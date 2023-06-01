@@ -1,3 +1,4 @@
+id,lga,state_id
 1,Gwagwalada,1
 2,Kuje,1
 3,Abaji,1
@@ -338,7 +339,7 @@
 384,Gombe,15
 385,Nafada/Bajoga,15
 386,Yamaltu/Delta,15
-387,Enugu South,,16
+387,Enugu South,16
 388,Igbo-Eze South,16
 389,Enugu North,16
 390,Nkanu,16
@@ -592,22 +593,22 @@
 669,Yola South,28
 670,Aba North,29
 671,Aba South,29
-672, Arochukwu,29
-673, Bende,29
-674, Ikwuano,29
-675, Isiala-Ngwa North,29
-676, Isiala-Ngwa South,29
-677, Isuikwato,29
-678, Obi Nwa,29
-679, Ohafia,29
-680, Osisioma,29
-681, Ngwa,29
-682, Ugwunagbo,29
-683, Ukwa East,29
-684, Ukwa West,29
-685, Umuahia North,29
-686, Umuahia South,29
-687, Umu-Neochi,29
+672,Arochukwu,29
+673,Bende,29
+674,Ikwuano,29
+675,Isiala-Ngwa North,29
+676,Isiala-Ngwa South,29
+677,Isuikwato,29
+678,Obi Nwa,29
+679,Ohafia,29
+680,Osisioma,29
+681,Ngwa,29
+682,Ugwunagbo,29
+683,Ukwa East,29
+684,Ukwa West,29
+685,Umuahia North,29
+686,Umuahia South,29
+687,Umu-Neochi,29
 688,Afijio,30
 689,Akinyele,30
 690,Atiba,30

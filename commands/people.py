@@ -3,12 +3,13 @@ from typing import List
 from pydantic import EmailStr, BaseModel
 from datetime import datetime, date, time, timedelta
 
-from models.people import Sex, MaritalStatus
+from models.client import Sex, MaritalStatus
 
 
 class Client (BaseModel):
     photo: bytes
     first_name: str
+    middle_name: str
     last_name: str
     sex: Sex
     marital_status: MaritalStatus
@@ -18,5 +19,6 @@ class Client (BaseModel):
     phone: str
     address: str
     lga_id: int
-    occupation: str
+    occupation: int
+
 

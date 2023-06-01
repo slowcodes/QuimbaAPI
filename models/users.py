@@ -13,13 +13,18 @@ class AccountStatus(str, Enum):
 
 
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = 'Users'
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(EmailStr, unique=True, index=True)
     password = Column(String(50))
     created_at = Column(DateTime, default=datetime.now())
     last_modified = Column(DateTime, default=datetime.now())
     last_login = Column(DateTime, default=datetime.now())
     status = AccountStatus = AccountStatus.ACTIVE
     person_id = (Integer, ForeignKey("person.id"))
+
+
+class UserBase(Base):
+    __tablename__ = 'Users_Classification'
+    id = Column(Integer, primary_key=True, index=True)
+    classification = Column(String(50)) # e.g physician, nurse, lab scientist
