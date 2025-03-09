@@ -5,19 +5,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, Double, String, Dat
 from sqlalchemy.orm import relationship
 from db import Base
 from models.client import Severity
-from models.users import User
-
-class Vitals(Base):
-    __tablename__ = "Vitals"
-    id = Column(Integer, primary_key=True, index=True)
-
-    temperature = Column(Double)
-    bmi = Column(Double)
-    blood_pressure = Column(String(10))
-    weight = Column(Double)
-    height = Column(Double)
-    created_at = Column(DateTime, default=datetime.date.today())
-    client_id = (Integer, ForeignKey("client.id", ondelete='CASCADE'))
+from models.auth import User
 
 
 class Schedule(Base):
@@ -44,10 +32,11 @@ class Specialist(Base):
 
 
 class QueueStatus(str, Enum):
-    WAITING = 'Waiting'
-    PROCESSED = 'Processed'
-    PROCESSING = 'Processing'
-    CANCELLED = 'Cancelled'
+    Waiting = 'Waiting'
+    Processed = 'Processed'
+    Processing = 'Processing'
+    Cancelled = 'Cancelled'
+
 
 class ConsultationQueue(Base):
     __tablename__ = "Consultation_Queue"
@@ -55,7 +44,7 @@ class ConsultationQueue(Base):
     id = Column(Integer, primary_key=True, index=True)
     schedule_id = Column(Integer, ForeignKey("Consultation_Schedule.id", ondelete='CASCADE'))
     scheduled_at = Column(Date, default=datetime.date.today())
-    status = Column(SqlEnum(QueueStatus), default=QueueStatus.PROCESSING)
+    status = Column(SqlEnum(QueueStatus), default=QueueStatus.Processing)
     booking_id = Column(Integer, ForeignKey("Service_Booking.id", ondelete='CASCADE'))
 
 
@@ -67,18 +56,20 @@ class Symptom(Base):
 
 
 class PresentingSymptomsFrequency(str, Enum):
-    Low = 'New Occurranc'
+    Low = 'Low'
     Medium = 'Medium'
     High = 'High'
 
 
 class SymptomFrequency(str, Enum):
-    UNKOWN = 'UNKNOWN'
-    REOCCURING = 'Reoccuring'
-    NOVEL = 'NOVEL'
+    Weekly = 'Weekly'
+    Hourly = 'Hourly'
+    Monthly = 'Monthly'
+    Daily = 'Daily'
+    Annually = 'Annually'
 
 
-class Presenting_Symptom(Base):
+class PresentingSymptom(Base):
     __tablename__ = 'Presenting_Symptoms'
 
     id = Column(Integer, primary_key=True, index=True)
@@ -88,10 +79,12 @@ class Presenting_Symptom(Base):
     frequency = Column(SqlEnum(SymptomFrequency))
 
 
-class ClinicalExaminations(Base):
+class ClinicalExamination(Base):
     __tablename__ = 'Clinical_Examination'
 
     id = Column(Integer, primary_key=True, index=True)
     presenting_complaints = Column(String(150))
-    complaints_complaint_ = Column(String(150))
-    conducted_at = Column(Date)
+    conducted_at = Column(Date, default=datetime.date.today())
+    transaction_id = Column(Integer, ForeignKey("Transaction.id", ondelete='CASCADE'))
+    conducted_by = Column(Integer, ForeignKey("Users.id", ondelete='CASCADE'))
+

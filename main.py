@@ -1,13 +1,15 @@
+import logging
+
 from fastapi import FastAPI
 import uvicorn
-from fastapi.params import Depends
-from sqlalchemy.orm import Session
-from db import engine, Base, create_engine, SessionLocal
-from models.client import State
-from routers import client_router, lab_router
+
+from db import engine, Base
+from routers import service_router, transaction_router, consultation_router, security_router
+from routers.client import client_router
+from routers.client import vital_router, nottification_router
+from routers.lab import lab_router, queue_router, samples_router, result_router
 import bootstrap.db_data_init
 from fastapi.middleware.cors import CORSMiddleware
-
 
 app = FastAPI()
 
@@ -27,18 +29,27 @@ app = FastAPI(
     },
 )
 
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
 app.include_router(client_router.client_router)
 app.include_router(lab_router.lab_router)
-
+app.include_router(result_router.result_router)
+app.include_router(samples_router.sample_collection_router)
+app.include_router(queue_router.queue_router)
+app.include_router(service_router.service_router)
+app.include_router(transaction_router.transaction_router)
+app.include_router(consultation_router.consultation_router)
+app.include_router(security_router.security_router)
+app.include_router(vital_router.vital_router)
+app.include_router(nottification_router.notification_router)
 
 # create tables
 def create_table():
@@ -47,7 +58,16 @@ def create_table():
 
 create_table()
 bootstrap.db_data_init.load_data()
+logging.basicConfig(
+    filename='app.log',  # File where logs will be written
+    level=logging.ERROR,  # Log level threshold
+    format='%(asctime)s - %(levelname)s - %(message)s'  # Log format
+)
+logging.error("This is an error message test")
 
 if __name__ == '__main__':
+    # Set up logging
+
+
     # SQLModel.metadata.create_all(engine)
     uvicorn.run('main:app', host="127.0.0.1", port=8001, reload=True)

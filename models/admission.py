@@ -1,7 +1,6 @@
 import datetime
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, Double, String, DateTime, Date, Enum as SqlEnum, Text, BLOB
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer
 from db import Base
 
 

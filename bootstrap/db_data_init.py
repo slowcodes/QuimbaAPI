@@ -17,8 +17,9 @@ def load_data():
 
     # Print the list of files
     for file in files:
-        generated_table_name = file.title().strip('.Csv')
+        generated_table_name = os.path.splitext(file)[0]    # file.title().strip('.csv')
         tbl = generated_table_name
+
 
         table = metadata.tables[tbl]
         rows = session.query(table).count()
