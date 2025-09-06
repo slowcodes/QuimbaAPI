@@ -1,58 +1,118 @@
 import datetime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Date, Enum as SqlEnum, Text, BLOB, \
+    BIGINT, Index, Double
+from sqlalchemy.orm import relationship, aliased
+from sqlalchemy.ext.declarative import declared_attr
+from db import Base
 from enum import Enum
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, Double, String, DateTime, Date, Enum as SqlEnum, Text, BLOB
-from sqlalchemy.orm import relationship
-from db import Base
 from models.client import Severity
-from models.auth import User
+from models.lab.lab import QueueStatus
 
 
-class Schedule(Base):
-    __tablename__ = "Consultation_Schedule"
+# Base class with soft delete functionality
+class SoftDeleteMixin:
+    deleted_at = Column(DateTime, default=None, nullable=True)
+
+    def soft_delete(self):
+        """Marks the record as deleted by setting the deleted_at timestamp."""
+        self.deleted_at = datetime.datetime.utcnow()
+
+    @classmethod
+    def query(cls, session):
+        """Override the query to exclude soft-deleted records by default."""
+        return session.query(cls).filter(cls.deleted_at == None)
+
+    def restore(self):
+        """Restores a soft-deleted record by setting deleted_at to None."""
+        self.deleted_at = None
+
+
+# Using the SoftDeleteMixin to implement soft deletes in your models
+class Schedule(Base, SoftDeleteMixin):
+    __tablename__ = "consultant_schedule"
     id = Column(Integer, primary_key=True, index=True)
-
     date_of_consultation = Column(Date)
-    specialist = Column(Integer, ForeignKey("Specialist.id", ondelete='CASCADE'))
+    specialist_id = Column(Integer, ForeignKey("consultant_specialist.id", ))
+
+    # Relationship with Specialist
+    specialist = relationship("Specialist", backref="consultant_specialist", lazy='select')
+
+    # Add an index on specialist_id for faster joins and lookups
+    Index('ix_specialist_idx', specialist_id)
 
 
-class Specialism(Base):
-    __tablename__ = "Department"
-
+class Specialism(Base, SoftDeleteMixin):
+    __tablename__ = "consultant_department"
     id = Column(Integer, primary_key=True, index=True)
-    department = Column(String(50))
+    department = Column(String(50), index=True)
+    specialist_title = Column(String(50))
 
 
-class Specialist(Base):
-    __tablename__ = "Specialist"
-
+class Specialist(Base, SoftDeleteMixin):
+    __tablename__ = "consultant_specialist"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("Users.id", ondelete='CASCADE'))
-    specialism = Column(Integer, ForeignKey("Department.id", ondelete='CASCADE'))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    title = Column(String(50))
+
+    # Relationships
+    specializations = relationship("SpecialistSpecialization", backref="specialist", lazy='select')
+
+    # Add index on user_id for efficient querying
+    Index('ix_user_id', user_id)
 
 
-class QueueStatus(str, Enum):
-    Waiting = 'Waiting'
-    Processed = 'Processed'
-    Processing = 'Processing'
-    Cancelled = 'Cancelled'
+class InHourFrequency(str, Enum):
+    Weekly = 'Weekly'
+    Daily = 'Daily'
+    EveryWeekday = 'Every Weekday'
+    WeekendsOnly = 'Weekends Only'
 
 
-class ConsultationQueue(Base):
-    __tablename__ = "Consultation_Queue"
-
+class InHours(Base, SoftDeleteMixin):
+    __tablename__ = "consultant_in_hours"
     id = Column(Integer, primary_key=True, index=True)
-    schedule_id = Column(Integer, ForeignKey("Consultation_Schedule.id", ondelete='CASCADE'))
+    start_time = Column(DateTime, default=datetime.date.today())
+    end_time = Column(DateTime, default=datetime.date.today())
+    specialist_id = Column(Integer, ForeignKey("consultant_specialist.id"))
+    frequency = Column(SqlEnum(InHourFrequency))
+    service_id = Column(Integer, ForeignKey("service_listing.service_id"))
+
+    # consultation_queue = relationship("ConsultationQueue", backref="consultant_in_hours")
+
+
+class SpecialistSpecialization(Base, SoftDeleteMixin):
+    __tablename__ = "consultant_specialist_specialization"
+    id = Column(Integer, primary_key=True, index=True)
+    specialist_id = Column(Integer, ForeignKey("consultant_specialist.id", ))
+    specialism_id = Column(Integer, ForeignKey("consultant_department.id", ))
+
+    # Indexes for optimized searching
+    Index('ix_specialist_specialization', specialist_id, specialism_id)
+
+
+class ConsultationQueue(Base, SoftDeleteMixin):
+    __tablename__ = "consultation_queue"
+    id = Column(Integer, primary_key=True, index=True)
+    schedule_id = Column(Integer, ForeignKey("consultant_in_hours.id", ondelete="cascade"))
     scheduled_at = Column(Date, default=datetime.date.today())
     status = Column(SqlEnum(QueueStatus), default=QueueStatus.Processing)
-    booking_id = Column(Integer, ForeignKey("Service_Booking.id", ondelete='CASCADE'))
+    booking_id = Column(Integer, ForeignKey("service_booking_detail.id", ondelete="cascade"))
+    specialization_id = Column(Integer, ForeignKey("consultant_department.id", ondelete="cascade"))
+    notes = Column(Text, nullable=True)
+    consultation_time = Column(DateTime)
+
+    # Relationship to Schedule
+    # in_hours = relationship("InHours", backref="consultation_queue", lazy='select')
+
+    # Index for faster queries
+    Index('ix_schedule_status', schedule_id, status)
 
 
-class Symptom(Base):
-    __tablename__ = 'Symptom'
-
+class Symptom(Base, SoftDeleteMixin):
+    __tablename__ = 'symptom'
     id = Column(Integer, primary_key=True, index=True)
-    symptom = Column(String(150))
+    symptom = Column(String(150), index=True)
 
 
 class PresentingSymptomsFrequency(str, Enum):
@@ -69,22 +129,32 @@ class SymptomFrequency(str, Enum):
     Annually = 'Annually'
 
 
-class PresentingSymptom(Base):
-    __tablename__ = 'Presenting_Symptoms'
-
+class PresentingSymptom(Base, SoftDeleteMixin):
+    __tablename__ = 'presenting_symptoms'
     id = Column(Integer, primary_key=True, index=True)
-    clinical_examination_id = Column(Integer, ForeignKey("Clinical_Examination.id", ondelete='CASCADE'))
-    symptom_id = Column(Integer, ForeignKey("Symptom.id", ondelete='CASCADE'))
+    clinical_examination_id = Column(Integer, ForeignKey("clinical_examination.id", ondelete="cascade" ))
+    symptom_id = Column(Integer, ForeignKey("symptom.id", ondelete="cascade" ))
     severity = Column(SqlEnum(Severity))
-    frequency = Column(SqlEnum(SymptomFrequency))
+    # frequency = Column(SqlEnum(SymptomFrequency, name="symptom_frequency"))
+
+    # Relationships
+    symptom = relationship("Symptom", backref="presenting_symptoms", lazy='select')
+    clinical_examination = relationship("ClinicalExamination", backref="presenting_symptoms", lazy='select')
+
+    # Index('ix_symptom_frequency', symptom_id, frequency)
 
 
-class ClinicalExamination(Base):
-    __tablename__ = 'Clinical_Examination'
-
+class ClinicalExamination(Base, SoftDeleteMixin):
+    __tablename__ = 'clinical_examination'
     id = Column(Integer, primary_key=True, index=True)
     presenting_complaints = Column(String(150))
     conducted_at = Column(Date, default=datetime.date.today())
-    transaction_id = Column(Integer, ForeignKey("Transaction.id", ondelete='CASCADE'))
-    conducted_by = Column(Integer, ForeignKey("Users.id", ondelete='CASCADE'))
+    transaction_id = Column(BIGINT, ForeignKey("transaction.id", ondelete="cascade"))
+    conducted_by = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
 
+    # Relationships and indexes for fast access
+    transaction = relationship("Transaction", backref="clinical_examinations", lazy='select')
+    conducted_by_user = relationship("User", backref="clinical_examinations", lazy='select')
+
+    # Index('ix_transaction_id', transaction_id)
+    Index('ix_exam_conducted_by', conducted_by)

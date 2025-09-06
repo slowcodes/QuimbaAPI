@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
-from commands.lab import CollectedSamplesDTO, SampleDetailDTO, LabServicesQueueDTO
+from dtos.lab import CollectedSamplesDTO, SampleDetailDTO, LabServicesQueueDTO
 from models.auth import User
 from models.client import Person, Client
-from models.lab.lab import CollectedSamples, LabService, LabServicesQueue, QueueStatus
-from models.services import ServiceBookingDetail, ServiceBooking
+from models.lab.lab import CollectedSamples, LabService, LabServicesQueue, QueueStatus, SampleType
+from models.services import ServiceBookingDetail, ServiceBooking, BusinessServices
 from repos.auth_repository import UserRepository
 from repos.client.client_repository import ClientRepository
 from repos.lab.queue_repository import QueueRepository
@@ -39,6 +39,8 @@ class CollectedSamplesRepository:
 
             LabService.lab_service_name,
             LabService.service_id,
+
+            BusinessServices.ext_turn_around_time
         ]
         self.samples_collection_details = self.db.query(*self.cols).select_from(CollectedSamples) \
             .join(LabServicesQueue, LabServicesQueue.id == CollectedSamples.queue_id) \
@@ -48,7 +50,7 @@ class CollectedSamplesRepository:
             .join(Client, Client.id == ServiceBooking.client_id) \
             .join(Person, Person.id == Client.person_id) \
             .join(LabService, LabService.service_id == ServiceBookingDetail.service_id) \
-
+            .join(BusinessServices, LabService.service_id == BusinessServices.service_id)
 
     def response_model(self, sample) -> SampleDetailDTO:
         user_repo = UserRepository(self.db)
@@ -62,7 +64,7 @@ class CollectedSamplesRepository:
             'container_label': sample.container_label,
             'sample_status': sample.status,
             'lab_service_id': sample.lab_service_id,
-
+            'ext_turn_around': sample.ext_turn_around_time,
             'client': {
                 'first_name': sample.first_name,
                 'last_name': sample.last_name,
@@ -84,11 +86,30 @@ class CollectedSamplesRepository:
             self.samples_collection_details.filter(CollectedSamples.id == sample_id).first()
         )
 
+    def normalize_sample_type(self, sample_type):
+        """Normalize sample_type to a proper SampleType enum member."""
+        if isinstance(sample_type, SampleType):
+            return sample_type  # Already correct enum member
+        if isinstance(sample_type, str):
+            # Try name first
+            if sample_type in SampleType.__members__:
+                return SampleType[sample_type]
+            # Try value
+            try:
+                return SampleType(sample_type)
+            except ValueError:
+                raise ValueError(f"Invalid sample_type: {sample_type!r}")
+        raise TypeError(f"sample_type must be str or SampleType, got {type(sample_type).__name__}")
+
     def add_collected_sample(self, sample_data: CollectedSamplesDTO) -> CollectedSamplesDTO:
-        new_collected_sample = CollectedSamples(**sample_data.__dict__)
+        smpl = sample_data.__dict__.copy()  # copy to avoid modifying original DTO
+        smpl['sample_type'] = self.normalize_sample_type(smpl['sample_type'])
+
+        new_collected_sample = CollectedSamples(**smpl)
         self.db.add(new_collected_sample)
         self.db.commit()
         self.db.refresh(new_collected_sample)
+
         return CollectedSamplesDTO(
             id=new_collected_sample.id,
             queue_id=new_collected_sample.queue_id,

@@ -4,14 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
-from commands.auth import UserDTO
-from commands.lab import ExperimentResultReadingDTO, SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, \
+from dtos.auth import UserDTO
+from dtos.lab import ExperimentResultReadingDTO, SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, \
     ApprovedLabBookingResultDTO
-from commands.services import ServiceBookingDTO
+from dtos.services import ServiceBookingDTO
 from db import get_db
 from models.lab.lab import ResultStatus
 from models.services import BookingStatus
-from repos.lab.experiment_repository import ExperimentResultReadingRepository
+from repos.lab.experiment_repository import ExperimentRepository
 from repos.lab.result.approved_lab_booking_result import ApprovedLabBookingResultRepository
 from repos.lab.result_repository import ResultRepository
 from repos.lab.sample_repository import CollectedSamplesRepository
@@ -21,8 +21,8 @@ from security.dependencies import get_current_active_user
 result_router = APIRouter(prefix="/api/lab-results", tags=["Lab Results"])
 
 
-def experiment_result_repo(db: Session = Depends(get_db)) -> ExperimentResultReadingRepository:
-    return ExperimentResultReadingRepository(db)
+def experiment_result_repo(db: Session = Depends(get_db)) -> ExperimentRepository:
+    return ExperimentRepository(db)
 
 
 def transaction_repo(db: Session = Depends(get_db)) -> TransactionRepository:
@@ -31,14 +31,14 @@ def transaction_repo(db: Session = Depends(get_db)) -> TransactionRepository:
 
 @result_router.post("/experiment-results/", response_model=ExperimentResultReadingDTO)
 def create_experiment_result(reading: ExperimentResultReadingDTO,
-                             repo: ExperimentResultReadingRepository = Depends(experiment_result_repo)):
+                             repo: ExperimentRepository = Depends(experiment_result_repo)):
     if repo.reading_exits(reading):
         raise HTTPException(status_code=409, detail="Experiment reading already exist")
     return repo.create_reading(reading)
 
 
 @result_router.get("/experiment-results/{reading_id}")
-def read_experiment_result(reading_id: int, repo: ExperimentResultReadingRepository = Depends(experiment_result_repo)):
+def read_experiment_result(reading_id: int, repo: ExperimentRepository = Depends(experiment_result_repo)):
     db_reading = repo.get_reading_by_id(reading_id)
     if db_reading is None:
         raise HTTPException(status_code=404, detail="Experiment reading not found")
@@ -51,8 +51,11 @@ def sample_result_repo(db: Session = Depends(get_db)) -> ResultRepository:
 
 @result_router.post("/sample-results/")
 def create_sample_result(result: SampleResultDTO,
+                         current_user: Annotated[UserDTO, Depends(get_current_active_user)],
                          repo: ResultRepository = Depends(sample_result_repo),
-                         db: Session = Depends(get_db)):
+                         db: Session = Depends(get_db),
+                         ):
+    result.created_by = current_user.id
     if repo.sample_result_exist(result):
         raise HTTPException(status_code=409, detail="Sample result already exist")
     response = repo.create_result(result)

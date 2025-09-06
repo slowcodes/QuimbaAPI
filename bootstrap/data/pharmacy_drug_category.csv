@@ -1,0 +1,21 @@
+id,group,use
+2,Antibiotics,Treat bacterial infections
+3,Analgesics,Pain relief
+4,Antipyretics,Reduce fever
+5,Anti-inflammatories,Reduce inflammation
+6,Antihypertensives,Lower blood pressure
+7,Antidiabetics,Manage blood sugar levels
+8,Antidepressants,Treat depression
+9,Antipsychotics,Treat schizophrenia/bipolar disorder
+10,Anticonvulsants,Prevent seizures
+11,Antivirals,Treat viral infections
+12,Vaccines,Disease prevention
+13,Antifungals,Treat fungal infections
+14,Bronchodilators,"Open airways (asthma, COPD)"
+15,Gastrointestinal (GI),"Acid reflux, ulcers"
+16,Hormonal products,Hormone regulation
+17,Cytotoxics,Cancer treatment
+18,Local Anaesthetics,Numbing specific areas
+19,Sedatives/Hypnotics,"Anxiety, sleep aid"
+20,Laxatives,Relieve constipation
+21,Contraceptives,Prevent pregnancy

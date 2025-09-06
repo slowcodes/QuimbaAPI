@@ -5,7 +5,7 @@ from faker.generator import random
 from fastapi import APIRouter, Depends
 from starlette import status
 
-from commands.lab import LaboratoryDTO, LaboratoryGroupDTO, CommandLaboratoryService, LabServicesQueueDTO
+from dtos.lab import LaboratoryDTO, LaboratoryGroupDTO, LaboratoryServiceDetailDTO, LabServicesQueueDTO, LabServiceDTO
 from sqlalchemy.orm import Session
 from db import get_db
 from starlette.responses import JSONResponse
@@ -24,12 +24,6 @@ def get_all_labs(skip: int, limit: int, lab_repository: LabRepository = Depends(
     return lab_repository.get_all_labs(skip, limit)
 
 
-@lab_router.post('/api/test/labs', tags=['Laboratories'])
-def test_api_swq(db: Session = Depends(get_db)):
-    print("request came through");
-    return [];
-
-
 @lab_router.get('/api/laboratories/groups', tags=['Laboratories', 'Laboratory Groups'])
 def get_all_lab_groups(skip: int, limit: int, search_text: str,
                        lab_repository: LabRepository = Depends(get_lab_repository)):
@@ -38,8 +32,12 @@ def get_all_lab_groups(skip: int, limit: int, search_text: str,
 
 @lab_router.post('/api/laboratories/add_lab', tags=['Laboratories', 'Laboratory'])
 def add_lab(lab: LaboratoryDTO, lab_repository: LabRepository = Depends(get_lab_repository)):
+    if lab.id:
+        lab_repository.update_lab(lab)
+        return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
+                            content=dict(error=False, msg='Lab service updated successfully'))
 
-    if (lab_repository.add_lab(lab)):
+    if lab_repository.add_lab(lab):
         return JSONResponse(status_code=status.HTTP_201_CREATED,
                             content=dict(error=False, msg='Lab added successfully'))
     return JSONResponse(status_code=status.HTTP_406_NOT_ACCEPTABLE,
@@ -52,11 +50,37 @@ def add_lab_group(labGroup: LaboratoryGroupDTO, lab_repository: LabRepository = 
         return JSONResponse(status_code=status.HTTP_201_CREATED,
                             content=dict(error=False, msg='Lab group added successfully'))
     return JSONResponse(status_code=status.HTTP_406_NOT_ACCEPTABLE,
+
                         content=dict(error=False, msg='New lab group must unique. A similar entry already exist'))
 
 
-@lab_router.post('/api/laboratories/add_lab_service', tags=['Laboratories', 'Laboratory Service'])
-def add_lab_services(lab_service: CommandLaboratoryService, lab_repository: LabRepository = Depends(get_lab_repository)):
+@lab_router.put('/api/laboratories/lab_service', tags=['Laboratories' 'Laboratory Service'])
+def update_lab_service(lab_service: LaboratoryServiceDetailDTO,
+                       lab_repository: LabRepository = Depends(get_lab_repository)):
+    if lab_service.lab_service_id:
+        lab_repository.update_lab_service_detail(lab_service.lab_service_id, lab_service)
+        return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
+                            content=dict(error=False, msg='Lab service updated  nbqz'))
+    else:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
+                            content=dict(error=True, msg='Lab service subject not found'))
+
+
+@lab_router.put('/api/laboratories/lab_service_detail', tags=['Laboratories' 'Laboratory Service'])
+def update_lab_service(lab_service: LabServiceDTO,
+                       lab_repository: LabRepository = Depends(get_lab_repository)):
+    if lab_service.id:
+        lab_repository.update_lab_service(lab_service.id, lab_service.__dict__)
+        return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
+                            content=dict(error=False, msg='Lab service updated  nbqz'))
+    else:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST,
+                            content=dict(error=True, msg='Lab service subject not found'))
+
+
+@lab_router.post('/api/laboratories/lab_service', tags=['Laboratories', 'Laboratory Service Detail'])
+def add_lab_services_detail(lab_service: LaboratoryServiceDetailDTO,
+                            lab_repository: LabRepository = Depends(get_lab_repository)):
     if lab_repository.add_lab_services(lab_service):
         return JSONResponse(status_code=status.HTTP_201_CREATED,
                             content=dict(error=False, msg='Lab service added successfully'))
@@ -65,7 +89,8 @@ def add_lab_services(lab_service: CommandLaboratoryService, lab_repository: LabR
 
 
 @lab_router.get('/api/laboratories/services', tags=['Laboratories', 'Laboratory Service'])
-def get_all_lab_services(lab_repository: LabRepository = Depends(get_lab_repository), skip: int = 0, limit: int = 10, lab_id: int = 1, search=''):
+def get_all_lab_services(lab_repository: LabRepository = Depends(get_lab_repository), skip: int = 0, limit: int = 10,
+                         lab_id: int = 1, search=''):
     # faker = Faker()
     # for i in range(300):
     #     new_lab_service = CommandLaboratoryService(
@@ -90,7 +115,8 @@ def get_lab_service_groups(lab_id: int = 0, lab_repository: LabRepository = Depe
                         content=dict(error=False, msg=lab_repository.get_lab_group(lab_id)))
 
 
-@lab_router.get('/api/laboratories/services/lab_service_details/', tags=['Laboratories', 'Laboratory Service', 'Details'])
+@lab_router.get('/api/laboratories/services/lab_service_details/',
+                tags=['Laboratories', 'Laboratory Service', 'Details'])
 def get_lab_service_details(lab_id: int = 0, repo: LabRepository = Depends(get_lab_repository)):
     details = repo.get_lab_service_details(lab_id)
 
@@ -100,5 +126,3 @@ def get_lab_service_details(lab_id: int = 0, repo: LabRepository = Depends(get_l
                                                           'code not fount'))
     return JSONResponse(status_code=status.HTTP_200_OK,
                         content=dict(error=False, msg=details))
-
-

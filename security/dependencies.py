@@ -7,7 +7,7 @@ from starlette import status
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from commands.auth import UserDTO, TokenData
+from dtos.auth import UserDTO, TokenData
 from db import get_db
 from models.auth import AccountStatus
 from repos.auth_repository import UserRepository
@@ -75,4 +75,27 @@ def require_access_privilege(privilege: int):
         if privilege not in current_user.privileges:
             raise HTTPException(status_code=403, detail="Insufficient permission")
         return current_user
+
     return privilege_checker
+
+
+def require_role_and_privilege(privilege_id: int, permission: str):
+    def role_and_privilege_checker(current_user: Annotated[UserDTO, Depends(get_current_active_user)]):
+        print('current user', current_user.roles, current_user.privileges)
+        if not has_permission(current_user.privileges, privilege_id, permission):
+            raise HTTPException(status_code=403, detail="Insufficient permission")
+        return current_user
+
+    return role_and_privilege_checker
+
+
+def has_permission(privileges: list, privilege_id: int, permission: str) -> bool:
+    for privilege in privileges:
+        if privilege.privilege_id == privilege_id:
+            if permission == "read":
+                return privilege.can_read
+            elif permission == "write":
+                return privilege.can_write
+            elif permission == "execute":
+                return privilege.can_execute
+    return False  # No matching privilege or invalid permission

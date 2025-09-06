@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from commands.lab import CollectedSamplesDTO, LabServicesQueueDTO
+from dtos.lab import CollectedSamplesDTO, LabServicesQueueDTO
 from db import get_db
 from models.lab.lab import SampleType, QueueStatus
 from repos.lab.queue_repository import QueueRepository

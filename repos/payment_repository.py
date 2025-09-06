@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
-from commands.transaction import PaymentDTO, TransactionDTO
+from dtos.transaction import PaymentDTO, TransactionDTO
 from models.auth import User
 from models.client import Person
 from models.transaction import Transaction
@@ -19,7 +19,7 @@ class PaymentRepository:
         self.db_session = db_session
         # usr = get_current_user()
 
-        self.user_id = 1 # usr.id
+        self.user_id = 1  # usr.id
 
     def create_payment(self, payment: PaymentDTO) -> PaymentDTO:
         payment.user_id = self.user_id
@@ -28,14 +28,14 @@ class PaymentRepository:
         self.db_session.commit()
         self.db_session.refresh(db_payment)
 
-        return {
-            "id": db_payment.id,
-            "payment_date": db_payment.payment_date,
-            "payment_time": db_payment.payment_time,  # for response only
-            "amount": db_payment.amount,
-            "transaction_id": db_payment.transaction_id,
-            "payment_method": db_payment.payment_method
-        }
+        return PaymentDTO(
+            id=db_payment.id,
+            payment_date=db_payment.payment_date,
+            payment_time=db_payment.payment_time,  # for response only
+            amount=db_payment.amount,
+            transaction_id=db_payment.transaction_id,
+            payment_method=db_payment.payment_method
+        )
 
     def get_payment(self, payment_id: int) -> TransactionDTO:
         return self.db_session.query(Payments).filter(Payments.id == payment_id).first()
@@ -84,38 +84,74 @@ class PaymentRepository:
 
         }
 
+    #
+    # def get_payments(self, limit=20, skip=0, transaction_type=ServiceType.All, client_id=0,
+    #                  start_date: str = '', last_date: str = ''):
+    #     cols = [Payments.id,
+    #             Payments.payment_date,
+    #             Payments.payment_method,
+    #             Payments.payment_time,
+    #             Payments.user_id,
+    #             Payments.amount,
+    #             Payments.transaction_id,
+    #             ServiceBooking.client_id,
+    #             Person.last_name.label('processing_agent_last_name'),
+    #             Person.last_name.label('processing_agent_first_name'),
+    #             func.sum(Payments.amount).label('total_amount')]
+    #
+    #     rs = self.db_session.query(*cols).select_from(Payments) \
+    #         .join(User, User.id == Payments.user_id) \
+    #         .join(Person, Person.id == User.person_id) \
+    #         .join(Transaction, Transaction.id == Payments.transaction_id) \
+    #         .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id) \
+    #
+    #     if client_id != 0:
+    #         rs = rs.filter(ServiceBooking.client_id == client_id)
+    #
+    #     if len(start_date) >= 8 and len(last_date) >= 8:
+    #         rs = rs.filter(
+    #             and_(
+    #                 Payments.payment_date >= start_date,
+    #                 Payments.payment_date <= last_date)
+    #
+    #         )
+    #     total = rs.all()[0].total_amount;
+    #     extracts = rs.group_by(
+    #         Payments.id,
+    #         Payments.payment_date,
+    #         Payments.payment_method,
+    #         Payments.payment_time,
+    #         Payments.user_id,
+    #         Payments.amount,
+    #         Payments.transaction_id,
+    #         Person.last_name,
+    #         Person.first_name
+    #     )
+    #
+    #     responds = extracts.offset(skip).limit(limit).all()
+    #
+    #     payments = []
+    #     for payment in responds:
+    #         payments.append({
+    #             'id': payment.id,
+    #             'payment_time': payment.payment_time,
+    #             'payment_date': payment.payment_date,
+    #             'payment_amount': payment.amount,
+    #             'processed_by': payment.processing_agent_last_name + ' ' + payment.processing_agent_last_name,
+    #             'transaction_id': payment.transaction_id,
+    #             'payment_method': payment.payment_method
+    #         })
+    #
+    #     return {
+    #         'data': payments,
+    #         'total': extracts.count(),
+    #         'volume': total
+    #     }
+
     def get_payments(self, limit=20, skip=0, transaction_type=ServiceType.All, client_id=0,
                      start_date: str = '', last_date: str = ''):
-        cols = [Payments.id,
-                Payments.payment_date,
-                Payments.payment_method,
-                Payments.payment_time,
-                Payments.user_id,
-                Payments.amount,
-                Payments.transaction_id,
-                ServiceBooking.client_id,
-                Person.last_name.label('processing_agent_last_name'),
-                Person.last_name.label('processing_agent_first_name'),
-                func.sum(Payments.amount).label('total_amount')]
-
-        rs = self.db_session.query(*cols).select_from(Payments) \
-            .join(User, User.id == Payments.user_id) \
-            .join(Person, Person.id == User.person_id) \
-            .join(Transaction, Transaction.id == Payments.transaction_id) \
-            .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id) \
-
-        if client_id != 0:
-            rs = rs.filter(ServiceBooking.client_id == client_id)
-
-        if len(start_date) >= 8 and len(last_date) >= 8:
-            rs = rs.filter(
-                and_(
-                    Payments.payment_date >= start_date,
-                    Payments.payment_date <= last_date)
-
-            )
-        total = rs.all()[0].total_amount;
-        extracts = rs.group_by(
+        # Define columns to select
+        cols = [
             Payments.id,
             Payments.payment_date,
             Payments.payment_method,
@@ -123,26 +159,68 @@ class PaymentRepository:
             Payments.user_id,
             Payments.amount,
             Payments.transaction_id,
+            ServiceBooking.client_id,
+            Person.last_name.label('processing_agent_last_name'),
+            Person.first_name.label('processing_agent_first_name'),  # ✅ Corrected first name
+            func.sum(Payments.amount).over().label('total_amount')  # ✅ Moved to window function
+        ]
+
+        # Base query
+        rs = self.db_session.query(*cols).select_from(Payments) \
+            .join(User, User.id == Payments.user_id) \
+            .join(Person, Person.id == User.person_id) \
+            .join(Transaction, Transaction.id == Payments.transaction_id) \
+            .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id)
+
+        # Filter by client_id if provided
+        if client_id != 0:
+            rs = rs.filter(ServiceBooking.client_id == client_id)
+
+        # Apply date filters if valid dates are provided
+        if len(start_date) >= 8 and len(last_date) >= 8:
+            rs = rs.filter(
+                and_(
+                    Payments.payment_date >= start_date,
+                    Payments.payment_date <= last_date
+                )
+            )
+
+        # Apply GROUP BY to avoid errors
+        rs = rs.group_by(
+            Payments.id,
+            Payments.payment_date,
+            Payments.payment_method,
+            Payments.payment_time,
+            Payments.user_id,
+            Payments.amount,
+            Payments.transaction_id,
+            ServiceBooking.client_id,
             Person.last_name,
             Person.first_name
         )
 
-        responds = extracts.offset(skip).limit(limit).all()
+        # Get total amount correctly
+        total_amount_query = self.db_session.query(func.sum(Payments.amount)).scalar() or 0
 
-        payments = []
-        for payment in responds:
-            payments.append({
+        # Apply pagination
+        responds = rs.offset(skip).limit(limit).all()
+
+        # Format response
+        payments = [
+            {
                 'id': payment.id,
                 'payment_time': payment.payment_time,
                 'payment_date': payment.payment_date,
                 'payment_amount': payment.amount,
-                'processed_by': payment.processing_agent_last_name + ' ' + payment.processing_agent_last_name,
+                'processed_by': f"{payment.processing_agent_last_name} {payment.processing_agent_first_name}",
                 'transaction_id': payment.transaction_id,
                 'payment_method': payment.payment_method
-            })
+            }
+            for payment in responds
+        ]
 
         return {
             'data': payments,
-            'total': extracts.count(),
-            'volume': total
+            'total': rs.count(),  # ✅ Uses correct grouped query
+            'volume': total_amount_query  # ✅ Uses correct sum calculation
         }

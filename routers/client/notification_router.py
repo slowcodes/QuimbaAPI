@@ -3,14 +3,14 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from commands.people import ClientNotificationDTO
+from dtos.people import ClientNotificationDTO
 from db import get_db
 from models.client import MsgType
 from repos.client.notification_repository import NotificationRepository
 
 notification_router = APIRouter(
     prefix="/api/client/notification",
-    tags=["Notifications", "Client"],
+    tags=["Notifications", "Clients"],
 )
 
 

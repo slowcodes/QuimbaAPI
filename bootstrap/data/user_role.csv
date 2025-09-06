@@ -1,0 +1,11 @@
+id,role_name,role_type
+1,Referral,Static
+2,Admission,Static
+3,Accounting,Static
+4,Consultation,Static
+5,Dispensary,Static
+6,Facility Management,Static
+7,Laboratory,Static
+8,Security and Administration,Static
+9,Transactions,Static
+10,Services and Appointments,Static

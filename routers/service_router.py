@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from twilio.rest import Client
 
 from db import get_db
-from commands.services import ServiceBookingDTO, ServiceBookingDetailDTO, ServiceBundleDTO, LabServiceBundleDTO
+from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, ServiceBundleDTO, LabServiceBundleDTO
 from repos.lab.queue_repository import QueueRepository
 from repos.services.service_bundle_repository import ServiceBundleRepository
 from repos.services.service_repository import ServiceRepository
@@ -35,9 +35,7 @@ def create_service_booking(service_booking: ServiceBookingDTO, repo: ServiceRepo
 @service_router.post("/detail/", response_model=ServiceBookingDetailDTO, status_code=status.HTTP_201_CREATED)
 def create_service_booking_detail(service_booking_detail: ServiceBookingDetailDTO,
                                   repo: ServiceRepository = Depends(service_repository)):
-    booking = repo.create_service_booking_detail(
-        service_booking=service_booking_detail)
-    return booking
+    return repo.create_service_booking_detail(service_booking=service_booking_detail)
 
 
 @service_router.get("/all-booking/", status_code=status.HTTP_200_OK)
@@ -150,7 +148,7 @@ def get_lab_service_bundle(skip: int = 0, limit: int = 20,
     try:
         return repo.get_lab_bundles(limit, skip)
     except Exception as e:
-        # print(e)
+        print(e)
         raise HTTPException(status_code=500, detail="Failed to retrieve lab service bundles") from e
 
 
@@ -185,6 +183,7 @@ def add_lab_service_bundle(lab_service_bundle: LabServiceBundleDTO,
             'collection': collections
         }
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail="Failed to retrieve lab service bundles") from e
 
 

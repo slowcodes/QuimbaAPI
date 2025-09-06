@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 from starlette import status
 
-from commands.people import ClientCommand, OrganisationDTO, VitalDTO
+from dtos.people import ClientDTO, OrganisationDTO, VitalDTO
 from sqlalchemy.orm import Session
 from db import get_db
 from starlette.responses import JSONResponse
@@ -51,12 +51,13 @@ def get_vitals_by_client_id(
     client_id: int,
     skip: int = 0,
     limit: int = 10,
+    vital_type: str = None,
     repo: VitalsRepository = Depends(get_vital_repository),
 ):
     """
     Retrieve vital records for a specific client with pagination.
     """
-    vitals = repo.get_vitals_by_client_id(client_id, skip, limit)
+    vitals = repo.get_vitals_by_client_id(client_id, skip, limit, vital_type)
     return vitals
 
 

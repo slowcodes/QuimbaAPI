@@ -1,37 +1,34 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, Double, String, DateTime, Date, Enum as SqlEnum, Text, BLOB
+import datetime
+
+from sqlalchemy import (
+    Boolean, Column, ForeignKey, Integer, Float, String,
+    DateTime, Date, Text, BLOB, BIGINT, Double, Index
+)
+from sqlalchemy.orm import relationship
 from db import Base
+from models.mixins import SoftDeleteMixin
 
 
+class BusinessSales(Base, SoftDeleteMixin):
+    __tablename__ = "sales"
 
-class BusinessSales(Base):
-    __tablename__ = "Sales"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    package_id = Column(Integer, ForeignKey("product_package.id", ondelete="cascade"))  # Price of the drug
+    transaction_id = Column(BIGINT, ForeignKey("transaction.id", ondelete="cascade"))  # FIXED
 
-    id = Column(Integer, primary_key=True, index=True)
-    price_code = Column(String(30))
-    transaction_id = (Integer, ForeignKey("transaction.id", ondelete='CASCADE'))
+    product_package = relationship("ProductPackage", back_populates="sales")
+    transaction = relationship("Transaction", back_populates="sales")
 
 
-class PriceCode(Base):
-    __tablename__ = "Sales_Price_Code"
+class SalesPriceCode(Base):
+    __tablename__ = "sales_price_code"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     selling_price = Column(Double)
     buying_price = Column(Double)
-    discount = Column(Double)
+    # packaging_id = Column(Integer) # Not necessary as it will be recorded in sales
+    date_created = Column(DateTime, default=datetime.datetime.utcnow) # tracking date of creation due to product price changes
 
-
-class Product(Base):
-    __tablename__ = "Products"
-
-    id = Column(Integer, primary_key=True, index=True)
-    current_price = Column(Double)
-    name = Column(String(100))
-    description = Column(String(100))
-
-
-class Barcode(Base):
-    __tablename__ = "Product_Barcode"
-
-    id = Column(Integer, primary_key=True, index=True)
-    barcode = Column(String(100))
-    product_id = (Integer, ForeignKey("product.id", ondelete='CASCADE'))
+    product_package = relationship("ProductPackage", back_populates="sales_price_code")
+    # pharmacy_drug_form_package = relationship("ProductPackage", back_populates="sales_price_code")
+    # pharmacy_drug_form_package = relationship("PharmDrugFormPackage", back_populates="sales_price_code")

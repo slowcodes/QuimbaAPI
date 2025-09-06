@@ -1,20 +1,23 @@
-from typing import List
+from typing import List, Optional
 import logging
 
 from sqlalchemy.orm import Session
 
 import db
-from commands.services import ServiceBookingDTO, ServiceBookingDetailDTO, ServiceEventDTO, EventType
+from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, ServiceEventDTO, EventType, BusinessServiceDTO
 from models.client import Client, Person
 from models.lab.lab import CollectedSamples, LabBundleCollection, LabServicesQueue, QueueStatus
 from models.services import Bundles, ServiceBooking, PriceCode, ServiceBookingDetail, BookingStatus, \
-    ServiceClinicalExamination
+    ServiceClinicalExamination, BusinessServices
 from models.transaction import Transaction
+from repos.services.price_repository import PriceRepository
 
 
 class ServiceRepository:
     def __init__(self, session: Session):
         self.session = session
+        self.price_repository = PriceRepository(session)
+
 
     def get_discounted_packages(self, service_id):
         cols = [
@@ -60,7 +63,6 @@ class ServiceRepository:
         self.session.commit()
         self.session.refresh(db_service_booking_details)
 
-        print('service booking details', db_service_booking_details.__dict__)
         return self.service_booking_detail_to_DTO(db_service_booking_details)
 
     def service_booking_to_DTO(self, sb: ServiceBooking) -> ServiceBookingDTO:
@@ -90,7 +92,6 @@ class ServiceRepository:
             Person.last_name,
             ServiceBooking.transaction_id,
             ServiceBooking.client_id,
-            ServiceBooking.booking_type,
             ServiceBooking.booking_status,
             Transaction.transaction_time,
             ServiceBooking.id.label("booking_id")
@@ -117,7 +118,7 @@ class ServiceRepository:
                     'transaction_time': booking.transaction_time,
                     'client_first_name': booking.first_name,
                     'client_last_name': booking.last_name,
-                    'booking_type': booking.booking_type,
+                    'booking_type': 'Laboratory',
                     'booking_status': booking.booking_status,
                 }
 
@@ -127,6 +128,8 @@ class ServiceRepository:
             'data': data,
             'total': total
         }
+
+
 
     def get_booking_details_by_booking_id(self, booking_id: int) -> List[ServiceBookingDetailDTO]:
         sv_bks = self.session.query(ServiceBookingDetail).filter(ServiceBookingDetail.booking_id == booking_id).all()
@@ -164,7 +167,6 @@ class ServiceRepository:
         if service_booking:
             delete_booking = self.delete_service_booking_details_by_booking_id(service_booking)
 
-            print('delete_booking', delete_booking, service_booking.booking_type)
             if delete_booking['delete']:
                 self.session.delete(service_booking)
 
@@ -288,3 +290,26 @@ class ServiceRepository:
 
         percentage_complete = (complete / no_of_booked_services) * 100
         return percentage_complete
+
+    def update_business_service(self, service_id: int, updated_service: dict) -> Optional[BusinessServices]:
+        """Update a service by its ID."""
+        service = self.session.query(BusinessServices).filter(BusinessServices.service_id == service_id).first()
+        if service:
+            for key, value in updated_service.items():
+                setattr(service, key, value)
+            self.session.commit()
+            self.session.refresh(service)
+            return service
+        return None
+
+    def get_business_service_by_id(self, id: int) -> BusinessServiceDTO:
+        business_service = self.session.query(BusinessServices).filter(BusinessServices.service_id == id).one_or_none()
+        if business_service:
+            return BusinessServiceDTO(
+                service_id=business_service.service_id,
+                price_code=self.price_repository.get_price_code_by_id(business_service.price_code),
+                ext_turn_around_time=business_service.ext_turn_around_time,
+                visibility=business_service.visibility,
+                serviceType=business_service.serviceType
+            )
+        return None

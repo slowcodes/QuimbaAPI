@@ -4,8 +4,8 @@ from sqlalchemy import or_
 
 from sqlalchemy.orm import Session
 
-from commands.auth import UserDTO, UserInDB, TokenData, RoleDTA, UserGroupDTO, PrivilegeDTO, UserGroupMemberDTO, \
-    AccountDTO
+from dtos.auth import UserDTO, UserGroupDTO, PrivilegeDTO, UserGroupMemberDTO, \
+    AccountDTO, SignUpResponseDTO
 from models.auth import User, AccountStatus, Roles, PrivilegeListing, UserGroup, UserGroupPrivilege, UserGroupMember
 from models.client import Person
 from security.utils import verify_password, get_password_hash, is_bcrypt_hash
@@ -20,6 +20,7 @@ class UserRepository:
             Person.first_name,
             Person.last_name,
             Person.email,
+            Person.title,
             User.status,
             User.created_at,
             User.password,
@@ -35,11 +36,73 @@ class UserRepository:
         self.query = self.session.query(*self.cols).select_from(User). \
             join(Person, Person.id == User.person_id)
 
-    def create_user(self, user_data: dict):
-        user = User(**user_data)
+    def create_user(self, user: User):
+
+        # user = User(**user_data)
         self.session.add(user)
         self.session.commit()
         return user
+
+    def register_user(self, account_dto: AccountDTO):
+        try:
+            person = Person(
+                first_name=account_dto.person.first_name,
+                last_name=account_dto.person.last_name,
+                middle_name=account_dto.person.middle_name,
+                title=account_dto.person.title,
+                email=account_dto.person.email,
+                phone=account_dto.person.phone,
+                sex=account_dto.person.sex
+            )
+            self.session.add(person)
+            self.session.flush()
+
+            user = User(
+                username=account_dto.username,
+                password=get_password_hash(account_dto.password) if account_dto.password else None,
+                status=account_dto.status,
+                person_id=person.id
+            )
+            self.session.add(user)
+            self.session.commit()
+            self.session.refresh(user)
+
+            signUp = AccountDTO(**user.__dict__)
+            signUp.person = person
+            return signUp
+        except Exception as e:
+            self.session.rollback()
+            return SignUpResponseDTO(error=True, msg=f"Error registering user: {str(e)}")
+
+    def updateSignUp(self, account_dto: AccountDTO):
+
+        try:
+            person = self.session.query(Person).filter(Person.id == account_dto.person.id).one_or_none()
+            if not person:
+                return SignUpResponseDTO(error=True, msg=f"Person with id {id} found")
+
+            # update only provided fields
+            for field in ["first_name", "last_name", "middle_name", "title", "email", "phone", "sex"]:
+                value = getattr(account_dto.person, field, None)
+                if value is not None:
+                    setattr(person, field, value)
+
+            user = self.session.query(User).filter(User.id == account_dto.id).one_or_none()
+            if not user:
+                return SignUpResponseDTO(error=True, msg="User not found")
+
+            if account_dto.password:
+                user.password = get_password_hash(account_dto.password)
+
+            self.session.commit()
+            self.session.refresh(person)
+            self.session.refresh(user)
+
+            return SignUpResponseDTO(error=False, msg="User successfully update")  # or return {"person": person, "user": user}
+
+        except Exception:
+            self.session.rollback()
+            raise
 
     def get_user_by_id(self, user_id: int) -> User | None:
 
@@ -50,12 +113,12 @@ class UserRepository:
 
         # return user
         return User(
-                id=user.id,
-                username=user.username,
-                person_id=user.person_id,
-                password=user.password,
-                status=user.status,
-                # created_at=user.created_at
+            id=user.id,
+            username=user.username,
+            person_id=user.person_id,
+            password=user.password,
+            status=user.status,
+            # created_at=user.created_at
         )
 
     def get_user(self, username: str):
@@ -65,18 +128,80 @@ class UserRepository:
         if user:
             user_dict = UserDTO(
                 id=user.id,
+                title=user.title,
                 username=user.email,
                 first_name=user.first_name,
                 last_name=user.last_name,
                 status=AccountStatus.Active,
                 person_id=user.person_id,
                 password=user.password,
-                roles=[],
-                privileges=[25, 45]
+                created_at=user.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                roles=self.get_user_roles(user.id),
+                privileges=self.get_user_privilege(user.id)
             )
 
         return user_dict
         # return None
+
+    def get_usr_by_id(self, user_id: int):
+
+        user = self.query.filter(User.id == user_id).first()
+        user_dict = None
+        if user:
+            user_dict = UserDTO(
+                id=user.id,
+                username=user.email,
+                title=user.title,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                status=AccountStatus.Active,
+                created_at=user.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                person_id=user.person_id,
+                password=user.password,
+                roles=self.get_user_roles(user.id),
+                privileges=self.get_user_privilege(user.id)
+            )
+
+        return user_dict
+        # return None
+
+    def get_user_roles(self, user_id) -> List[int]:
+        groups = self.session.query(UserGroupMember).filter(UserGroupMember.user_id == user_id).all()
+        roles = []
+        for group in groups:
+            roles.append(
+                group.id
+            )
+        return roles
+
+    def get_user_privilege(self, user_id) -> List:
+        cols = [
+            UserGroupPrivilege.can_write,
+            UserGroupPrivilege.can_execute,
+            UserGroupPrivilege.can_read,
+            UserGroupPrivilege.privilege_id,
+            UserGroupPrivilege.group_id,
+            UserGroupPrivilege.id,
+        ]
+
+        group_privileges = self.session.query(*cols).select_from(UserGroupPrivilege) \
+            .join(UserGroupMember, UserGroupMember.group_id == UserGroupPrivilege.group_id) \
+            .filter(UserGroupMember.user_id == user_id).all()
+
+        privileges = []
+        for group_privileges in group_privileges:
+            privileges.append(
+                PrivilegeDTO(
+                    id=group_privileges.privilege_id,
+                    can_execute=group_privileges.can_execute,
+                    can_read=group_privileges.can_read,
+                    can_write=group_privileges.can_write,
+                    privilege_id=group_privileges.privilege_id,
+                    group_id=group_privileges.group_id
+                )
+            )
+
+        return privileges
 
     def update_user(self, account_dto: AccountDTO):
         # self.create_user(
@@ -88,8 +213,8 @@ class UserRepository:
         #     }
         # )
         # user = self.query.filter(User.id == account_dto.id).one_or_none()
-        user = self.session.query(User)\
-            .filter(User.status != AccountStatus.Deleted)\
+        user = self.session.query(User) \
+            .filter(User.status != AccountStatus.Deleted) \
             .filter(User.id == account_dto.id).first()
 
         if user is None:
@@ -97,7 +222,6 @@ class UserRepository:
 
         account_data = account_dto.dict(exclude_unset=True)
         for key, value in account_data.items():
-
             if key == 'password':
                 # If the password is not a hash, hash it
                 value = get_password_hash(value) if not is_bcrypt_hash(value) else value
@@ -106,12 +230,12 @@ class UserRepository:
         self.session.commit()
         self.session.refresh(user)
 
-                # try:
-                #     print(f"Setting {key} to {value}")
-                #     setattr(user, key, value)
-                #     self.session.commit(user)
-                # except AttributeError as e:
-                #     print(f"Failed to set attribute {key}: {e}")
+        # try:
+        #     print(f"Setting {key} to {value}")
+        #     setattr(user, key, value)
+        #     self.session.commit(user)
+        # except AttributeError as e:
+        #     print(f"Failed to set attribute {key}: {e}")
         # user.username = account_dto.username
         # user_account.person_id = account_dto.person_id
 

@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from commands.auth import UserDTO
+from dtos.auth import UserDTO
 from models.lab.lab import ApprovedLabBookingResult
-from commands.lab import ApprovedLabBookingResultDTO
+from dtos.lab import ApprovedLabBookingResultDTO
 from typing import Optional
 
 from repos.auth_repository import UserRepository
@@ -26,9 +26,9 @@ class ApprovedLabBookingResultRepository:
             ApprovedLabBookingResult.booking_id == booking_id).first()
 
         if result:
-            user = user_repo.get_user_by_id(result.approved_by)
+            # user = user_repo.get_user_by_id(result.approved_by)
             response = ApprovedLabBookingResultDTO.from_orm(result)
-            response.approved_user = user_repo.get_user(user.username)
+            response.approved_user = user_repo.get_usr_by_id(result.approved_by)
             return response
         return None
 
@@ -42,6 +42,8 @@ class ApprovedLabBookingResultRepository:
 
             dto.approved_by = user.id
             dto_dict = dto.dict()
+
+            print('approval detail', dto_dict)
             filtered_data = {k: v for k, v in dto_dict.items() if v is not None and k != "approved_user"}
 
             data = ApprovedLabBookingResult(**filtered_data)

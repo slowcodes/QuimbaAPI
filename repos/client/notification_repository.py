@@ -3,7 +3,7 @@ from typing import Optional, List
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 from sqlalchemy.orm import Session
 
-from commands.people import ClientNotificationDTO
+from dtos.people import ClientNotificationDTO
 from models.client import ClientNotification, ClientNotificationSubscription, MsgType
 
 

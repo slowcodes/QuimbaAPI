@@ -1,12 +1,11 @@
 import datetime
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, Double, String, DateTime, Date, Enum as SqlEnum, Text, BLOB
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, Double, String, DateTime, Date, Enum as SqlEnum, Text, \
+    BLOB, BIGINT
 
 from db import Base
 from enum import Enum
-from models.consultation import ClinicalExamination
-from models import transaction
+from sqlalchemy.orm import relationship
 
 
 class StoreVisibility(str, Enum):
@@ -16,29 +15,32 @@ class StoreVisibility(str, Enum):
 
 class ServiceType(str, Enum):
     Laboratory = 'Laboratory'
-    Pharmacy = 'Pharmacy'
+    # Pharmacy = 'Pharmacy'
     Administration = 'Administration'  # e.g enrollment
     Consultation = 'Consultation'
+    Appointment = 'Appointment'
 
 
 class BusinessServices(Base):
-    __tablename__ = "Service_Listing"
+    __tablename__ = "service_listing"
 
     service_id = Column(Integer, primary_key=True, index=True)
-    price_code = Column(Integer, ForeignKey("Service_Price_Code.id", ondelete='CASCADE'))
+    price_code = Column(Integer, ForeignKey("service_price_code.id", ))
     ext_turn_around_time = Column(Double)
     visibility = Column(SqlEnum(StoreVisibility))
     serviceType = Column(SqlEnum(ServiceType))
 
 
 class Bundles(Base):
-    __tablename__ = "Service_Bundle"
+    __tablename__ = "service_bundle"
 
     id = Column(Integer, primary_key=True, index=True)
     bundles_name = Column(String(100))
     bundles_desc = Column(String(100))
     discount = Column(Double)
     bundle_type = Column(SqlEnum(ServiceType))
+
+    lab_service_bundle = relationship("LabBundleCollection", back_populates="bundle")
 
 
 class BookingStatus(str, Enum):
@@ -51,37 +53,39 @@ class BookingStatus(str, Enum):
 class BookingType(str, Enum):
     Laboratory = 'Laboratory'
     Consultation = 'Consultation'
+    Appointment = 'Appointment'
 
 
 class ServiceBooking(Base):
-    __tablename__ = "Service_Booking"
+    __tablename__ = "service_booking"
 
     id = Column(Integer, primary_key=True, index=True)
-    client_id = Column(Integer, ForeignKey("Client.id", ondelete='CASCADE'))
-    transaction_id = Column(Integer, ForeignKey("Transaction.id", ondelete='CASCADE'))
+    client_id = Column(Integer, ForeignKey("client.id", ondelete="cascade"))
+    transaction_id = Column(BIGINT, ForeignKey("transaction.id", ondelete="cascade"))
     booking_status = Column(SqlEnum(BookingStatus), default=BookingStatus.Processing)
-    booking_type = Column(SqlEnum(BookingType), default=BookingType.Laboratory)
+    # booking_type = Column(SqlEnum(BookingType), default=BookingType.Laboratory)
 
 
 class ServiceBookingDetail(Base):
-    __tablename__ = "Service_Booking_Detail"
+    __tablename__ = "service_booking_detail"
 
     id = Column(Integer, primary_key=True, index=True)
-    service_id = Column(Integer, ForeignKey("Service_Listing.service_id", ondelete='CASCADE'))
-    price_code = Column(Integer, ForeignKey("Service_Price_Code.id", ondelete='CASCADE'))
-    booking_id = Column(Integer, ForeignKey("Service_Booking.id", ondelete='CASCADE'))
+    service_id = Column(Integer, ForeignKey("service_listing.service_id", ondelete="cascade"))
+    price_code = Column(Integer, ForeignKey("service_price_code.id", ondelete="cascade"))
+    booking_id = Column(Integer, ForeignKey("service_booking.id", ondelete="cascade"))
+    booking_type = Column(SqlEnum(BookingType), default=BookingType.Laboratory)
 
 
 class ServiceClinicalExamination(Base):
-    __tablename__ = "Service_Booking_Clinical_Examination"
+    __tablename__ = "service_booking_clinical_examination"
 
     id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("Service_Booking.id", ondelete='CASCADE'))
-    clinical_examination_id = Column(Integer, ForeignKey("Clinical_Examination.id", ondelete='CASCADE'))
+    booking_id = Column(Integer, ForeignKey("service_booking.id", ))
+    clinical_examination_id = Column(Integer, ForeignKey("clinical_examination.id", ))
 
 
 class PriceCode(Base):
-    __tablename__ = "Service_Price_Code"
+    __tablename__ = "service_price_code"
 
     id = Column(Integer, primary_key=True, index=True)
     service_price = Column(Double)
@@ -96,18 +100,18 @@ class CommunicationMode(str, Enum):
 
 
 class BookingCommunication(Base):
-    __tablename__ = "Service_Booking_Communication"
+    __tablename__ = "service_booking_communication"
 
     id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("Service_Booking.id", ondelete='CASCADE'))
+    booking_id = Column(Integer, ForeignKey("service_booking.id", ))
     mode = Column(SqlEnum(CommunicationMode))
 
 
 class BookingCommunicationLog(Base):
-    __tablename__ = "Service_Booking_Communication_Log"
+    __tablename__ = "service_booking_communication_log"
 
     id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("Service_Booking.id", ondelete='CASCADE'))
+    booking_id = Column(Integer, ForeignKey("service_booking.id", ))
     mode = Column(SqlEnum(CommunicationMode))
     message = Column(String(100))
     status = Column(String(100))

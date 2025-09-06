@@ -1,25 +1,38 @@
-from typing import List
+from http.client import HTTPException
+from typing import List, Optional
+from decimal import Decimal
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, aliased
 
-from commands.lab import LaboratoryGroupDTO, CommandLaboratoryService, LabBundleCollectionDTO
+from dtos.lab import LaboratoryGroupDTO, LaboratoryServiceDetailDTO, LabBundleCollectionDTO, LaboratoryDTO
+from dtos.services import PriceCodeDTO
 from models.client import *
+from models.consultation import ConsultationQueue, InHours
 from models.lab.lab import Laboratory, LabServiceGroup, LabService, LabServiceGroupTag, Experiment, ExperimentParameter, \
     ExperimentParameterBounds, LabServiceExperiment, SampleResult, CollectedSamples, LabServicesQueue, \
     LabBundleCollection
-from models.services import PriceCode, BusinessServices, ServiceBooking, ServiceBookingDetail, Bundles, ServiceType
+from models.services import PriceCode, BusinessServices, ServiceBooking, ServiceBookingDetail, Bundles, ServiceType, \
+    BookingType
 from models.transaction import Transaction
+from repos.lab.experiment_repository import ExperimentRepository
+from repos.services.price_repository import PriceRepository
 from repos.services.service_repository import ServiceRepository
 
 
 class LabRepository:
+
     def __init__(self, session: Session):
         self.session = session
+        self.price_repository = PriceRepository(session)
         self.service_repo = ServiceRepository(session)
-
+        self.experiment_repository = ExperimentRepository(session)
 
     def get_all_labs(self, skip, limit):
         return self.session.query(Laboratory).offset(skip).limit(limit).all()
+
+    def get_laboratory_by_id(self, lab_id: int):
+        return self.db.query(Laboratory).filter(Laboratory.id == lab_id).first()
 
     def get_all_labs_groups(self, skip, limit, keyword):
         if len(keyword) > 0:
@@ -42,6 +55,7 @@ class LabRepository:
             LabService.id,
             LabService.lab_service_name,
             LabService.lab_service_desc,
+
             Laboratory.lab_name,
             BusinessServices.price_code,
             PriceCode.service_price,
@@ -79,7 +93,6 @@ class LabRepository:
         # db.close()
         rtn = []
 
-        # sys.setrecursionlimit(20)
         for item in result:
             # group = db.query().select_from(LabServiceGroupTag).filter(LabServiceGroupTag.lab_service_id == lab_id)
             data = {
@@ -90,8 +103,8 @@ class LabRepository:
                 'price_code': item.price_code,
                 'price': item.service_price,
                 'eta': item.ext_turn_around_time,
-                'service_id': item.service_id,
-                'lab_service_id': item.id
+                'service_id': item.service_id,  # this is needed to create service_booking_details.
+                'lab_service_id': item.id  # this is needed to create lab_service_queue
             }
             rtn.append(data)
         return {'total': total, 'data': rtn}
@@ -102,9 +115,11 @@ class LabRepository:
             ServiceBookingDetail.price_code,
             ServiceBookingDetail.id.label("booking_detail_id"),
             ServiceBookingDetail.service_id,
+            ServiceBookingDetail.booking_type,
             LabService.lab_service_name,
             # ServiceBooking.client_id,
             PriceCode.service_price,
+            PriceCode.id.label("service_price_code"),
             BusinessServices.ext_turn_around_time,
             Transaction.id.label("transaction_id")
         ]
@@ -112,34 +127,88 @@ class LabRepository:
         results = self.session.query(*cols).select_from(ServiceBookingDetail). \
             join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id). \
             join(PriceCode, PriceCode.id == ServiceBookingDetail.price_code). \
-            join(Transaction, Transaction.id == ServiceBooking.transaction_id). \
+            join(Transaction, Transaction.id == ServiceBooking.transaction_id)
+
+        lab_res = results.\
             join(LabService, LabService.service_id == ServiceBookingDetail.service_id). \
             join(BusinessServices, BusinessServices.service_id == ServiceBookingDetail.service_id). \
-            filter(ServiceBooking.transaction_id == transaction_id).all()
+            filter(ServiceBooking.transaction_id == transaction_id). \
+            filter(ServiceBookingDetail.booking_type == BookingType.Laboratory).all()
 
         bos = []
-        for result in results:
+        for result in lab_res:
             bos.append({
                 'booking_details_id': result.booking_detail_id,
                 'service_id': result.service_id,
                 'lab_service_name': result.lab_service_name,
                 # 'lab_service_desc': result.lab_service_desc,
-                'price_code': result.price_code,
+                'price_code': result.service_price_code,
                 'price': result.service_price,
                 'ext_turn_around_time': result.ext_turn_around_time
             })
 
         return bos
 
-    def add_lab_services(self, laboratory_service: CommandLaboratoryService):
-        new_price_code = PriceCode(
+    def update_lab_service(self, id: int, lab_service: dict) -> Optional[LabService]:
+        """Update a service by its ID."""
+        service = self.session.query(LabService).filter(LabService.id == id).first()
+        if service:
+            for key, value in lab_service.items():
+                if key and value:
+                    setattr(service, key, value)
+            self.session.commit()
+            self.session.refresh(service)
+            return service
+        return None
+
+    def update_lab_service_detail(self, lab_service_id: int, updated_service: LaboratoryServiceDetailDTO):
+        # 1️⃣ Fetch the existing LabService record
+        lab_service = self.session.query(LabService).filter(LabService.id == lab_service_id).first()
+        if not lab_service:
+            raise HTTPException(status_code=404, detail="Lab service not found")
+
+        # 2️⃣ Update basic fields
+        price_code = self.price_repository.create(PriceCodeDTO(
+            service_price=updated_service.price,
+            discount=updated_service.discount
+        ))
+
+        self.service_repo.update_business_service(lab_service.service_id, {
+            'price_code': price_code.id,
+            'ext_turn_around_time': updated_service.est_turn_around_time,
+            'visibility': updated_service.visibility
+        })
+        lab_service.lab_service_name = updated_service.name
+        lab_service.lab_service_desc = updated_service.description
+
+        # update groups
+        self.session.query(LabServiceGroupTag).filter(LabServiceGroupTag.lab_service_id == lab_service_id).delete()
+        for group in updated_service.groups:
+            new_group_tag = LabServiceGroupTag(
+                lab_service_group=group,
+                lab_service_id=lab_service_id
+            )
+            self.session.add(new_group_tag)
+            self.session.commit()
+            self.session.refresh(new_group_tag)
+
+        # 4️⃣ Update experiments
+        for exp in updated_service.exps:
+            self.experiment_repository.update_experiment(lab_service.id, exp)
+
+        # 5️⃣ Commit and refresh
+        self.session.commit()
+        self.session.refresh(lab_service)
+
+        return updated_service
+
+    def add_lab_services(self, laboratory_service: LaboratoryServiceDetailDTO):
+
+        new_price_code = PriceCodeDTO(
             service_price=laboratory_service.price,
             discount=laboratory_service.discount
         )
-        self.session.add(new_price_code)
-        self.session.commit()
-        self.session.refresh(new_price_code)
-
+        new_price_code = self.price_repository.create(new_price_code)
         new_business_details = BusinessServices(
             price_code=new_price_code.id,
             ext_turn_around_time=laboratory_service.est_turn_around_time,
@@ -211,7 +280,7 @@ class LabRepository:
             self.session.refresh(new_experiment)
         return True
 
-    def add_lab(self, lab: Laboratory) -> Boolean:
+    def add_lab(self, lab: LaboratoryDTO) -> Boolean:
         counter = self.session.query(Laboratory).where(Laboratory.lab_name == lab.lab).count()
         if counter <= 0:
             new_lab = Laboratory(
@@ -224,6 +293,24 @@ class LabRepository:
             return True
 
         return False
+
+    def update_lab(self, lab: LaboratoryDTO) -> Boolean:
+        labx = self.session.query(Laboratory).filter(Laboratory.id == lab.id).first()
+
+        if not labx:
+            return False  # Return False when lab does not exist
+
+        try:
+            if lab.lab:
+                labx.lab_name = lab.lab
+            if lab.description:
+                labx.lab_desc = lab.description
+
+            self.session.commit()
+            return True  # Indicate success
+        except SQLAlchemyError:
+            self.session.rollback()
+            return False  # Indicate failure
 
     def add_lab_group(self, grp: LaboratoryGroupDTO) -> Boolean:
         counter = self.session.query(LabServiceGroup).where(LabServiceGroup.group_name == grp.group_name).count()
@@ -253,6 +340,12 @@ class LabRepository:
 
         return rtn;
 
+    def get_lab_service_details_by_service_id(self, service_id: int):
+        lab_service = self.session.query(LabService).filter(LabService.service_id == service_id).first()
+        if lab_service:
+            return self.get_lab_service_details(lab_service.id)
+        return None
+
     def get_lab_service_details(self, lab_id: int):
 
         bs = aliased(BusinessServices)
@@ -266,17 +359,16 @@ class LabRepository:
             ls.service_id,
             bs.visibility,
             bs.ext_turn_around_time,
-            bs.price_code,
+            # bs.price_code,
             bs.service_id,
             pc.service_price,
             pc.discount,
-            pc.id,
+            pc.id.label("price_code"),
         ]
         rs = self.session.query(*cols).select_from(ls). \
-            join(bs, ls.service_id == bs.price_code). \
+            join(bs, ls.service_id == bs.service_id). \
             join(pc, bs.price_code == pc.id). \
             filter(ls.id == lab_id).first()
-
 
         if rs:
             return {
@@ -288,13 +380,14 @@ class LabRepository:
                 'lab_service_id': rs.id,
                 'groups': self.get_lab_group(lab_id),
                 'discounted_packages': self.service_repo.get_discounted_packages(rs.service_id),
-                'exps': self.get_lab_experiments(lab_id),
+                'exps': self.experiment_repository.get_lab_experiments(lab_id),
                 'lab_id': lab_id,
+                'price_code': rs.price_code,
                 'visibility': rs.visibility,
                 'service_id': rs.service_id,
                 'result_summary_text': self.get_result_summary_text(lab_id)
             }
-        print('Nothing data found')
+
         return None
 
     def get_result_summary_text(self, lab_service_id: int):
@@ -308,65 +401,3 @@ class LabRepository:
             .all()
         results = [row._asdict() for row in rs]
         return results
-
-    def get_lab_experiments(self, lab_id: int):
-        cols = [
-            Experiment.id,
-            Experiment.description,
-            LabServiceExperiment.lab_service_id.label("service_id")
-        ]
-
-        rs = self.session.query(*cols).select_from(Experiment) \
-            .join(LabServiceExperiment, Experiment.id == LabServiceExperiment.experiment_id) \
-            .filter(LabServiceExperiment.lab_service_id == lab_id).all()
-
-        rtn = []
-        for items in rs:
-            rtn.append(
-                {
-                    'name': items.description,
-                    'key': items.service_id,
-                    'parameter': self.get_experiment_parameter(items.id)
-                })
-
-        return rtn;
-
-    def get_experiment_parameter(self, exp_id: int):
-        cols = [
-            ExperimentParameter.id,
-            ExperimentParameter.parameter,
-            ExperimentParameter.measuring_unit,
-            ExperimentParameter.parameter_type,
-
-        ]
-        rs = self.session.query(*cols).select_from(ExperimentParameter).filter(
-            ExperimentParameter.exp_id == exp_id).all()
-        parameter = []
-        for param in rs:
-            parameter.append({
-                'boundary': self.get_parameter_boundaries(param.id),
-                'name': param.parameter,
-                'unit': param.measuring_unit,
-                'type': param.parameter_type,
-                'paramKey': param.id
-            })
-        return parameter
-
-    def get_parameter_boundaries(self, param_id: int):
-        cols = [
-            ExperimentParameterBounds.id,
-            ExperimentParameterBounds.lower_bound,
-            ExperimentParameterBounds.upper_bound,
-            ExperimentParameterBounds.boundary_type
-        ]
-        rs = self.session.query(*cols) \
-            .select_from(ExperimentParameterBounds) \
-            .filter(ExperimentParameterBounds.parameter_id == param_id).all()
-        boundaries = []
-        for bounds in rs:
-            boundaries.append({
-                'lower_bound': bounds.lower_bound,
-                'upper_bound': bounds.upper_bound,
-                'boundary_type': bounds.boundary_type
-            })
-        return boundaries

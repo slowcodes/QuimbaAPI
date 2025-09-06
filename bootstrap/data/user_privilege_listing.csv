@@ -1,0 +1,30 @@
+id,role_id,privilege,description
+1,7,Sample Collection,Permissions to collect and manage lab samples
+2,7,Queue,Permissions to access and manage lab service bookings on queue
+3,7,Results,Permissions create access and manage laboratory results
+4,7,Archive,Permissions to access and manage all laboratory archives
+5,7,Bundles,Permissions to access and manage laboratory bundles
+6,7,Groups,Permission to access and manage laboratory groups
+7,3,Payment Processing,Permissions to process payments and manage financial data
+8,3,Debt Registry,Permissions to process payments and manage financial data
+9,3,Debt Transactions, Permission to access and manage debt transaction
+10,3,HMO Transactions, Permission to access and manage HMO Transactions
+11,9,Transactions,Permissions to initiate and manage all transactions
+12,9,Laboratory Transactions,Permissions to initiate and manage all laboratory transactions
+13,9,Treatment Transactions,Permissions to initiate and manage all treatment transactions
+14,9,Consultation Transactions,Permissions to initiate and manage all consultation transactions
+15,9,Dispensary Transactions,Permissions to initiate and manage all dispensary transactions
+16,9,Enrollment Transactions,Permissions to initiate and manage all enrollment transactions
+17,9,Nursing Transactions,Permissions to initiate and manage all nursing transactions
+18,9,Admission Transactions,Permissions to initiate and manage all admission transactions
+19,8,Client Enrollment,Permission to enroll delete and manage client information
+20,8,User Registration,Permission to create and manage users
+21,8,Group Management,Permission to create and manage security groups
+22,8,HMO Management,Permission to create and manage health management organisations
+23,7,Verification,Permission to verify and manage laboratory result verification process
+24,7,Result Approval,Permissions to approve results for collection
+25,10,Book Services,Permissions to book and manage services
+26,10,Track Bookings,Permissions to track booked services
+27,1,Enroll Referral,Permissions to manage referrals
+28,1,Manage Organizations,Permissions to manage organizations
+29,1,Generate Referral Settlement,Permissions to generate and manage settlements for referrals

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from commands.lab import LabResultLogCreate, LabResultLogUpdate
+from dtos.lab import LabResultLogCreate, LabResultLogUpdate
 from models.lab.lab import LabResultLog, ResultStatus
 
 

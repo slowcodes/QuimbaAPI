@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 
-from commands.people import VitalDTO
+from dtos.people import VitalDTO
 from models.client import Vitals
 
 
@@ -31,7 +31,7 @@ class VitalsRepository:
         """
         return self.db.query(Vitals).filter(Vitals.id == vital_id).first()
 
-    def get_vitals_by_client_id(self, client_id: int, skip: int = 0, limit: int = 10) -> List[Vitals]:
+    def get_vitals_by_client_id(self, client_id: int, skip: int = 0, limit: int = 10, vital_type: str = None) -> List[Vitals]:
         """
         Retrieves paginated Vital records for a given client.
 
@@ -41,7 +41,18 @@ class VitalsRepository:
         :return: A list of Vital records.
         """
         query = self.db.query(Vitals).filter(Vitals.client_id == client_id)
-        return query.offset(skip).limit(limit).all()
+        if vital_type:
+            query = query.filter(Vitals.vital_type == vital_type)
+
+        return {
+            'data': query.offset(skip).limit(limit).all(),
+            'total': self.vital_count(vital_type)
+        }
+
+    def vital_count(self, vital_type: str = None):
+        if vital_type:
+            return self.db.query(Vitals).filter(Vitals.vital_type == vital_type).count()
+        return self.db.query(Vitals).count()
 
     def update_vital(self, vital_id: int, vital_dto: VitalDTO) -> Optional[Vitals]:
         """

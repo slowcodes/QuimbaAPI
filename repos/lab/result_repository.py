@@ -4,8 +4,8 @@ from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from commands.auth import UserDTO
-from commands.lab import SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, LabResultLogCreate
+from dtos.auth import UserDTO
+from dtos.lab import SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, LabResultLogCreate
 from models.client import Person, Client
 from models.lab.lab import SampleResult, LabVerifiedResult, QueueStatus, ResultStatus, LabResultLog, CollectedSamples, \
     LabServicesQueue, LabService
@@ -13,7 +13,8 @@ from models.services import ServiceBooking, BookingStatus, ServiceBookingDetail,
 from models.transaction import Transaction, TransactionType
 from repos.auth_repository import UserRepository
 from repos.client.client_repository import ClientRepository
-from repos.lab.experiment_repository import ExperimentResultReadingRepository
+from repos.client.referral_repository import ReferralRepository
+from repos.lab.experiment_repository import ExperimentRepository
 from repos.lab.queue_repository import QueueRepository
 from repos.lab.result.approved_lab_booking_result import ApprovedLabBookingResultRepository
 from repos.lab.result.lab_result_log_repository import LabResultLogRepository
@@ -26,9 +27,10 @@ class ResultRepository:
     def __init__(self, db_session: Session):
         self.db_session = db_session
         self.user_repository = UserRepository(self.db_session)
-        self.experiment_repository = ExperimentResultReadingRepository(self.db_session)
+        self.experiment_repository = ExperimentRepository(self.db_session)
         self.service_repository = ServiceRepository(self.db_session)
         self.queue_repository = QueueRepository(self.db_session)
+        self.referral_repository = ReferralRepository(self.db_session)
 
     def create_result(self, sample_result: SampleResultDTO) -> SampleResultDTO:
         result = SampleResult(sample_id=sample_result.sample_id,
@@ -50,7 +52,7 @@ class ResultRepository:
         if result is not None:
 
             # delete experiment reading
-            errr = ExperimentResultReadingRepository(self.db_session)
+            errr = ExperimentRepository(self.db_session)
             errr.delete_experiment_reading_sample_id(result.sample_id)
 
             # update sample status to processing
@@ -421,7 +423,7 @@ class ResultRepository:
             client_repo = ClientRepository(self.db_session)
             approval = ApprovedLabBookingResultRepository(self.db_session)
             return {
-                # 'transaction_id': rs.id,
+                'transaction_id': rs.id,
                 'transaction_time': rs.transaction_time,
                 'status': rs.booking_status,
                 'client': client_repo.get_client(rs.client_id),
@@ -430,7 +432,8 @@ class ResultRepository:
                 'queue': queue_elements,
                 'approval': approval.get_by_booking_id(booking_id),
                 'archived_log': LabResultLogRepository(self.db_session).get_by_booking_id(booking_id,
-                                                                                          ResultStatus.Archived)
+                                                                                          ResultStatus.Archived),
+                'referral': self.referral_repository.get_referred_transaction_referral(rs.id)
             }
         return None
 

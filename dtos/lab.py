@@ -4,12 +4,14 @@ from pydantic import BaseModel
 from datetime import datetime
 from decimal import Decimal
 
-from commands.people import ClientCommand, UserDTO
+from dtos.auth import UserDTO
+from dtos.people import ClientDTO
 from models.lab.lab import BoundaryType, QueueStatus, QueuePriority, SampleType, ExperimentResultReading, ResultStatus
 from models.services import StoreVisibility
 
 
 class LaboratoryDTO(BaseModel):
+    id: Optional[int] = None
     lab: str
     description: str
 
@@ -19,32 +21,41 @@ class LaboratoryGroupDTO(BaseModel):
     group_desc: str
 
 
-class CommandParameterBoundary(BaseModel):
+class ParameterBoundaryDTO(BaseModel):
     upper_bound: str
     lower_bound: str
     boundary_type: BoundaryType
-    key: Decimal
+    boundary_id: Optional[Decimal] = None
 
 
-class CommandParameter(BaseModel):
+class ParameterDTO(BaseModel):
     name: str
     unit: str
     paramKey: Decimal
     type: str
-    boundary: List[CommandParameterBoundary]
+    boundary: List[ParameterBoundaryDTO]
 
 
-class CommandExperiment(BaseModel):
+class ExperimentDTO(BaseModel):
     name: str
     key: str
-    parameter: List[CommandParameter]
+    parameter: List[ParameterDTO]
 
 
-class CommandLaboratoryService(BaseModel):
+class LabServiceDTO(BaseModel):
+    id: Optional[int] = None
+    lab_id: Optional[int] = None
+    lab_service_name: Optional[str] = None
+    lab_service_desc: Optional[str] = None
+    service_id: Optional[int] = None
+
+
+class LaboratoryServiceDetailDTO(BaseModel):
+    lab_service_id: Optional[int] = None
     groups: List[int]
     name: str
     description: str
-    exps: List[CommandExperiment]
+    exps: List[ExperimentDTO]
     price: Decimal
     discount: Decimal
     visibility: StoreVisibility
@@ -53,7 +64,7 @@ class CommandLaboratoryService(BaseModel):
 
 
 class LabServicesQueueDTO(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     lab_service_id: int
     scheduled_at: Optional[datetime] = None  # Default is None if not provided
     status: Optional[QueueStatus] = QueueStatus.Processing  # Default is None if not provided
@@ -71,6 +82,7 @@ class QueueListingDTO(BaseModel):
     est_delivery_time: int
     client_first_name: str
     client_last_name: str
+    booking_ref: int
 
 
 class QueueDTO(BaseModel):
@@ -80,29 +92,29 @@ class QueueDTO(BaseModel):
 
 
 class CollectedSamplesDTO(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     queue_id: int
     sample_type: SampleType
     collected_by: int
     container_label: str
-    collected_at: Optional[datetime]
+    collected_at: Optional[datetime] = None
 
 
 class ExperimentResultReadingDTO(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     parameter_id: int
     parameter_value: str
     sample_id: int
-    created_at: Optional[datetime]
+    created_at: Optional[datetime] = None
 
 
 class SampleResultDTO(BaseModel):
-    id: Optional[int]
-    created_at: Optional[datetime]
+    id: Optional[int] = None
+    created_at: Optional[datetime] = None
     sample_id: int
     created_by: int
     comment: str
-    experiment_readings: Optional[List[ExperimentResultReadingDTO]]
+    experiment_readings: Optional[List[ExperimentResultReadingDTO]]=None
 
 
 class ServiceAgent(BaseModel):
@@ -126,16 +138,16 @@ class SampleDetailDTO(BaseModel):
     service_agent: ServiceAgent
     lab_service_name: str
     queue: Queue
-    client: ClientCommand;
+    client: ClientDTO;
 
 
 class VerifiedResultEntryDTO(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     result_id: int
-    verified_at: Optional[datetime]
-    verified_by: Optional[int]
-    comment: Optional[str]
-    status: Optional[str]
+    verified_at: Optional[datetime] = None
+    verified_by: Optional[UserDTO] = None
+    comment: Optional[str] = None
+    status: Optional[str] = None
 
 
 class DateFilterDTO(BaseModel):
@@ -145,26 +157,28 @@ class DateFilterDTO(BaseModel):
 
 
 class LabBundleCollectionDTO(BaseModel):
-    id: Optional[int]
-    bundles_id: Optional[int]
-    lab_service_id: Optional[int]
-    lab_service_name: Optional[str]
+    id: Optional[int] = None
+    bundles_id: Optional[int] = None
+    lab_service_id: Optional[int] = None
+    lab_service_name: Optional[str] = None
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 
 class ApprovedLabBookingResultDTO(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     booking_id: int
-    approved_at: Optional[datetime]
-    approved_by: Optional[int]
-    comment: Optional[str]
+    approved_at: Optional[datetime] = None
+    approved_by: Optional[int] = None
+    comment: Optional[str] = None
     status: str
-    approved_user: Optional[UserDTO]
+    approved_user: Optional[UserDTO] = None
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 
 class LabResultLogBase(BaseModel):
@@ -187,3 +201,4 @@ class LabResultLogResponse(LabResultLogBase):
 
     class Config:
         orm_mode = True  # Enables ORM compatibility with SQLAlchemy
+        from_attributes = True
