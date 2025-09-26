@@ -9,7 +9,7 @@ from dtos.lab import SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, Lab
 from models.client import Person, Client
 from models.lab.lab import SampleResult, LabVerifiedResult, QueueStatus, ResultStatus, LabResultLog, CollectedSamples, \
     LabServicesQueue, LabService
-from models.services import ServiceBooking, BookingStatus, ServiceBookingDetail, BusinessServices
+from models.services.services import ServiceBooking, BookingStatus, ServiceBookingDetail, BusinessServices
 from models.transaction import Transaction, TransactionType
 from repos.auth_repository import UserRepository
 from repos.client.client_repository import ClientRepository

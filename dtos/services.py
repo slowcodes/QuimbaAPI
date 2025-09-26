@@ -2,7 +2,8 @@ from enum import Enum
 from typing import Optional, List
 from pydantic import BaseModel
 from dtos.lab import LabBundleCollectionDTO
-from models.services import ServiceType, StoreVisibility
+from dtos.people import ClientDTO
+from models.services.services import ServiceType, StoreVisibility
 
 
 class ServiceBookingDetailDTO(BaseModel):
@@ -12,10 +13,12 @@ class ServiceBookingDetailDTO(BaseModel):
     booking_id: Optional[int] = None
     booking_type: Optional[str] = None
 
+
 class ServiceBookingDTO(BaseModel):
     id: Optional[int] = None
     client_id: int
     transaction_id: int
+    client: Optional[ClientDTO] = None
     booking_status: Optional[str] = None
     transaction_time: Optional[str] = None
     client_first_name: Optional[str] = None

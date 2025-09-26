@@ -1,16 +1,15 @@
-from datetime import timedelta, datetime, date
-from typing import List, Optional, Dict
+from datetime import timedelta, datetime
+from typing import List, Optional
 
-from dateutil.parser import isoparse
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
-from dtos.consultation import SymptomDTO, ClinicalExaminationDTO, PresentingSymptomDTO, ConsultantDTO, SpecialismDTO, \
+from dtos.consultation import SymptomDTO, ClinicalExaminationDTO, PresentingSymptomDTO, ConsultantDTO, \
     InHoursDTO, ConsultationQueueDTO, ConsultationAppointmentDTO
 from dtos.services import PriceCodeDTO
-from models.client import Client, Person
 from models.consultation import Symptom, ClinicalExamination, PresentingSymptom, Specialist, Specialism, \
-    SpecialistSpecialization, InHours, InHourFrequency, ConsultationQueue
-from models.services import PriceCode, BusinessServices, StoreVisibility, ServiceType, ServiceBooking, \
+    SpecialistSpecialization, InHours, InHourFrequency, ConsultationQueue, InternalSystems
+from models.lab.lab import QueueStatus
+from models.services.services import PriceCode, BusinessServices, StoreVisibility, ServiceType, ServiceBooking, \
     ServiceBookingDetail, BookingType
 from models.transaction import Transaction
 from repos.auth_repository import UserRepository
@@ -19,7 +18,7 @@ from repos.services.price_repository import PriceRepository
 from repos.services.service_repository import ServiceRepository
 
 
-class ConsultationRepository:
+class ConsultantRepository:
     def __init__(self, db: Session):
         self.db = db
         self.user_repository = UserRepository(db)
@@ -27,17 +26,33 @@ class ConsultationRepository:
         self.price_repository = PriceRepository(db)
         self.client_repository = ClientRepository(db)
 
+        cols = [
+            Transaction.transaction_time,
+            Transaction.transaction_status,
+            Specialist.id.label("specialist_id"),
+            Transaction.id.label("transaction_id"),
+            ConsultationQueue.id,
+            ServiceBooking.client_id,
+            ServiceBookingDetail.booking_id,
+            ConsultationQueue.scheduled_at,
+            ConsultationQueue.id.label("schedule_id"),
+            ConsultationQueue.specialization_id.label("specialization_id"),
+            ConsultationQueue.consultation_time,
+            ConsultationQueue.notes,
+            InHours.start_time,
+            ConsultationQueue.status
+        ]
+
+        self.queue = self.db.query(*cols).select_from(ConsultationQueue) \
+            .join(ServiceBookingDetail, ConsultationQueue.booking_id == ServiceBookingDetail.id) \
+            .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id) \
+            .join(Transaction, Transaction.id == ServiceBooking.transaction_id) \
+            .join(InHours, InHours.id == ConsultationQueue.schedule_id) \
+            .join(Specialist, Specialist.id == InHours.specialist_id)
+
     def get_symptom(self) -> List[SymptomDTO]:
         symptoms = self.db.query(Symptom).all()
         return [SymptomDTO(symptom=symptom.symptom, id=symptom.id) for symptom in symptoms]
-
-    def create_clinical_examination(self,
-                                    clinical_examination_data: ClinicalExaminationDTO) -> ClinicalExaminationDTO:
-        db_clinical_examination = ClinicalExamination(**clinical_examination_data.dict())
-        self.db.add(db_clinical_examination)
-        self.db.commit()
-        self.db.refresh(db_clinical_examination)
-        return ClinicalExaminationDTO(**db_clinical_examination.__dict__)
 
     def in_hours_dto(self, hours: InHours) -> InHoursDTO:
         return InHoursDTO(
@@ -152,45 +167,29 @@ class ConsultationRepository:
             print(f"Error adding consultant queue: {e}")
 
     def get_consultant_queue(self, consultant_id: int = 0, client_id: int = 0, start_date: str = '',
-                             last_date: str = '', in_hour_id=0, status: str = '') -> List[ConsultationAppointmentDTO]:
-        cols = [
-            Transaction.transaction_time,
-            Transaction.transaction_status,
-            Specialist.id.label("specialist_id"),
-            Transaction.id.label("transaction_id"),
-            ConsultationQueue.id,
-            ServiceBooking.client_id,
-            ServiceBookingDetail.booking_id,
-            ConsultationQueue.scheduled_at,
-            ConsultationQueue.consultation_time,
-            InHours.start_time,
-            ConsultationQueue.status
-        ]
-
-        queue = self.db.query(*cols).select_from(ConsultationQueue) \
-            .join(ServiceBookingDetail, ConsultationQueue.booking_id == ServiceBookingDetail.id) \
-            .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id) \
-            .join(Transaction, Transaction.id == ServiceBooking.transaction_id) \
-            .join(InHours, InHours.id == ConsultationQueue.schedule_id) \
-            .join(Specialist, Specialist.id == InHours.specialist_id)
-
+                             last_date: str = '', in_hour_id=0, status: str = QueueStatus.Processing) -> List[
+        ConsultationAppointmentDTO]:
+        queue = ''
+        print('consultant_id', consultant_id, 'in_hour_id', in_hour_id, 'client_id', client_id, 'start_date',
+              start_date, 'last_date', last_date, 'status', status)
         if consultant_id != 0:
-            queue = queue.filter(Specialist.id == consultant_id)
+            queue = self.queue.filter(Specialist.id == consultant_id)
 
         if in_hour_id != 0:
-            queue = queue.filter(InHours.id == in_hour_id)
+            queue = self.queue.filter(InHours.id == in_hour_id)
 
         if client_id != 0:
-            queue = queue.filter(ServiceBooking.client_id == client_id)
+            queue = self.queue.filter(ServiceBooking.client_id == client_id)
 
         if start_date and last_date:
-            queue = queue.filter(and_(
+            queue = self.queue.filter(and_(
                 ConsultationQueue.consultation_time >= start_date,
                 ConsultationQueue.consultation_time <= last_date
             ))
 
         if status:
-            queue = queue.filter(ConsultationQueue.status == status)
+            print('status PROVIDED:', status)
+            queue = self.queue.filter(ConsultationQueue.status == status)
 
         res = queue.all()
 
@@ -200,7 +199,8 @@ class ConsultationRepository:
                 ConsultationAppointmentDTO(
                     specialist=self.get_consultant(booking.specialist_id),
                     client=self.client_repository.get_client(booking.client_id),
-                    time_of_appointment=booking.consultation_time.strftime("%Y-%m-%d %H:%M:%S"), # start_time.strftime("%Y-%m-%d")+"T12:00:00.000Z", # booking.consultation_time,
+                    time_of_appointment=booking.consultation_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    # start_time.strftime("%Y-%m-%d")+"T12:00:00.000Z", # booking.consultation_time,
                     date_of_appointment=booking.start_time.strftime("%Y-%m-%d"),
                     booking_id=booking.booking_id,
                     transaction_id=booking.transaction_id,
@@ -238,7 +238,7 @@ class ConsultationRepository:
             filter(ServiceBookingDetail.booking_type == BookingType.Appointment)
 
         res = app_res.filter(ServiceBooking.transaction_id == transaction_id).all()
-        
+
         cos = []
         for result in res:
             consultant = self.get_consultant(result.specialist_id)
@@ -401,6 +401,37 @@ class ConsultationRepository:
             self.db.rollback()
             raise e
 
+    def update_consultant(self, consultant_id: int, consultant_dto: ConsultantDTO):
+        consultant = self.get_consultant_by_id(consultant_id)
+        if consultant:
+            consultant.title = consultant_dto.title
+            self.db.commit()
+            self.db.refresh(consultant)
+
+            # Update specializations
+            existing_specializations = self.db.query(SpecialistSpecialization).filter(
+                SpecialistSpecialization.specialist_id == consultant.id).all()
+            existing_spec_ids = {spec.specialism_id for spec in existing_specializations}
+            new_spec_ids = {spec.id for spec in consultant_dto.specializations}
+
+            # Add new specializations
+            for spec_id in new_spec_ids - existing_spec_ids:
+                self.add_consultant_specialization(consultant.id, spec_id)
+
+            # Remove old specializations
+            for spec in existing_specializations:
+                if spec.specialism_id not in new_spec_ids:
+                    self.db.delete(spec)
+            self.db.commit()
+
+            return ConsultantDTO(
+                id=consultant.id,
+                user=consultant_dto.user,
+                title=consultant.title,
+                specializations=consultant_dto.specializations
+            )
+        return None
+
     def get_consultants(self, skip: int = 0, limit: int = 100) -> List[ConsultantDTO]:
 
         query = self.db.query(Specialist).offset(skip).limit(limit).all()
@@ -422,6 +453,23 @@ class ConsultationRepository:
             )
         return consultants
 
+    def get_consultation_queue_by_id(self, queue_id: int):
+        qu = self.queue.filter(ConsultationQueue.id == queue_id).first()
+        booking_details = self.get_consultation_service_booking(qu.transaction_id)[0]
+        client = self.client_repository.get_client(qu.client_id)
+        return ConsultationQueueDTO(
+            id=qu.id,
+            schedule_id=qu.schedule_id,
+            scheduled_at=qu.scheduled_at.strftime("%Y-%m-%d %H:%M:%S"),
+            consultation_time=qu.consultation_time.strftime("%Y-%m-%d %H:%M:%S"),
+            status=qu.status,
+            booking_detail=booking_details,
+            client=client,
+            booking_id=qu.booking_id,
+            specialization_id=qu.specialization_id,
+            notes=qu.notes
+        )
+
     def get_consultant(self, consultant_id: int):
         consultant = self.db.query(Specialist).filter(Specialist.id == consultant_id).one_or_none()
 
@@ -437,3 +485,7 @@ class ConsultationRepository:
                     SpecialismDTO(id=spec.id, department=spec.department, specialist_title=spec.specialist_title)
                     for spec in specializations]
             )
+
+    def get_internal_systems(self) -> List[str]:
+        # get enum internal systems
+        return [e.value for e in InternalSystems]

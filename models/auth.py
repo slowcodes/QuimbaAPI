@@ -41,6 +41,7 @@ class User(Base):
     person_id = Column(Integer, ForeignKey("person.id", ondelete="cascade"))
 
     auth_logs = relationship("AuthLogs", back_populates="user")
+    client_service_cart = relationship("ClientServiceCart", back_populates="user")
     #
     # @property
     # def status(self):

@@ -13,6 +13,9 @@ import logging
 from datetime import datetime
 
 from repos.auth_repository import UserRepository
+from repos.client.drug_allergy_repository import DrugAllergyRepository
+from repos.client.food_allergy_repository import FoodAllergyRepository
+from repos.client.life_style_repository import ClientLifestyleRepository
 from repos.client.notification_repository import NotificationRepository
 from repos.client.vital_rpository import VitalsRepository
 
@@ -206,7 +209,7 @@ class ClientRepository:
 
     logger = logging.getLogger(__name__)
 
-    def get_all_client(self, skip: int = 0, limit: int = 100, keyword: str = '') -> Dict[str, Any]:
+    def get_all_client(self, skip: int, limit: int, keyword: str = '') -> Dict[str, Any]:
         """
         Retrieve a list of clients with optional filtering and pagination.
 
@@ -215,6 +218,7 @@ class ClientRepository:
         :param keyword: Optional keyword to filter clients by first name, last name, phone, or date of birth.
         :return: A dictionary containing the list of clients and the total count.
         """
+        print('limit', limit)
         try:
             # self.insert_data_from_csv()
             query = self.session.query(*self.col) \
@@ -350,6 +354,11 @@ class ClientRepository:
 
     def get_client(self, client_id: int):
         # print('client id', client_id)
+
+        drug_allergy_repository = DrugAllergyRepository(self.session)
+        food_allergy_repository = FoodAllergyRepository(self.session)
+        lifestyle_repository = ClientLifestyleRepository(self.session)
+
         cols = [
             Client.id,
             Person.first_name,
@@ -393,11 +402,15 @@ class ClientRepository:
                 'locality': (self.get_lga(rs.lga_id)).__dict__,
                 'occupation': (self.get_occupation(rs.occupation_id)).__dict__,
                 'notifications': self.notification.get_subscriptions_by_client(rs.id, 100, 0),
-                'vitals': self.vital_repository.get_vitals_by_client_id(rs.id, 0, 100)['data']
+                'vitals': self.vital_repository.get_vitals_by_client_id(rs.id, 0, 100)['data'],
+                'food_allergy': food_allergy_repository.get_by_client(rs.id),
+                'drug_allergy': drug_allergy_repository.get_by_client(rs.id),
+                'lifestyle': lifestyle_repository.get_by_patient(rs.id)
             }
         else:
             raise ValueError(f"Client with ID {client_id} not found.")
             return None
+
     def get_occupation(self, occupation_id: int) -> Optional[OccupationDTO]:
         occupation = self.session.query(Occupation).filter(Occupation.id == occupation_id).one_or_none()
         if occupation is None:

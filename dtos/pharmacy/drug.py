@@ -8,7 +8,7 @@ from models.pharmacy import Form
 
 
 class DrugGroupDTO(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     group: Optional[str]
     use: Optional[str]
     parent_id: Optional[int]
@@ -18,20 +18,20 @@ class DrugGroupDTO(BaseModel):
 
 
 class PharmDrugPackageDTO(BaseModel):
-    id: Optional[int]
-    form_id: Optional[int]
+    id: Optional[int] = None
+    form_id: Optional[int] = None
     package_container: Optional[str] = None
     sales_price_code: Optional[SalesPriceCodeDTO] = None
-    product_barcode: Optional[List[Optional[str]]]
+    product_barcode: Optional[List[Optional[str]]] = None
     parent_package_id: Optional[int] = None
     quantity_per_parent: Optional[int] = None
 
 
 class DrugFormDTO(BaseModel):
     id: Optional[int] = None
-    drug_id: Optional[int]
+    drug_id: Optional[int] = None
     drug_form: Optional[Form] = None
-    form_packages: Optional[List[PharmDrugPackageDTO]]
+    form_packages: Optional[List[PharmDrugPackageDTO]]  = None
 
     class Config:
         from_attributes=True

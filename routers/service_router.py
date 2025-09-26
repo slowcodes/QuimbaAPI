@@ -1,15 +1,19 @@
-from typing import List
+from typing import List, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from twilio.rest import Client
 
 from db import get_db
+from dtos.auth import UserDTO
+from dtos.consultation import ConsultationDTO, ConsultationCreate, ConsultationUpdate
 from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, ServiceBundleDTO, LabServiceBundleDTO
+from repos.consultation.consultation_repository import ConsultationsRepository
 from repos.lab.queue_repository import QueueRepository
 from repos.services.service_bundle_repository import ServiceBundleRepository
 from repos.services.service_repository import ServiceRepository
 from repos.transaction_repository import TransactionRepository
+from security.dependencies import require_access_privilege
 
 service_router = APIRouter(prefix="/api/service-bookings", tags=["Service Bookings"])
 
@@ -41,7 +45,7 @@ def create_service_booking_detail(service_booking_detail: ServiceBookingDetailDT
 @service_router.get("/all-booking/", status_code=status.HTTP_200_OK)
 def get_service_booking_detail(
         # current_user: Annotated[UserDTO, Depends(get_current_active_user)],
-        skip: int = 0, limit: int = 20, client_id: int = 0, lab_id = 0,
+        skip: int = 0, limit: int = 20, client_id: int = 0, lab_id=0,
         repo: ServiceRepository = Depends(service_repository)):
     booking = repo.get_all_service_bookings(limit,
                                             skip, client_id)
@@ -85,7 +89,7 @@ def delete_service_booking(service_booking_id: int,
 @service_router.get("/track/{service_booking_id}")
 def track_service_booking(service_booking_id: int,
                           repo: ServiceRepository = Depends(service_repository),
-                          queue_repo: QueueRepository= Depends(queue_repository)):
+                          queue_repo: QueueRepository = Depends(queue_repository)):
     service_booking = repo.get_service_booking(service_booking_id)
     if service_booking is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service booking not found")
@@ -199,3 +203,6 @@ def delete_lab_bundle_collection(lab_collection_id: int,
         return repo.delete_lab_bundle(lab_collection_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to retrieve lab service bundles") from e
+
+
+

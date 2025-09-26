@@ -7,10 +7,9 @@ from dtos.services import ServiceEventDTO, EventType, ServiceTrackingDTO
 from models.client import Client, Person
 from models.lab.lab import LabServicesQueue, Laboratory, QueueStatus, LabService, CollectedSamples, SampleResult, \
     LabVerifiedResult
-from models.services import ServiceBooking, BusinessServices, ServiceBookingDetail
+from models.services.services import ServiceBooking, BusinessServices, ServiceBookingDetail
 from repos.auth_repository import UserRepository
 from repos.lab.experiment_repository import ExperimentRepository
-from repos.services.service_repository import ServiceRepository
 from repos.transaction_repository import TransactionRepository
 
 

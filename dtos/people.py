@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from pydantic import EmailStr, BaseModel, Field, validator
-from datetime import date
+from datetime import date, datetime
 from models.client import Sex, MaritalStatus, VitalType, ProfTitle
 
 
@@ -78,10 +78,26 @@ class ClientDTO(PersonDTO):
     #     return value
 
 
+# class ClientLifestyleDTO(BaseModel):
+#     patient_id: int
+#     lifestyles: Dict[str, str]
+
+
 class ReferralDTO(BaseModel):
     id: Optional[int] = None
     person: Optional[PersonDTO]
     org: Optional[OrganisationDTO] = None
+
+
+class VitalsDTO(BaseModel):
+    id: int
+    vital_type: VitalType
+    vital_value: str
+    created_at: datetime
+    client_id: int
+
+    class Config:
+        from_attributes = True
 
 
 class VitalDTO(BaseModel):

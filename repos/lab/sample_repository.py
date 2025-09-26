@@ -3,7 +3,7 @@ from dtos.lab import CollectedSamplesDTO, SampleDetailDTO, LabServicesQueueDTO
 from models.auth import User
 from models.client import Person, Client
 from models.lab.lab import CollectedSamples, LabService, LabServicesQueue, QueueStatus, SampleType
-from models.services import ServiceBookingDetail, ServiceBooking, BusinessServices
+from models.services.services import ServiceBookingDetail, ServiceBooking, BusinessServices
 from repos.auth_repository import UserRepository
 from repos.client.client_repository import ClientRepository
 from repos.lab.queue_repository import QueueRepository

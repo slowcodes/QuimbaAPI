@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 
 from dtos.lab import LabBundleCollectionDTO
 from dtos.services import ServiceBundleDTO
-from models.lab.lab import LabBundleCollection, LabService
-from models.services import Bundles, ServiceType
+from models.lab.lab import LabBundleCollection
+from models.services.services import Bundles, ServiceType
 from repos.lab.lab_repository import LabRepository
 
 

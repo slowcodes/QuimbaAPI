@@ -11,7 +11,7 @@ class AccountDTO(BaseModel):
     id: Optional[int] = None
     title: Optional[str] = None
     username: str
-    password: Optional[str]
+    password: Optional[str] = None
     # confirm_password: Optional[str]
     created_at: Optional[str] = None
     status: Optional[AccountStatus] = AccountStatus.Active
@@ -47,8 +47,8 @@ class AccountActivityDTO(BaseModel):
 class UserDTO(AccountDTO):
     first_name: str
     last_name: str
-    roles: Optional[List[int]]
-    privileges: Optional[List[PrivilegeDTO]]
+    roles: Optional[List[int]] = None
+    privileges: Optional[List[PrivilegeDTO]] = None
     # disabled: bool | None = None
 
 

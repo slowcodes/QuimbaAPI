@@ -2,15 +2,14 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from dtos.auth import UserDTO
 from dtos.lab import ExperimentResultReadingDTO, SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, \
     ApprovedLabBookingResultDTO
 from dtos.services import ServiceBookingDTO
 from db import get_db
-from models.lab.lab import ResultStatus
-from models.services import BookingStatus
+from models.services.services import BookingStatus
 from repos.lab.experiment_repository import ExperimentRepository
 from repos.lab.result.approved_lab_booking_result import ApprovedLabBookingResultRepository
 from repos.lab.result_repository import ResultRepository

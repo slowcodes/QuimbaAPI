@@ -1,8 +1,9 @@
 import datetime
+from typing import Optional
+
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Date, Enum as SqlEnum, Text, BLOB, \
     BIGINT, Index, Double
 from sqlalchemy.orm import relationship, aliased
-from sqlalchemy.ext.declarative import declared_attr
 from db import Base
 from enum import Enum
 
@@ -29,17 +30,17 @@ class SoftDeleteMixin:
 
 
 # Using the SoftDeleteMixin to implement soft deletes in your models
-class Schedule(Base, SoftDeleteMixin):
-    __tablename__ = "consultant_schedule"
-    id = Column(Integer, primary_key=True, index=True)
-    date_of_consultation = Column(Date)
-    specialist_id = Column(Integer, ForeignKey("consultant_specialist.id", ))
-
-    # Relationship with Specialist
-    specialist = relationship("Specialist", backref="consultant_specialist", lazy='select')
-
-    # Add an index on specialist_id for faster joins and lookups
-    Index('ix_specialist_idx', specialist_id)
+# class Schedule(Base, SoftDeleteMixin):
+#     __tablename__ = "consultant_schedule"
+#     id = Column(Integer, primary_key=True, index=True)
+#     date_of_consultation = Column(Date)
+#     specialist_id = Column(Integer, ForeignKey("consultant_specialist.id", ))
+#
+#     # Relationship with Specialist
+#     specialist = relationship("Specialist", backref="consultant_specialist", lazy='select')
+#
+#     # Add an index on specialist_id for faster joins and lookups
+#     Index('ix_specialist_idx', specialist_id)
 
 
 class Specialism(Base, SoftDeleteMixin):
@@ -57,7 +58,7 @@ class Specialist(Base, SoftDeleteMixin):
 
     # Relationships
     specializations = relationship("SpecialistSpecialization", backref="specialist", lazy='select')
-
+    consultations = relationship("Consultations", back_populates="creator", passive_deletes=True)
     # Add index on user_id for efficient querying
     Index('ix_user_id', user_id)
 
@@ -65,8 +66,9 @@ class Specialist(Base, SoftDeleteMixin):
 class InHourFrequency(str, Enum):
     Weekly = 'Weekly'
     Daily = 'Daily'
-    EveryWeekday = 'Every Weekday'
+    EveryWeekDay = 'Every Weekday'
     WeekendsOnly = 'Weekends Only'
+    EveryDayOfTheWeek = 'EveryDayOfTheWeek'
 
 
 class InHours(Base, SoftDeleteMixin):
@@ -104,9 +106,79 @@ class ConsultationQueue(Base, SoftDeleteMixin):
 
     # Relationship to Schedule
     # in_hours = relationship("InHours", backref="consultation_queue", lazy='select')
+    consultations = relationship("Consultations", back_populates="queue", passive_deletes=True)
 
     # Index for faster queries
     Index('ix_schedule_status', schedule_id, status)
+
+
+class ConsultationType(str, Enum):
+    base_case = 'base_case'
+    follow_up = 'follow_up'
+
+
+class Consultations(Base, SoftDeleteMixin):
+    __tablename__ = "consultations"
+    id = Column(Integer, primary_key=True, index=True)
+    consultation_type = Column(SqlEnum(ConsultationType), default=ConsultationType.base_case)
+    queue_id = Column(Integer, ForeignKey("consultation_queue.id"))
+    reason_for_visit = Column(Text)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_by = Column(Integer, ForeignKey("consultant_specialist.id", ondelete="cascade"))
+    preliminary_diagnosis = Column(String(250), nullable=True)
+    # final_diagnosis = Column(String(250), nullable=True)
+
+    queue = relationship("ConsultationQueue", back_populates="consultations", passive_deletes=True)
+    creator = relationship("Specialist", back_populates="consultations", passive_deletes=True)
+
+
+class ConsultationClinicalExamination(Base, SoftDeleteMixin):
+    __tablename__ = "consultation_clinical_examination"
+
+    id = Column(Integer, primary_key=True, index=True)
+    consultation_id = Column(Integer, ForeignKey("consultations.id", ondelete="cascade"))
+    clinical_examination_id = Column(Integer, ForeignKey("clinical_examination.id", ondelete="cascade"))
+
+
+class ConsultationPrescription(Base, SoftDeleteMixin):
+    __tablename__ = "consultation_prescription"
+
+    id = Column(Integer, primary_key=True, index=True)
+    consultation_id = Column(Integer, ForeignKey("consultations.id", ondelete="cascade"))
+    prescription_id = Column(Integer, ForeignKey("pharmacy_prescription.id", ondelete="cascade"))
+
+
+class ConsultationHierarchy(Base, SoftDeleteMixin):
+    __tablename__ = "consultation_hierarchy"
+    id = Column(Integer, primary_key=True, index=True)
+    base_consultation_id = Column(Integer, ForeignKey("consultations.id", ondelete="cascade"))
+    follow_up_consultation_id = Column(Integer, ForeignKey("consultations.id", ondelete="cascade"))
+
+
+class InternalSystems(str, Enum):
+    respiratory = 'respiratory'
+    general = 'general'
+    cardiovascular = 'cardiovascular'
+    gastrointestinal = 'gastrointestinal'
+    neurological = 'neurological'
+    musculoskeletal = 'musculoskeletal'
+    integumentary = 'integumentary'
+    urinary = 'urinary'
+    reproductive = 'reproductive'
+    dermatological = 'dermatological'
+    psychiatric = 'psychiatric'
+
+
+class ConsultationRoS(Base, SoftDeleteMixin):
+    __tablename__ = "consultation_review_of_system"
+
+    id = Column(Integer, primary_key=True, index=True)
+    consultation_id = Column(Integer, ForeignKey("consultations.id", ondelete="cascade"))
+    system = Column(SqlEnum(InternalSystems))
+    note = Column(Text, nullable=True)
+
+    # consultations = relationship("Consultations", backref="consultation_review_of_system", lazy='select')
 
 
 class Symptom(Base, SoftDeleteMixin):
@@ -130,12 +202,12 @@ class SymptomFrequency(str, Enum):
 
 
 class PresentingSymptom(Base, SoftDeleteMixin):
-    __tablename__ = 'presenting_symptoms'
+    __tablename__ = 'consultation_presenting_symptoms'
     id = Column(Integer, primary_key=True, index=True)
-    clinical_examination_id = Column(Integer, ForeignKey("clinical_examination.id", ondelete="cascade" ))
-    symptom_id = Column(Integer, ForeignKey("symptom.id", ondelete="cascade" ))
+    clinical_examination_id = Column(Integer, ForeignKey("clinical_examination.id", ondelete="cascade"))
+    symptom_id = Column(Integer, ForeignKey("symptom.id", ondelete="cascade"))
     severity = Column(SqlEnum(Severity))
-    # frequency = Column(SqlEnum(SymptomFrequency, name="symptom_frequency"))
+    frequency = Column(SqlEnum(SymptomFrequency, name="symptom_frequency"))
 
     # Relationships
     symptom = relationship("Symptom", backref="presenting_symptoms", lazy='select')
@@ -147,7 +219,7 @@ class PresentingSymptom(Base, SoftDeleteMixin):
 class ClinicalExamination(Base, SoftDeleteMixin):
     __tablename__ = 'clinical_examination'
     id = Column(Integer, primary_key=True, index=True)
-    presenting_complaints = Column(String(150))
+    presenting_complaints = Column(Text)
     conducted_at = Column(Date, default=datetime.date.today())
     transaction_id = Column(BIGINT, ForeignKey("transaction.id", ondelete="cascade"))
     conducted_by = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
@@ -158,3 +230,5 @@ class ClinicalExamination(Base, SoftDeleteMixin):
 
     # Index('ix_transaction_id', transaction_id)
     Index('ix_exam_conducted_by', conducted_by)
+
+

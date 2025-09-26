@@ -3,11 +3,10 @@ import logging
 
 from sqlalchemy.orm import Session
 
-import db
-from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, ServiceEventDTO, EventType, BusinessServiceDTO
+from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, BusinessServiceDTO
 from models.client import Client, Person
 from models.lab.lab import CollectedSamples, LabBundleCollection, LabServicesQueue, QueueStatus
-from models.services import Bundles, ServiceBooking, PriceCode, ServiceBookingDetail, BookingStatus, \
+from models.services.services import Bundles, ServiceBooking, ServiceBookingDetail, BookingStatus, \
     ServiceClinicalExamination, BusinessServices
 from models.transaction import Transaction
 from repos.services.price_repository import PriceRepository
@@ -128,8 +127,6 @@ class ServiceRepository:
             'data': data,
             'total': total
         }
-
-
 
     def get_booking_details_by_booking_id(self, booking_id: int) -> List[ServiceBookingDetailDTO]:
         sv_bks = self.session.query(ServiceBookingDetail).filter(ServiceBookingDetail.booking_id == booking_id).all()

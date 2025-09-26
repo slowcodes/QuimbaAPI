@@ -1,5 +1,5 @@
 from operator import and_
-from typing import Annotated, List
+from typing import List
 from sqlalchemy import or_
 
 from sqlalchemy.orm import Session
@@ -150,7 +150,7 @@ class UserRepository:
         if user:
             user_dict = UserDTO(
                 id=user.id,
-                username=user.email,
+                username=user.username,
                 title=user.title,
                 first_name=user.first_name,
                 last_name=user.last_name,

@@ -6,8 +6,8 @@ from decimal import Decimal
 
 from dtos.auth import UserDTO
 from dtos.people import ClientDTO
-from models.lab.lab import BoundaryType, QueueStatus, QueuePriority, SampleType, ExperimentResultReading, ResultStatus
-from models.services import StoreVisibility
+from models.lab.lab import BoundaryType, QueueStatus, QueuePriority, SampleType, ResultStatus
+from models.services.services import StoreVisibility
 
 
 class LaboratoryDTO(BaseModel):

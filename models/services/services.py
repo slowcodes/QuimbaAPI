@@ -7,6 +7,8 @@ from db import Base
 from enum import Enum
 from sqlalchemy.orm import relationship
 
+from models.consultation import SoftDeleteMixin
+
 
 class StoreVisibility(str, Enum):
     Disabled = 'Disabled'

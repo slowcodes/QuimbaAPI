@@ -1,12 +1,10 @@
-from enum import Enum
-
 from dtos.auth import UserDTO
 from dtos.pharmacy.prescription import PrescriptionDTO, PrescriptionDetailDTO
 from models.pharmacy import Prescription, PrescriptionStatus, PrescriptionDetail, Form
 from repos.auth_repository import UserRepository
 from repos.base_repository import BaseRepository
 from repos.client.client_repository import ClientRepository
-from repos.consultation_repository import ConsultationRepository
+from repos.consultation.consultant_repository import ConsultantRepository
 from repos.pharmacy.drug_repository import DrugRepository
 from repos.pharmacy.pharmacy_repository import PharmacyRepository
 
@@ -14,7 +12,7 @@ from repos.pharmacy.pharmacy_repository import PharmacyRepository
 class PrescriptionRepository(BaseRepository):
     def __init__(self, db):
         super().__init__(db)
-        self.consultation_repository = ConsultationRepository(db)
+        self.consultation_repository = ConsultantRepository(db)
         self.client_repository = ClientRepository(db)
         self.auth_repository = UserRepository(db)
         self.pharmacy_repository = PharmacyRepository(db)
@@ -77,8 +75,8 @@ class PrescriptionRepository(BaseRepository):
         return details
 
     def create(self, prescription_dto: PrescriptionDTO, user: UserDTO) -> PrescriptionDTO:
-        prescription = prescription_dto.dict()
 
+        prescription = prescription_dto.dict()
         consultant = self.consultation_repository.get_consultant_by_user_id(user.id)
 
         psd = prescription.pop("prescriptions")
@@ -93,17 +91,17 @@ class PrescriptionRepository(BaseRepository):
                 note=prescription_dto.note,
             ))
 
+        self.db.flush(prescription)
         ps = PrescriptionDTO(
             id=prescription.id,
             status=prescription.status,
             note=prescription.note,
             instruction=prescription.instruction,
+            pharmacy_id=prescription.pharmacy_id,
             created_at=(prescription.created_at).strftime("%Y-%m-%d %H:%M:%S"),
             client=prescription_dto.client,
             consultant=prescription_dto.consultant if prescription_dto.consultant else None,
         )
-
-        ps.prescriptions = []
 
         pres = []
         for item in psd:

@@ -1,16 +1,15 @@
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from dtos.lab import DateFilterDTO
 from dtos.transaction import TransactionDTO, TransactionPackageDTO
 from models.auth import User
 from models.client import Person, Client
-from models.services import ServiceBooking, BookingStatus, Bundles
+from models.services.services import ServiceBooking, BookingStatus, Bundles
 from models.transaction import Transaction, TransactionType, ReferredTransaction, PackageTransaction
 from repos.auth_repository import UserRepository
 from repos.client.client_repository import ClientRepository
 from repos.client.referral_repository import ReferralRepository
-from repos.consultation_repository import ConsultationRepository
+from repos.consultation.consultant_repository import ConsultantRepository
 from repos.lab.lab_repository import LabRepository
 from repos.payment_repository import PaymentRepository
 from repos.services.service_bundle_repository import ServiceBundleRepository
@@ -255,7 +254,7 @@ class TransactionRepository:
             Client.id
         ]
         lab_repository = LabRepository(self.db_session)
-        consultation_repository = ConsultationRepository(self.db_session)
+        consultation_repository = ConsultantRepository(self.db_session)
 
         clients_with_open_transactions = self.db_session.query(*cols) \
             .select_from(Client) \

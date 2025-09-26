@@ -1,19 +1,15 @@
 from http.client import HTTPException
-from typing import List, Optional
-from decimal import Decimal
+from typing import Optional
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, aliased
 
-from dtos.lab import LaboratoryGroupDTO, LaboratoryServiceDetailDTO, LabBundleCollectionDTO, LaboratoryDTO
+from dtos.lab import LaboratoryGroupDTO, LaboratoryServiceDetailDTO, LaboratoryDTO
 from dtos.services import PriceCodeDTO
 from models.client import *
-from models.consultation import ConsultationQueue, InHours
 from models.lab.lab import Laboratory, LabServiceGroup, LabService, LabServiceGroupTag, Experiment, ExperimentParameter, \
-    ExperimentParameterBounds, LabServiceExperiment, SampleResult, CollectedSamples, LabServicesQueue, \
-    LabBundleCollection
-from models.services import PriceCode, BusinessServices, ServiceBooking, ServiceBookingDetail, Bundles, ServiceType, \
-    BookingType
+    ExperimentParameterBounds, LabServiceExperiment, SampleResult, CollectedSamples, LabServicesQueue
+from models.services.services import PriceCode, BusinessServices, ServiceBooking, ServiceBookingDetail, BookingType
 from models.transaction import Transaction
 from repos.lab.experiment_repository import ExperimentRepository
 from repos.services.price_repository import PriceRepository

@@ -1,7 +1,7 @@
 
 
 from models.lab.lab import LabService, LabServiceGroupTag
-from models.services import PriceCode, BusinessServices, ServiceType
+from models.services.services import PriceCode, BusinessServices, ServiceType
 
 
 def insert_lab_service(session, data):

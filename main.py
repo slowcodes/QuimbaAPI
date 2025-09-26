@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
+import redis
 
 from routers.pharmacy.all_pharm_router import pharm_routers
 
@@ -37,6 +38,9 @@ app = FastAPI(
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
     },
 )
+
+r = redis.Redis(host="localhost", port=6379, db=0)
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

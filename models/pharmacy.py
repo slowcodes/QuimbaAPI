@@ -123,6 +123,9 @@ class Drug(Base, SoftDeleteMixin):
     product = relationship("Product", back_populates="pharmacy_drug")
     group_tags = relationship("DrugGroupTag", back_populates="drug")
 
+    allergies = relationship("DrugAllergy", back_populates="drug", cascade="all, delete-orphan")
+
+
 
 class PharmacyDrugMovement(Base):
     __tablename__ = "pharmacy_drug_movement"

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends
 from starlette import status
-
+import json
+from fastapi.encoders import jsonable_encoder
+from cache.redis import get_redis_client, decode_bytes
 from dtos.people import ClientDTO, OrganisationDTO
 from sqlalchemy.orm import Session
 from db import get_db
@@ -17,12 +19,22 @@ def get_client_repository(db: Session = Depends(get_db)) -> ClientRepository:
 
 @client_router.get('/api/clients/', tags=['Clients'])
 async def get_all_clients(skip: int = 0,
-                    limit: int = 100, keyword: str = '',
+                    limit: int = 20, keyword: str = '', refresh: int = 0,
                     repo: ClientRepository = Depends(get_client_repository)):
+
+    redis = get_redis_client()
+    cache_key = f"clients:{skip}:{limit}:{keyword}"
+    cached_clients = redis.get(cache_key)
+    # cached_clients = decode_bytes(cached_clients)
+
+    if cached_clients and refresh == 0:
+        clients = json.loads(cached_clients.decode("utf-8"))
+        return JSONResponse(status_code=status.HTTP_200_OK, content=clients)
+
     # faker = Faker()
     # for i in range(3000):
     #     new_client = ClientCommand(
-    #         photo=faker.word(),
+    #         phot o=faker.word(),
     #         first_name=faker.unique.first_name(),
     #         last_name=faker.unique.first_name(),
     #         middle_name=faker.unique.first_name(),
@@ -37,7 +49,11 @@ async def get_all_clients(skip: int = 0,
     #         occupation=1
     #     )
     #     repos.client_repository.add_client(db, new_client)
-    return repo.get_all_client(skip, limit, keyword)
+    data = repo.get_all_client(skip, limit, keyword)
+    safe_data = jsonable_encoder(data)
+    redis.set(cache_key, json.dumps(safe_data), ex=300)  # Cache for 5 minutes
+    # return JSONResponse(status_code=status.HTTP_200_OK, content=data)
+    return data
 
 
 @client_router.get('/api/clients/client', response_model=None, tags=['Clients'])

@@ -10,9 +10,9 @@ import os
 # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 # SQLALCHEMY_DATABASE_URL = "sqlite:///./Quimba.db"
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL") + "?options=-csearch_path=public"
 # SQLALCHEMY_DATABASE_URL = 'mysql+pymysql://root:password123@db:3306/Quimba'
-
+print('API database url', SQLALCHEMY_DATABASE_URL)
 # SQLite Specific
 # engine = create_engine(
 #     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}

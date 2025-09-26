@@ -1,24 +1,21 @@
-from operator import and_
-from typing import List, Annotated
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
 from starlette.responses import JSONResponse
 
-from dtos.auth import UserDTO
 from dtos.lab import DateFilterDTO
 from dtos.transaction import TransactionDTO, PaymentDTO, ReferredTransactionDTO, TransactionPackageDTO
 from db import get_db
-from models.services import BookingStatus
-from models.transaction import ServiceType, TransactionType
+from models.services.services import BookingStatus
+from models.transaction import TransactionType
 from repos import transaction_repository
 from repos.client.referral_repository import ReferralRepository
-from repos.consultation_repository import ConsultationRepository
+from repos.consultation.consultant_repository import ConsultantRepository
 from repos.lab.lab_repository import LabRepository
 from repos.payment_repository import PaymentRepository
 from repos.transaction_repository import TransactionRepository
-from security.dependencies import get_current_active_user, require_role, require_access_privilege
 
 transaction_router = APIRouter(prefix="/api/transaction", tags=["Transaction"])
 
@@ -31,8 +28,8 @@ def lab_repository(db: Session = Depends(get_db)) -> LabRepository:
     return LabRepository(db)
 
 
-def consultation_repo(db: Session = Depends(get_db)) -> ConsultationRepository:
-    return ConsultationRepository(db)
+def consultation_repo(db: Session = Depends(get_db)) -> ConsultantRepository:
+    return ConsultantRepository(db)
 
 
 def referral_repository(db: Session = Depends(get_db)) -> ReferralRepository:
@@ -47,7 +44,7 @@ def payment_repo(db: Session = Depends(get_db)) -> PaymentRepository:
 def get_transaction(transaction_id: int,
                     # current_user: Annotated[UserDTO, Depends(require_access_privilege(11))],
                     repo: TransactionRepository = Depends(transaction_repo),
-                    cons_repo: ConsultationRepository = Depends(consultation_repo),
+                    cons_repo: ConsultantRepository = Depends(consultation_repo),
                     lab_repo: LabRepository = Depends(lab_repository)):
     lab_services = lab_repo.get_lab_services_booking(transaction_id)
     transaction_details = repo.get_laboratory_transaction(transaction_id)
@@ -113,7 +110,6 @@ def read_collated_results(limit: int = 15, skip: int = 0, booking_status: Bookin
     ref_flag = False
     if only_referred_transactions == 1:
         ref_flag = True
-    print('flag', ref_flag)
     results = repo.get_laboratory_transaction_details(limit, skip, lab_id, booking_status, search_text, client_id,
                                                       date_filter, transaction_type, ref_flag)
 

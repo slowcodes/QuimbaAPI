@@ -36,6 +36,8 @@ class Transaction(Base, SoftDeleteMixin):
     transaction_status = Column(SqlEnum(TransactionType), default=TransactionType.Open)
 
     sales = relationship("BusinessSales", back_populates="transaction")
+    client_service_carts = relationship("ClientServiceCart", back_populates="transaction")
+
 
 class PaymentMethod(str, Enum):
     PoS = 'PoS'

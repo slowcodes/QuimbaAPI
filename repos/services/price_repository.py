@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from dtos.services import PriceCodeDTO
-from models.services import PriceCode
+from models.services.services import PriceCode
 
 
 class PriceRepository:

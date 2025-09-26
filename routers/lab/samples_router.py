@@ -1,7 +1,14 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from typing import List
 
+from starlette.responses import JSONResponse
+from starlette.status import HTTP_200_OK
+
+from cache.redis import get_redis_client
 from dtos.lab import CollectedSamplesDTO, LabServicesQueueDTO
 from db import get_db
 from models.lab.lab import SampleType, QueueStatus
@@ -53,14 +60,24 @@ def create_collected_sample(sample_data: CollectedSamplesDTO,
 @sample_collection_router.get("/")  # response_model=List[CollectedSamplesDTO]
 def get_collected_samples(skip: int = 0, limit: int = 10, lab_id: int = 0, booking_id: int = 0,
                           start_date: str = None, last_date: str = None, status: QueueStatus = QueueStatus.Processing,
-                          search_keyword: str = None, repo: CollectedSamplesRepository = Depends(get_repository)):
+                          search_keyword: str = None, refresh: int = 0, repo: CollectedSamplesRepository = Depends(get_repository)):
     date_filter = {
         'start_date': start_date,
         'last_date': last_date,
         'status': status
     }
+    redis = get_redis_client()
+    cache_key = f"clients:{skip}:{limit}:{lab_id}:{booking_id}:{start_date}:{last_date}:{status}:{search_keyword}"
+    cached_samples = redis.get(cache_key)
 
-    return repo.get_collected_samples(skip, limit, lab_id, booking_id, date_filter, search_keyword)
+    if cached_samples and refresh == 0:
+        samples = json.loads(cached_samples.decode("utf-8"))
+        return JSONResponse(status_code=HTTP_200_OK, content=samples)
+
+    data = repo.get_collected_samples(skip, limit, lab_id, booking_id, date_filter, search_keyword)
+    safe_data = jsonable_encoder(data)
+    redis.set(cache_key, json.dumps(safe_data), ex=300)
+    return data
 
 
 @sample_collection_router.put("/{sample_id}")

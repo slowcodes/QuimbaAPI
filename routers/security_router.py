@@ -23,8 +23,10 @@ security_router = APIRouter(prefix="/api/v1/auth", tags=["Security"])
 def auth_repo(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db)
 
+
 def get_person_repository(db: Session = Depends(get_db)) -> PersonRepository:
     return PersonRepository(db)
+
 
 @security_router.post("/login")
 async def login_for_access_token(
@@ -46,11 +48,10 @@ async def login_for_access_token(
 
 @security_router.put("/signup", response_model=SignUpResponseDTO, status_code=status.HTTP_202_ACCEPTED)
 async def sign_up(signup_dto: AccountDTO,
-                      auth=Depends(auth_repo),
-                      # person_repo=Depends(get_person_repository),
-                      security=Depends(require_role_and_privilege(20, "write"))
-                      ):
-
+                  auth=Depends(auth_repo),
+                  # person_repo=Depends(get_person_repository),
+                  security=Depends(require_role_and_privilege(20, "write"))
+                  ):
     updated_user = auth.updateSignUp(signup_dto)
     if updated_user.error:
         return JSONResponse(status_code=status.HTTP_406_NOT_ACCEPTABLE,
@@ -60,11 +61,10 @@ async def sign_up(signup_dto: AccountDTO,
 
 @security_router.post("/signup", response_model=SignUpResponseDTO, status_code=status.HTTP_201_CREATED)
 async def sign_up(signup_dto: AccountDTO,
-                      auth=Depends(auth_repo),
-                      person_repo=Depends(get_person_repository),
-                      security=Depends(require_role_and_privilege(20, "write"))
-                      ):
-
+                  auth=Depends(auth_repo),
+                  person_repo=Depends(get_person_repository),
+                  security=Depends(require_role_and_privilege(20, "write"))
+                  ):
     if person_repo.person_exists(signup_dto.person):
         return JSONResponse(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             content=dict(error=True, msg='A similar entry already exist'))
@@ -88,10 +88,9 @@ async def get_all_user(skip: int = 0, limit: int = 20, auth=Depends(auth_repo),
 
 @security_router.get("/users/{id}")
 async def getUserById(id: int,
-                         auth=Depends(auth_repo),
-                         person_repo=Depends(get_person_repository),
-                         security=Depends(require_role_and_privilege(20, "read"))):
-
+                      auth=Depends(auth_repo),
+                      person_repo=Depends(get_person_repository),
+                      security=Depends(require_role_and_privilege(20, "read"))):
     usr_details = auth.get_user_by_id(id)
     person = person_repo.get(usr_details.person_id)
     return {
@@ -112,7 +111,6 @@ async def getUserById(id: int,
 async def update_user_account(account_dto: AccountDTO, auth=Depends(auth_repo),
                               security=Depends(require_role_and_privilege(20, "execute"))
                               ):
-
     return auth.update_user(account_dto)
 
 

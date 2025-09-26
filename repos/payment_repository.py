@@ -7,7 +7,7 @@ from dtos.transaction import PaymentDTO, TransactionDTO
 from models.auth import User
 from models.client import Person
 from models.transaction import Transaction
-from models.services import ServiceBooking
+from models.services.services import ServiceBooking
 from models.transaction import Payments, ServiceType
 from repos.auth_repository import UserRepository
 from repos.client.client_repository import ClientRepository

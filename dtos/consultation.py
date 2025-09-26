@@ -1,64 +1,15 @@
+import datetime
+from datetime import date
 
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import date
-from enum import Enum
 
-from dtos.auth import UserDTO
+from dtos.consultant import ConsultantDTO
 from dtos.people import ClientDTO
+from dtos.pharmacy.prescription import PrescriptionDTO
+from dtos.service_dtos.client_cart_service import ClientServiceCartDTO
 from dtos.services import BusinessServiceDTO
-from models.consultation import QueueStatus, InHourFrequency
-
-
-class ScheduleDTO(BaseModel):
-    date_of_consultation: date
-    specialist: int
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
-
-class SpecialistDTO(BaseModel):
-    user_id: int
-    specialism: int
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
-
-class ConsultationQueueDTO(BaseModel):
-    schedule_id: int
-    scheduled_at: Optional[date] = None
-    status: Optional[QueueStatus] = QueueStatus.Processing
-    booking_id: int
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
-
-class SpecialismDTO(BaseModel):
-    id: Optional[int]
-    department: str
-    specialist_title: str
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
-
-class ConsultantDTO(BaseModel):
-    id: Optional[int]
-    user: UserDTO
-    title: str
-    specializations: List[SpecialismDTO] = []
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
-
+from models.consultation import QueueStatus, InHourFrequency, ConsultationType, InternalSystems
 
 class SymptomDTO(BaseModel):
     id: Optional[int]
@@ -105,8 +56,14 @@ class ConsultationQueueDTO(BaseModel):
     status: Optional[QueueStatus] = QueueStatus.Processing
     booking_id: Optional[int] = None
     notes: Optional[str] = None
+    booking_detail: Optional[dict] = None
+    client: Optional[dict] = None
     specialization_id: Optional[int] = None
     consultation_time: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
 
 class ConsultationAppointmentDTO(BaseModel):
@@ -117,5 +74,55 @@ class ConsultationAppointmentDTO(BaseModel):
     booking_id: Optional[int] = None
     transaction_id: Optional[int] = None
     scheduled_at: Optional[str] = None
-    status:Optional[str] = None
+    status: Optional[str] = None
     id: Optional[int] = None
+
+
+class ConsultationBase(BaseModel):
+    consultation_type: ConsultationType = ConsultationType.base_case
+    reason_for_visit: Optional[str] = None
+    preliminary_diagnosis: Optional[str] = None
+    # final_diagnosis: Optional[str] = None
+
+
+class ConsultationCreate(ConsultationBase):
+    queue_id: int
+
+
+class ConsultationUpdate(ConsultationBase):
+    pass
+
+
+class ConsultationDTO(ConsultationBase):
+    id: Optional[int] = None
+    queue_id: int
+    created_by: Optional[int] = None
+    created_at: Optional[datetime.datetime] = None
+    updated_at: Optional[datetime.datetime] = None
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+class ConsultationRoSDTO(BaseModel):
+    id: Optional[int] = None
+    system: Optional[InternalSystems]
+    note: Optional[str] = ""
+    consultation_id: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+class ConsultationDetailDTO(BaseModel):
+    consultation: ConsultationDTO
+    clinical_examination: Optional[ClinicalExaminationDTO] = None
+    review_of_systems: Optional[List[ConsultationRoSDTO]] = []
+    client_service_cart: Optional[ClientServiceCartDTO] = None
+    prescription: Optional[PrescriptionDTO] = None
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
