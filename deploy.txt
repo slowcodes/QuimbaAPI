@@ -1,0 +1,4 @@
+db set up
+sudo docker run --restart unless-stopped --name quimba-postgress --network quimbanetwork -e POSTGRES_USER=quimba -e POSRGRES_PASSWORD=secretofthesand -e POSTGRES_DB=postgres -v quimba_pgdata:/var/lib/postgres/data -d postgres
+
+docker run --restart unless-stopped -it -p 8000:8000/tcp ezennacharles/quimba

@@ -1,0 +1,52 @@
+
+services:
+  webapp:
+    image: ezennacharles/quimba-web
+    ports:
+      - "80:80"
+    environment:
+      - API_URL=http://app/api/
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - quimba_network
+
+  cache:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - quimba_network
+
+  app:
+    image: ezennacharles/quimba
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://quimba:secretofthesand@db:5432/postgres
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - quimba_network
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: quimba
+      POSTGRES_PASSWORD: secretofthesand
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - quimba_network
+volumes:
+  postgres_data:
+
+networks:
+  quimba_network:  # Shared network for all containers

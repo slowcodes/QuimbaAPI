@@ -1,0 +1,3656 @@
+[
+  {
+    "id": 23,
+    "test_title": "RHEUMATOID FACTOR (Quantitative)",
+    "price_code": 32,
+    "lab_test_desc": "RHEUMATOID FACTOR (Qaulitative)",
+    "lab_type": "Laboratory",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 24,
+    "test_title": "ASOT",
+    "price_code": 33,
+    "lab_test_desc": "ASO TITRE",
+    "lab_type": "Laboratory",
+    "service_price": 15500,
+    "discount_price": 0
+  },
+  {
+    "id": 25,
+    "test_title": "Both Legs Xray AP/LAT",
+    "price_code": 34,
+    "lab_test_desc": "Both Legs Xray AP/LAT",
+    "lab_type": "Radiology",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 26,
+    "test_title": "VDRL (Syphilis) Test",
+    "price_code": 35,
+    "lab_test_desc": "PRP / VDRL (Syphilis)",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 27,
+    "test_title": "Widal Test",
+    "price_code": 36,
+    "lab_test_desc": "Widal Reaction Titration.",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 28,
+    "test_title": "HEPATITIS B Surface Antigen (HBs Ag)",
+    "price_code": 37,
+    "lab_test_desc": "HEPATITIS B Surface Antigen (HBs Ag)",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 29,
+    "test_title": "HEPATITIS C",
+    "price_code": 38,
+    "lab_test_desc": "HEPATITIS C",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 30,
+    "test_title": "HIV 1 & 2 Antibodies",
+    "price_code": 39,
+    "lab_test_desc": "HIV 1 & 2 Antibody",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 31,
+    "test_title": "CD4",
+    "price_code": 40,
+    "lab_test_desc": "CD4",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 32,
+    "test_title": "Skin snip + Skin scrapping",
+    "price_code": 41,
+    "lab_test_desc": "Fungal Microscopy",
+    "lab_type": "Laboratory",
+    "service_price": 5000,
+    "discount_price": 0
+  },
+  {
+    "id": 33,
+    "test_title": "Fungal Culture",
+    "price_code": 42,
+    "lab_test_desc": "Fungal Culture",
+    "lab_type": "Laboratory",
+    "service_price": 27500,
+    "discount_price": 0
+  },
+  {
+    "id": 34,
+    "test_title": "ANTENATAL SCREEN ",
+    "price_code": 43,
+    "lab_test_desc": "ANTENATAL SCREEN \n(FBC, PLTS, BG, Geno, HBsAg, HCV, VDRL, ICT, DCT)",
+    "lab_type": "Laboratory",
+    "service_price": 15000,
+    "discount_price": 0
+  },
+  {
+    "id": 35,
+    "test_title": "ANTENATAL SCREEN + HIV",
+    "price_code": 44,
+    "lab_test_desc": "ANTENATAL SCREEN(FBC, PLT, Bgrp, Geno, \nHBsAg, HCV, VDRL, ICT, DCT) + HIV",
+    "lab_type": "laboratory",
+    "service_price": 13500,
+    "discount_price": 0
+  },
+  {
+    "id": 36,
+    "test_title": "FBC (3 Parts Differentials)",
+    "price_code": 45,
+    "lab_test_desc": "FBC (3 Parts Differentials)",
+    "lab_type": "Laboratory",
+    "service_price": 3000,
+    "discount_price": 0
+  },
+  {
+    "id": 37,
+    "test_title": "ESR",
+    "price_code": 46,
+    "lab_test_desc": "ESR",
+    "lab_type": "Laboratory",
+    "service_price": 3000,
+    "discount_price": 0
+  },
+  {
+    "id": 38,
+    "test_title": "HAEMOGLOBIN",
+    "price_code": 47,
+    "lab_test_desc": "HAEMOGLOBIN",
+    "lab_type": "Laboratory",
+    "service_price": 750,
+    "discount_price": 0
+  },
+  {
+    "id": 39,
+    "test_title": "WBC + DIFF COUNT",
+    "price_code": 48,
+    "lab_test_desc": "WBC + DIFF COUNT",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 40,
+    "test_title": "RETICULOCYTES",
+    "price_code": 49,
+    "lab_test_desc": "RETICULOCYTES",
+    "lab_type": "Laboratory",
+    "service_price": 2000,
+    "discount_price": 0
+  },
+  {
+    "id": 41,
+    "test_title": "HB ELECTROPHORESIS (GENOTYPE)",
+    "price_code": 50,
+    "lab_test_desc": "HB ELECTROPHORESIS (GENOTYPE)",
+    "lab_type": "Laboratory",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 42,
+    "test_title": "ANTENATAL SCREEN ",
+    "price_code": 51,
+    "lab_test_desc": "ANTENATAL SCREEN \n(FBC, BG, Geno, HBsAg, HCV, VDRL, ICT, DCT)",
+    "lab_type": "laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 43,
+    "test_title": "G6PD",
+    "price_code": 52,
+    "lab_test_desc": "G6PD",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 44,
+    "test_title": "Blood Culture (Bact-Alert)",
+    "price_code": 53,
+    "lab_test_desc": "Blood Culture (Bact-Alert)",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 45,
+    "test_title": "Blood Microscopy (parasites) EDTA Bottle",
+    "price_code": 54,
+    "lab_test_desc": "Blood Microscopy (parasites) EDTA Bottle",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 46,
+    "test_title": "CSF Cell Count",
+    "price_code": 55,
+    "lab_test_desc": "CSF Cell Count",
+    "lab_type": "Laboratory",
+    "service_price": 1000,
+    "discount_price": 0
+  },
+  {
+    "id": 47,
+    "test_title": "Throat Swab m/c/s",
+    "price_code": 56,
+    "lab_test_desc": "Throat MCS",
+    "lab_type": "Laboratory",
+    "service_price": 6500,
+    "discount_price": 0
+  },
+  {
+    "id": 48,
+    "test_title": "Eye MCS",
+    "price_code": 57,
+    "lab_test_desc": "Eye MCS",
+    "lab_type": "Laboratory",
+    "service_price": 5000,
+    "discount_price": 0
+  },
+  {
+    "id": 49,
+    "test_title": "Nose MCS",
+    "price_code": 58,
+    "lab_test_desc": " Nose",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 50,
+    "test_title": "Ear Swab MCS",
+    "price_code": 59,
+    "lab_test_desc": "Ear MCS",
+    "lab_type": "Laboratory",
+    "service_price": 6500,
+    "discount_price": 0
+  },
+  {
+    "id": 51,
+    "test_title": "Sputum MCS",
+    "price_code": 60,
+    "lab_test_desc": "Sputum MCS",
+    "lab_type": "Laboratory",
+    "service_price": 3500,
+    "discount_price": 0
+  },
+  {
+    "id": 52,
+    "test_title": "ziehl Nelseen Smear (AFB-Aspirates)",
+    "price_code": 61,
+    "lab_test_desc": "ziehl Nelseen Smear (AFB-Aspirates)",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 53,
+    "test_title": "Sputum AFB (ziehl Nelseen Smear x3)",
+    "price_code": 62,
+    "lab_test_desc": "Sputum AFB (ziehl Nelseen Smear x3)",
+    "lab_type": "Laboratory",
+    "service_price": 6500,
+    "discount_price": 0
+  },
+  {
+    "id": 54,
+    "test_title": "Aspirate MCS",
+    "price_code": 63,
+    "lab_test_desc": "Aspirate MCS",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 55,
+    "test_title": "Fluid Cell Count",
+    "price_code": 64,
+    "lab_test_desc": "Fluid Cell Count",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 56,
+    "test_title": "Semen MCS",
+    "price_code": 65,
+    "lab_test_desc": "Semen MCS",
+    "lab_type": "Laboratory",
+    "service_price": 3500,
+    "discount_price": 0
+  },
+  {
+    "id": 57,
+    "test_title": "Catheter Tip MCS",
+    "price_code": 66,
+    "lab_test_desc": "CAtheter Tip MCS",
+    "lab_type": "Laboratory",
+    "service_price": 4500,
+    "discount_price": 0
+  },
+  {
+    "id": 59,
+    "test_title": "Genotype + Blood Group Test",
+    "price_code": 68,
+    "lab_test_desc": "Genotype + Blood Group",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 60,
+    "test_title": "Genotype + Blood Group + HIV",
+    "price_code": 69,
+    "lab_test_desc": "Genotype + Blood Group + HIV",
+    "lab_type": "Laboratory",
+    "service_price": 11000,
+    "discount_price": 0
+  },
+  {
+    "id": 61,
+    "test_title": "MCS + Cell Count and Chemistry",
+    "price_code": 70,
+    "lab_test_desc": "MCS + Cell Count and Chemistry",
+    "lab_type": "Laboratory",
+    "service_price": 5000,
+    "discount_price": 0
+  },
+  {
+    "id": 62,
+    "test_title": "pleural fluid protein",
+    "price_code": 71,
+    "lab_test_desc": "pleural fluid protein",
+    "lab_type": "Laboratory",
+    "service_price": 4500,
+    "discount_price": 0
+  },
+  {
+    "id": 63,
+    "test_title": "Stool Microscopy",
+    "price_code": 72,
+    "lab_test_desc": "Stool Microscopy",
+    "lab_type": "Laboratory",
+    "service_price": 2000,
+    "discount_price": 0
+  },
+  {
+    "id": 64,
+    "test_title": "Stool MCS",
+    "price_code": 73,
+    "lab_test_desc": "Stool MCS",
+    "lab_type": "Laboratory",
+    "service_price": 5000,
+    "discount_price": 0
+  },
+  {
+    "id": 65,
+    "test_title": "Faecal Occult Blood",
+    "price_code": 74,
+    "lab_test_desc": "Faecal Occult Blood",
+    "lab_type": "Laboratory",
+    "service_price": 3500,
+    "discount_price": 0
+  },
+  {
+    "id": 66,
+    "test_title": "Skin snip",
+    "price_code": 75,
+    "lab_test_desc": "Skin snip",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 67,
+    "test_title": "Mantoux",
+    "price_code": 76,
+    "lab_test_desc": "Mantoux",
+    "lab_type": "Laboratory",
+    "service_price": 2000,
+    "discount_price": 0
+  },
+  {
+    "id": 68,
+    "test_title": "Skin scrapping (KOH)",
+    "price_code": 77,
+    "lab_test_desc": "Skin scrapping (KOH)",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 69,
+    "test_title": "Urinalysis",
+    "price_code": 78,
+    "lab_test_desc": "Urine Microscopy + Chemistry",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 70,
+    "test_title": "Urine M/C/S",
+    "price_code": 79,
+    "lab_test_desc": "Urine Microscopy + Culture + Sensitivity",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 71,
+    "test_title": "24HRS Urine Chemistry ",
+    "price_code": 80,
+    "lab_test_desc": "24HRS Urine Chemistry ",
+    "lab_type": "Laboratory",
+    "service_price": 3500,
+    "discount_price": 0
+  },
+  {
+    "id": 72,
+    "test_title": "Urine AFB",
+    "price_code": 81,
+    "lab_test_desc": "Urine AFB",
+    "lab_type": "Laboratory",
+    "service_price": 4500,
+    "discount_price": 0
+  },
+  {
+    "id": 73,
+    "test_title": "Total PSA + Free PSA",
+    "price_code": 82,
+    "lab_test_desc": "PSA QUATITATIVE ",
+    "lab_type": "Laboratory",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 74,
+    "test_title": "TOTAL  PSA",
+    "price_code": 83,
+    "lab_test_desc": "Total PSA",
+    "lab_type": "Laboratory",
+    "service_price": 9500,
+    "discount_price": 0
+  },
+  {
+    "id": 75,
+    "test_title": "BENCE-JONES PROTEIN (urine)",
+    "price_code": 84,
+    "lab_test_desc": "BENCE-JONES PROTEIN (urine)",
+    "lab_type": "Laboratory",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 76,
+    "test_title": "CORTISOL (serum)",
+    "price_code": 85,
+    "lab_test_desc": "CORTISOL (serum)",
+    "lab_type": "Laboratory",
+    "service_price": 27500,
+    "discount_price": 0
+  },
+  {
+    "id": 77,
+    "test_title": "CORTISOL (24hr urine)",
+    "price_code": 86,
+    "lab_test_desc": "CORTISOL (24hr urine)",
+    "lab_type": "Laboratory",
+    "service_price": 27500,
+    "discount_price": 0
+  },
+  {
+    "id": 78,
+    "test_title": "GROWTH HORMONE",
+    "price_code": 87,
+    "lab_test_desc": "GROWTH HORMONE",
+    "lab_type": "Laboratory",
+    "service_price": 27500,
+    "discount_price": 0
+  },
+  {
+    "id": 79,
+    "test_title": "PITUITARY SCREEN",
+    "price_code": 88,
+    "lab_test_desc": "PITUITARY SCREEN",
+    "lab_type": "Laboratory",
+    "service_price": 27500,
+    "discount_price": 0
+  },
+  {
+    "id": 80,
+    "test_title": "Electrolytes, Urea, Creatinine (EUC)",
+    "price_code": 89,
+    "lab_test_desc": "ELECTROLYTES, UREA & CREATININE",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 81,
+    "test_title": "ELECTROLYTES",
+    "price_code": 90,
+    "lab_test_desc": "ELECTROLYTES",
+    "lab_type": "Laboratory",
+    "service_price": 6500,
+    "discount_price": 0
+  },
+  {
+    "id": 82,
+    "test_title": "SODIUM",
+    "price_code": 91,
+    "lab_test_desc": "SODIUM",
+    "lab_type": "Laboratory",
+    "service_price": 1000,
+    "discount_price": 0
+  },
+  {
+    "id": 83,
+    "test_title": "CHLORIDE",
+    "price_code": 92,
+    "lab_test_desc": "CHLORIDE",
+    "lab_type": "laboratory",
+    "service_price": 600,
+    "discount_price": 0
+  },
+  {
+    "id": 84,
+    "test_title": "BICARBONATE",
+    "price_code": 93,
+    "lab_test_desc": "BICARBONATE",
+    "lab_type": "Laboratory",
+    "service_price": 1000,
+    "discount_price": 0
+  },
+  {
+    "id": 85,
+    "test_title": "POTASSIUM",
+    "price_code": 94,
+    "lab_test_desc": "POTASSIUM",
+    "lab_type": "Laboratory",
+    "service_price": 1000,
+    "discount_price": 0
+  },
+  {
+    "id": 86,
+    "test_title": "UREA",
+    "price_code": 95,
+    "lab_test_desc": "UREA",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 87,
+    "test_title": "CREATININE",
+    "price_code": 96,
+    "lab_test_desc": "CREATININE",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 88,
+    "test_title": "CREATININE CLEARANCE",
+    "price_code": 97,
+    "lab_test_desc": "CREATININE CLEARANCE",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 89,
+    "test_title": "PHOSPHORUS (PO4)",
+    "price_code": 98,
+    "lab_test_desc": "SERUM PHOSPHORUS ",
+    "lab_type": "Laboratory",
+    "service_price": 6500,
+    "discount_price": 0
+  },
+  {
+    "id": 90,
+    "test_title": "URIC ACID",
+    "price_code": 99,
+    "lab_test_desc": "URIC ACID",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 91,
+    "test_title": "SERUM MAGNESIUM",
+    "price_code": 100,
+    "lab_test_desc": "SERUM MAGNESIUM",
+    "lab_type": "Laboratory",
+    "service_price": 18000,
+    "discount_price": 0
+  },
+  {
+    "id": 92,
+    "test_title": "PROTEIN (24 HR URINE)",
+    "price_code": 101,
+    "lab_test_desc": "PROTEIN (24 HR URINE)",
+    "lab_type": "Laboratory",
+    "service_price": 6000,
+    "discount_price": 0
+  },
+  {
+    "id": 93,
+    "test_title": "SERUM CALCIUM (serum-no cuff)",
+    "price_code": 102,
+    "lab_test_desc": "SERUM CALCIUM (serum-no cuff)",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 94,
+    "test_title": "URIN ACID (24hr urine)",
+    "price_code": 103,
+    "lab_test_desc": "URIN ACID (24hr urine)",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 95,
+    "test_title": "C-REACTIVE PROTEIN (CRP)",
+    "price_code": 104,
+    "lab_test_desc": "C-REACTIVE PROTEIN (CRP)",
+    "lab_type": "Laboratory",
+    "service_price": 28500,
+    "discount_price": 0
+  },
+  {
+    "id": 96,
+    "test_title": "LFT (ROUTINE)",
+    "price_code": 105,
+    "lab_test_desc": "LFT ",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 97,
+    "test_title": "TOTAL PROTEIN ",
+    "price_code": 106,
+    "lab_test_desc": "TOTAL PROTEIN ",
+    "lab_type": "Laboratory",
+    "service_price": 4500,
+    "discount_price": 0
+  },
+  {
+    "id": 98,
+    "test_title": "ALBUMIN",
+    "price_code": 107,
+    "lab_test_desc": "ALBUMIN",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 99,
+    "test_title": "BILIRUBIN (DIRECT & INDIRECT)",
+    "price_code": 108,
+    "lab_test_desc": "BILIRUBIN (DIRECT & INDIRECT)",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 100,
+    "test_title": "AMYLASE",
+    "price_code": 109,
+    "lab_test_desc": "AMYLASE",
+    "lab_type": "Laboratory",
+    "service_price": 10000,
+    "discount_price": 0
+  },
+  {
+    "id": 101,
+    "test_title": "ALT",
+    "price_code": 110,
+    "lab_test_desc": "ALT",
+    "lab_type": "Laboratory",
+    "service_price": 1750,
+    "discount_price": 0
+  },
+  {
+    "id": 102,
+    "test_title": "ALP",
+    "price_code": 111,
+    "lab_test_desc": "ALP",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 103,
+    "test_title": "AST",
+    "price_code": 112,
+    "lab_test_desc": "AST",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 104,
+    "test_title": "LIPASE",
+    "price_code": 113,
+    "lab_test_desc": "LIPASE",
+    "lab_type": "Laboratory",
+    "service_price": 10000,
+    "discount_price": 0
+  },
+  {
+    "id": 105,
+    "test_title": "Fasting Lipid Profile ( Direct LDL Quantification)",
+    "price_code": 114,
+    "lab_test_desc": "LIPID PROFILE",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 107,
+    "test_title": "TRIGLYCERIDES",
+    "price_code": 116,
+    "lab_test_desc": "TRIGLYCERIDES",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 108,
+    "test_title": "HDL, LDL, VLDL",
+    "price_code": 117,
+    "lab_test_desc": "HDL, LDL, VLDL",
+    "lab_type": "laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 109,
+    "test_title": "Fasting Blood Glucose (FBG)",
+    "price_code": 118,
+    "lab_test_desc": "BLOOD SUGAR (random)",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 110,
+    "test_title": "Random Blood Glucose (RBG)",
+    "price_code": 119,
+    "lab_test_desc": "BLOOD SUGAR (fasting)",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 111,
+    "test_title": "2HR POST PRANDIAL",
+    "price_code": 120,
+    "lab_test_desc": "2HR POST PRANDIAL",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 112,
+    "test_title": "GLUCOSE TOLERANCE TEST (2hrs)",
+    "price_code": 121,
+    "lab_test_desc": "GLUCOSE TOLERANCE TEST (2hrs)",
+    "lab_type": "Laboratory",
+    "service_price": 5000,
+    "discount_price": 0
+  },
+  {
+    "id": 113,
+    "test_title": "HBA1C",
+    "price_code": 122,
+    "lab_test_desc": "HBA1C",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 114,
+    "test_title": "DIRECT ANTIGLOBULIN TEST (direct coombs test)",
+    "price_code": 123,
+    "lab_test_desc": "DIRECT ANTIGLOBULIN TEST (direct coombs test)",
+    "lab_type": "Laboratory",
+    "service_price": 2000,
+    "discount_price": 0
+  },
+  {
+    "id": 115,
+    "test_title": "INDIRECT ANTIGLOBULIN TEST (indirect coombs test)",
+    "price_code": 124,
+    "lab_test_desc": "INDIRECT ANTIGLOBULIN TEST (indirect coombs test)",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 117,
+    "test_title": "PCV / HB",
+    "price_code": 126,
+    "lab_test_desc": "PCV",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 118,
+    "test_title": "PLATELET",
+    "price_code": 127,
+    "lab_test_desc": "PLATELET",
+    "lab_type": "Laboratory",
+    "service_price": 1000,
+    "discount_price": 0
+  },
+  {
+    "id": 119,
+    "test_title": "PT + INR ",
+    "price_code": 128,
+    "lab_test_desc": "PT + INR ",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 120,
+    "test_title": "APTT",
+    "price_code": 129,
+    "lab_test_desc": "APTT",
+    "lab_type": "Laboratory",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 121,
+    "test_title": "CLOTTING TIME ",
+    "price_code": 130,
+    "lab_test_desc": "CLOTTING TIME ",
+    "lab_type": "Laboratory",
+    "service_price": 4000,
+    "discount_price": 0
+  },
+  {
+    "id": 122,
+    "test_title": "TSH ",
+    "price_code": 131,
+    "lab_test_desc": "TSH ",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 124,
+    "test_title": "FREE T3",
+    "price_code": 133,
+    "lab_test_desc": "FREE T3",
+    "lab_type": "Laboratory",
+    "service_price": 6500,
+    "discount_price": 0
+  },
+  {
+    "id": 127,
+    "test_title": "MENOPAUSAL SCREEN (LH,FSH,OESTROGEN)",
+    "price_code": 136,
+    "lab_test_desc": "MENOPAUSAL SCREEN (LH,FSH,OESTROGEN)",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 128,
+    "test_title": "OVULATORY PROFILE (day 21) (PROGESTERONE ONLY)",
+    "price_code": 137,
+    "lab_test_desc": "OVULATORY PROFILE (day 21) \n(PROGESTERONE ONLY)",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 129,
+    "test_title": "INFERTILITY (female day 3) (LH,FSH)",
+    "price_code": 138,
+    "lab_test_desc": "INFERTILITY (female day 3) (LH,FSH)",
+    "lab_type": "Laboratory",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 130,
+    "test_title": "INFERTILITY (male) ",
+    "price_code": 139,
+    "lab_test_desc": "INFERTILITY (male) \n(TESTOSTERONE, PROLACTIN, LH/FSH)",
+    "lab_type": "Laboratory",
+    "service_price": 21500,
+    "discount_price": 0
+  },
+  {
+    "id": 131,
+    "test_title": "FERTILITY (female) ",
+    "price_code": 140,
+    "lab_test_desc": "FERTILITY (female) \n(PROGESTERONE, PROLACTIN, LH / FSH)",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 132,
+    "test_title": "PROLACTIN, LH / FSH",
+    "price_code": 141,
+    "lab_test_desc": "PROLACTIN, LH / FSH   ",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 133,
+    "test_title": "SEMEN ANALYSIS",
+    "price_code": 142,
+    "lab_test_desc": "SEMEN ANALYSIS",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 134,
+    "test_title": "B-HCG QUANTITATIVE (Urgent)",
+    "price_code": 143,
+    "lab_test_desc": "B-HCG QUANTITATIVE",
+    "lab_type": "Laboratory",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 135,
+    "test_title": "Pregnancy Test (Serum)",
+    "price_code": 144,
+    "lab_test_desc": "B-HCG QUANTITATIVE (pregnancy test)",
+    "lab_type": "Laboratory",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 136,
+    "test_title": "PROLACTIN (rest 15 minutes)",
+    "price_code": 145,
+    "lab_test_desc": "PROLACTIN (rest 15 minutes)",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 137,
+    "test_title": "FSH",
+    "price_code": 146,
+    "lab_test_desc": "FSH",
+    "lab_type": "Laboratory",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 138,
+    "test_title": "LH",
+    "price_code": 147,
+    "lab_test_desc": "LH",
+    "lab_type": "Laboratory",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 139,
+    "test_title": "OESTRADIOL (E2)",
+    "price_code": 148,
+    "lab_test_desc": "OESTRADIOL (E2)",
+    "lab_type": "Laboratory",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 140,
+    "test_title": "PROGESTERONE (ovulation day 21)",
+    "price_code": 149,
+    "lab_test_desc": "PROGESTERONE (ovulation day 21)",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 141,
+    "test_title": "17-OH PROGESTERONE",
+    "price_code": 150,
+    "lab_test_desc": "17-OH PROGESTERONE",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 142,
+    "test_title": "DHEA-S",
+    "price_code": 151,
+    "lab_test_desc": "DHEA-S",
+    "lab_type": "Laboratory",
+    "service_price": 26500,
+    "discount_price": 0
+  },
+  {
+    "id": 143,
+    "test_title": "TESTOSTERONE",
+    "price_code": 152,
+    "lab_test_desc": "TESTOSTERONE",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 144,
+    "test_title": "High Vaginal Swab m/c/s (HVS)",
+    "price_code": 153,
+    "lab_test_desc": "High Vaginal Swab m/c/s (HVS)",
+    "lab_type": "Laboratory",
+    "service_price": 3000,
+    "discount_price": 0
+  },
+  {
+    "id": 145,
+    "test_title": "ECS m/c/s",
+    "price_code": 154,
+    "lab_test_desc": "ECS m/c/s",
+    "lab_type": "Laboratory",
+    "service_price": 3000,
+    "discount_price": 0
+  },
+  {
+    "id": 146,
+    "test_title": "Urethral Smear m/c/s",
+    "price_code": 155,
+    "lab_test_desc": "Urethral Smear m/c/s",
+    "lab_type": "Laboratory",
+    "service_price": 3000,
+    "discount_price": 0
+  },
+  {
+    "id": 147,
+    "test_title": "Tissue MCS",
+    "price_code": 156,
+    "lab_test_desc": "Tissue MCS",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 148,
+    "test_title": "WOUND SWAB MCS",
+    "price_code": 157,
+    "lab_test_desc": "WOUND SWAB",
+    "lab_type": "Laboratory",
+    "service_price": 5500,
+    "discount_price": 0
+  },
+  {
+    "id": 149,
+    "test_title": "Pelvic Scan",
+    "price_code": 158,
+    "lab_test_desc": "Pelvic Scan",
+    "lab_type": "laboratory",
+    "service_price": 4500,
+    "discount_price": 0
+  },
+  {
+    "id": 150,
+    "test_title": "Blood Group Test",
+    "price_code": 159,
+    "lab_test_desc": "Blood Group",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 152,
+    "test_title": "Abdomenopelvic Scan",
+    "price_code": 161,
+    "lab_test_desc": "Abdominoplelvic Scan",
+    "lab_type": "Laboratory",
+    "service_price": 7500,
+    "discount_price": 0
+  },
+  {
+    "id": 153,
+    "test_title": "Transvaginal Scan (TVS)",
+    "price_code": 162,
+    "lab_test_desc": "Transvaginal Scan",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 154,
+    "test_title": "Transcranial Scan",
+    "price_code": 163,
+    "lab_test_desc": "Transcranial Scan",
+    "lab_type": "laboratory",
+    "service_price": 6000,
+    "discount_price": 0
+  },
+  {
+    "id": 155,
+    "test_title": "Transrectal Scan (TRUS)",
+    "price_code": 164,
+    "lab_test_desc": "Transrectal Scan (TRUS)",
+    "lab_type": "Laboratory",
+    "service_price": 13500,
+    "discount_price": 0
+  },
+  {
+    "id": 156,
+    "test_title": "Sonomammography",
+    "price_code": 165,
+    "lab_test_desc": "Breast Scan",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 157,
+    "test_title": "SCROTAL ULTRASOUND SCAN",
+    "price_code": 166,
+    "lab_test_desc": "Scrotal Scan",
+    "lab_type": "Laboratory",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 158,
+    "test_title": "Chlamydia",
+    "price_code": 167,
+    "lab_test_desc": "Chlamydia Trachomatis",
+    "lab_type": "Laboratory",
+    "service_price": 3500,
+    "discount_price": 0
+  },
+  {
+    "id": 159,
+    "test_title": "Thyroid USS",
+    "price_code": 168,
+    "lab_test_desc": "THYROID USS",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 160,
+    "test_title": "CHEM8+",
+    "price_code": 169,
+    "lab_test_desc": " (Na,K,BUN/Urea,Creatinine,iCa,TCO2,Glu,Hb, AnGap)",
+    "lab_type": "Laboratory",
+    "service_price": 10000,
+    "discount_price": 0
+  },
+  {
+    "id": 161,
+    "test_title": "FREE PSA",
+    "price_code": 170,
+    "lab_test_desc": "Free PSA",
+    "lab_type": "Laboratory",
+    "service_price": 6500,
+    "discount_price": 0
+  },
+  {
+    "id": 162,
+    "test_title": "SMALL PARTS",
+    "price_code": 171,
+    "lab_test_desc": "Small Parts",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 163,
+    "test_title": "Follicular Tracking",
+    "price_code": 172,
+    "lab_test_desc": "Follicle Tracking",
+    "lab_type": "Laboratory",
+    "service_price": 48000,
+    "discount_price": 0
+  },
+  {
+    "id": 164,
+    "test_title": "Lower Limb Doppler",
+    "price_code": 173,
+    "lab_test_desc": "LOWER LIMB DOPPLER",
+    "lab_type": "Laboratory",
+    "service_price": 45000,
+    "discount_price": 0
+  },
+  {
+    "id": 165,
+    "test_title": "Sonohisterosalpingography",
+    "price_code": 174,
+    "lab_test_desc": "Sonohisterosalpingography",
+    "lab_type": "laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 166,
+    "test_title": "knee Ultrasound Scan",
+    "price_code": 175,
+    "lab_test_desc": "Knee Ultrasound Scan",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 167,
+    "test_title": "Treponema Confirmatory Test",
+    "price_code": 176,
+    "lab_test_desc": "Treponema Confirmatory Test",
+    "lab_type": "Laboratory",
+    "service_price": 38500,
+    "discount_price": 0
+  },
+  {
+    "id": 169,
+    "test_title": "Microfilaria Worm",
+    "price_code": 178,
+    "lab_test_desc": "Microfilariasis",
+    "lab_type": "Laboratory",
+    "service_price": 5500,
+    "discount_price": 0
+  },
+  {
+    "id": 171,
+    "test_title": "A RhD positive (A+)",
+    "price_code": 278,
+    "lab_test_desc": " Blood Group A+",
+    "lab_type": "Laboratory",
+    "service_price": 8000,
+    "discount_price": 0
+  },
+  {
+    "id": 172,
+    "test_title": "A RhD positive (A-)",
+    "price_code": 279,
+    "lab_test_desc": " Blood Group A-",
+    "lab_type": "Laboratory",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 173,
+    "test_title": "B RhD positive (B+)",
+    "price_code": 280,
+    "lab_test_desc": " Blood Group B+",
+    "lab_type": "Laboratory",
+    "service_price": 8000,
+    "discount_price": 0
+  },
+  {
+    "id": 174,
+    "test_title": "B RhD positive (B-)",
+    "price_code": 281,
+    "lab_test_desc": " Blood Group B-",
+    "lab_type": "Laboratory",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 175,
+    "test_title": "0 RhD positive (0+)",
+    "price_code": 282,
+    "lab_test_desc": " Blood Group O+",
+    "lab_type": "Laboratory",
+    "service_price": 8000,
+    "discount_price": 0
+  },
+  {
+    "id": 176,
+    "test_title": "O RhD positive (0-)",
+    "price_code": 283,
+    "lab_test_desc": " Blood Group O-",
+    "lab_type": "Laboratory",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 177,
+    "test_title": "AB RhD positive (AB+)",
+    "price_code": 184,
+    "lab_test_desc": " Blood Group AB+",
+    "lab_type": "Laboratory",
+    "service_price": 8000,
+    "discount_price": 0
+  },
+  {
+    "id": 179,
+    "test_title": "AB RhD positive (AB+)",
+    "price_code": 284,
+    "lab_test_desc": " Blood Group AB+",
+    "lab_type": "Laboratory",
+    "service_price": 8000,
+    "discount_price": 0
+  },
+  {
+    "id": 181,
+    "test_title": "AB RhD positive (AB-)",
+    "price_code": 378,
+    "lab_test_desc": " Blood Group AB-",
+    "lab_type": "Laboratory",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 182,
+    "test_title": "Blood film",
+    "price_code": 179,
+    "lab_test_desc": "Blood film",
+    "lab_type": "Laboratory",
+    "service_price": 3500,
+    "discount_price": 0
+  },
+  {
+    "id": 183,
+    "test_title": "Hepatitis B Vaccine Adult",
+    "price_code": 183,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 184,
+    "test_title": "Hepatitis B Vaccine",
+    "price_code": 189,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 185,
+    "test_title": "Treatment",
+    "price_code": 190,
+    "lab_test_desc": "IM E-mal 150mg OD X 1/7",
+    "lab_type": "Lab",
+    "service_price": 6000,
+    "discount_price": 0
+  },
+  {
+    "id": 186,
+    "test_title": "Hand X-ray AP/LAT",
+    "price_code": 202,
+    "lab_test_desc": "hand xray",
+    "lab_type": "Radiology",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 187,
+    "test_title": "STI Screening",
+    "price_code": 203,
+    "lab_test_desc": "HIV, HbsAg, HCV,VDRL",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 189,
+    "test_title": "Malaria Test",
+    "price_code": 210,
+    "lab_test_desc": "Malaria Parasite",
+    "lab_type": "Laboratory",
+    "service_price": 1000,
+    "discount_price": 0
+  },
+  {
+    "id": 190,
+    "test_title": "Microalbumin/Creatinine",
+    "price_code": 211,
+    "lab_test_desc": "Mcroalbumin/Creatinine",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 191,
+    "test_title": "Treatmeny",
+    "price_code": 212,
+    "lab_test_desc": "IV ceftriaxone1g bd x 5/7\nIV gentalek 160mg bd x 3/7",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 192,
+    "test_title": "Treatment",
+    "price_code": 234,
+    "lab_test_desc": "Im E-mal 150mg od x 3/7",
+    "lab_type": "Lab",
+    "service_price": 6000,
+    "discount_price": 0
+  },
+  {
+    "id": 193,
+    "test_title": "Service Charge",
+    "price_code": 245,
+    "lab_test_desc": "Treatment service charge",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 194,
+    "test_title": "Service charge",
+    "price_code": 246,
+    "lab_test_desc": "Treatment service charge",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 195,
+    "test_title": "Service charge",
+    "price_code": 247,
+    "lab_test_desc": "Treatment service charge",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 196,
+    "test_title": "service charge",
+    "price_code": 248,
+    "lab_test_desc": "treatment service charge",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 197,
+    "test_title": "service charge",
+    "price_code": 249,
+    "lab_test_desc": "treatment service charge",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 198,
+    "test_title": "service charge",
+    "price_code": 250,
+    "lab_test_desc": "treatment service charge",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 199,
+    "test_title": "service charge",
+    "price_code": 251,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 200,
+    "test_title": "Service Charge",
+    "price_code": 253,
+    "lab_test_desc": "Treatment Service charge",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 201,
+    "test_title": "Treatment Bill",
+    "price_code": 265,
+    "lab_test_desc": "1. Cefriaxone/Sulbactan 1.2g bd x 5/7\n2. Genticin 160mg bd x 5/7",
+    "lab_type": "Lab",
+    "service_price": 28000,
+    "discount_price": 0
+  },
+  {
+    "id": 202,
+    "test_title": "Treatment Bill",
+    "price_code": 266,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 28000,
+    "discount_price": 0
+  },
+  {
+    "id": 203,
+    "test_title": "Treatment Bill",
+    "price_code": 268,
+    "lab_test_desc": "Iv rocephin 1b bd x 5/7\nIv gentamycin 160mg bd x 3/7",
+    "lab_type": "Lab",
+    "service_price": 52500,
+    "discount_price": 0
+  },
+  {
+    "id": 204,
+    "test_title": "Treatment bill",
+    "price_code": 269,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 52500,
+    "discount_price": 0
+  },
+  {
+    "id": 205,
+    "test_title": "Treatment Bill",
+    "price_code": 270,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 52500,
+    "discount_price": 0
+  },
+  {
+    "id": 206,
+    "test_title": "Treatment bill",
+    "price_code": 271,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 52500,
+    "discount_price": 0
+  },
+  {
+    "id": 207,
+    "test_title": "Treatment Bill",
+    "price_code": 272,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 6000,
+    "discount_price": 0
+  },
+  {
+    "id": 208,
+    "test_title": "Treatment M",
+    "price_code": 273,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 6000,
+    "discount_price": 0
+  },
+  {
+    "id": 209,
+    "test_title": "Treatment bill",
+    "price_code": 275,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 50500,
+    "discount_price": 0
+  },
+  {
+    "id": 210,
+    "test_title": "Treatment Bill ",
+    "price_code": 276,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 50500,
+    "discount_price": 0
+  },
+  {
+    "id": 211,
+    "test_title": "Knee Xray AP/LAT",
+    "price_code": 277,
+    "lab_test_desc": "Knee Xray (AP/LAT)",
+    "lab_type": "Radiology",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 218,
+    "test_title": "Treatment Bill",
+    "price_code": 285,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 6000,
+    "discount_price": 0
+  },
+  {
+    "id": 219,
+    "test_title": "Treatment bill",
+    "price_code": 286,
+    "lab_test_desc": "Iv gentamicin 160mg bd x 3/7",
+    "lab_type": "Lab",
+    "service_price": 8000,
+    "discount_price": 0
+  },
+  {
+    "id": 220,
+    "test_title": "Genotype Test",
+    "price_code": 287,
+    "lab_test_desc": "Genotype Test",
+    "lab_type": "Laboratory",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 221,
+    "test_title": "Blood Group Test",
+    "price_code": 288,
+    "lab_test_desc": "Blood Group",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 222,
+    "test_title": "Hong Kong",
+    "price_code": 289,
+    "lab_test_desc": "Description",
+    "lab_type": "Lab",
+    "service_price": 90,
+    "discount_price": 0
+  },
+  {
+    "id": 223,
+    "test_title": "treatment bill",
+    "price_code": 290,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 10000,
+    "discount_price": 0
+  },
+  {
+    "id": 224,
+    "test_title": "treatment",
+    "price_code": 291,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 10000,
+    "discount_price": 0
+  },
+  {
+    "id": 225,
+    "test_title": "Treatment",
+    "price_code": 292,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 8000,
+    "discount_price": 0
+  },
+  {
+    "id": 226,
+    "test_title": "Treatment",
+    "price_code": 293,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 9500,
+    "discount_price": 0
+  },
+  {
+    "id": 227,
+    "test_title": "Treatment Bill",
+    "price_code": 299,
+    "lab_test_desc": "Iv ceftriaxone 1g bd x 5/7",
+    "lab_type": "Lab",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 228,
+    "test_title": "Treatment Bill",
+    "price_code": 300,
+    "lab_test_desc": "1. Cefriaxone/Sulbactan 1.2g bd x 5/7\n2. Genticin 160mg bd x 5/7",
+    "lab_type": "Lab",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 229,
+    "test_title": "Treatment Bill",
+    "price_code": 301,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 230,
+    "test_title": "Treatment Bill",
+    "price_code": 302,
+    "lab_test_desc": "1. Cefriaxone/Sulbactan 1.2g bd x 5/7\n2. Genticin 160mg bd x 5/7",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 231,
+    "test_title": "Treatment bill",
+    "price_code": 303,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 232,
+    "test_title": "treatment",
+    "price_code": 304,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 233,
+    "test_title": "Treatment",
+    "price_code": 305,
+    "lab_test_desc": "IM E-mal 150mg OD X 1/7",
+    "lab_type": "Lab",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 234,
+    "test_title": "treatment",
+    "price_code": 306,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 235,
+    "test_title": "treatment",
+    "price_code": 308,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 236,
+    "test_title": "Anti-dsDNA",
+    "price_code": 310,
+    "lab_test_desc": "Anti-dsDNA",
+    "lab_type": "Lab",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 237,
+    "test_title": "Anti-histone",
+    "price_code": 311,
+    "lab_test_desc": "Anti-histone Antibodies",
+    "lab_type": "Lab",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 238,
+    "test_title": "Antinuclear Antibodies (ANA)",
+    "price_code": 312,
+    "lab_test_desc": "Antinuclear Antibodies",
+    "lab_type": "Lab",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 239,
+    "test_title": "STI SCREENING",
+    "price_code": 316,
+    "lab_test_desc": "HIV, HbsAg, HCV,VDRL\n",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 240,
+    "test_title": "Treatment Bill",
+    "price_code": 317,
+    "lab_test_desc": "1. iv ceftriaxone\n3. Service charge",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 241,
+    "test_title": "Treatment Bill",
+    "price_code": 318,
+    "lab_test_desc": "Iv artesunate",
+    "lab_type": "Lab",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 242,
+    "test_title": "Treatment bill",
+    "price_code": 319,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 15000,
+    "discount_price": 0
+  },
+  {
+    "id": 243,
+    "test_title": "treatment",
+    "price_code": 320,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 5000,
+    "discount_price": 0
+  },
+  {
+    "id": 244,
+    "test_title": "Treatment Bill",
+    "price_code": 321,
+    "lab_test_desc": "Iv ceftriaxone 1g bd  x 5/7\nService charge",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 245,
+    "test_title": "Treatment Bill",
+    "price_code": 322,
+    "lab_test_desc": "Iv ceftriaxone 1g bd x 5/7\nService charge",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 246,
+    "test_title": "Treatment bill",
+    "price_code": 323,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 247,
+    "test_title": "Malaria + Widal Tests",
+    "price_code": 324,
+    "lab_test_desc": "Malaria + Widal Tests",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 248,
+    "test_title": "Malatia treatment",
+    "price_code": 325,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 7000,
+    "discount_price": 0
+  },
+  {
+    "id": 249,
+    "test_title": "Treatment bill",
+    "price_code": 326,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 250,
+    "test_title": "Treatment Bill",
+    "price_code": 327,
+    "lab_test_desc": "Iv ceftriaxone",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 252,
+    "test_title": "Vaginal Swab MCS",
+    "price_code": 331,
+    "lab_test_desc": "Vaginal swab mcs",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 261,
+    "test_title": "Hepatitis B Test",
+    "price_code": 344,
+    "lab_test_desc": "Hepatitis B surface antigen",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 262,
+    "test_title": "Hepatitis C Test",
+    "price_code": 345,
+    "lab_test_desc": "Hepatitis C Virus",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 277,
+    "test_title": "Hepatitis B & C Screening Tests",
+    "price_code": 370,
+    "lab_test_desc": "HbSag + Hepatitis C Antibodies",
+    "lab_type": "Laboratory",
+    "service_price": 5000,
+    "discount_price": 0
+  },
+  {
+    "id": 295,
+    "test_title": "Hepatitis B Vaccine",
+    "price_code": 408,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 300,
+    "test_title": "Full Blood Count (Manual)",
+    "price_code": 414,
+    "lab_test_desc": "Full Blood Count (Manual)",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 317,
+    "test_title": "Tracking",
+    "price_code": 453,
+    "lab_test_desc": "Follicle Tracking",
+    "lab_type": "Laboratory",
+    "service_price": 48000,
+    "discount_price": 0
+  },
+  {
+    "id": 341,
+    "test_title": "Vaccine",
+    "price_code": 502,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 359,
+    "test_title": "Pre- Marital Screening Test",
+    "price_code": 528,
+    "lab_test_desc": "Genotype + Blood Group + HIV + HBsAg + HCV",
+    "lab_type": "Laboratory",
+    "service_price": 3500,
+    "discount_price": 0
+  },
+  {
+    "id": 386,
+    "test_title": "Hepatitis B panel (Elisa)",
+    "price_code": 563,
+    "lab_test_desc": "Hepatitis B Panel",
+    "lab_type": "Laboratory",
+    "service_price": 125000,
+    "discount_price": 0
+  },
+  {
+    "id": 390,
+    "test_title": "Hb vaccine ",
+    "price_code": 567,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 399,
+    "test_title": "Urinalysis+ MCS ",
+    "price_code": 577,
+    "lab_test_desc": "Urine Analysis + Culture + Sensitivity",
+    "lab_type": "Laboratory",
+    "service_price": 0,
+    "discount_price": 0
+  },
+  {
+    "id": 400,
+    "test_title": "FBC + ESR",
+    "price_code": 578,
+    "lab_test_desc": "BASIC HEAMATOLOGY TEST",
+    "lab_type": "Laboratory",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 401,
+    "test_title": "Direct LDL Quantification",
+    "price_code": 579,
+    "lab_test_desc": "LDL",
+    "lab_type": "Laboratory",
+    "service_price": 5500,
+    "discount_price": 0
+  },
+  {
+    "id": 402,
+    "test_title": "STI + H.pylori + RHEUMATOID FACTOR",
+    "price_code": 580,
+    "lab_test_desc": "BASIC SCREENING TESTS",
+    "lab_type": "Laboratory",
+    "service_price": 7000,
+    "discount_price": 0
+  },
+  {
+    "id": 403,
+    "test_title": "Stool MCS + FOB",
+    "price_code": 581,
+    "lab_test_desc": "STOOL MCS + OCCULT BLOOD",
+    "lab_type": "Laboratory",
+    "service_price": 5000,
+    "discount_price": 0
+  },
+  {
+    "id": 404,
+    "test_title": "Urinalysis + MCS + Chlamydia",
+    "price_code": 582,
+    "lab_test_desc": "Urine Analysis+MCS+Chlamydia",
+    "lab_type": "Laboratory",
+    "service_price": 4000,
+    "discount_price": 0
+  },
+  {
+    "id": 405,
+    "test_title": "STI+H.pylori+RHEUMATOID FACTOR+Total PSA+Free PSA",
+    "price_code": 583,
+    "lab_test_desc": "Basic Screening test",
+    "lab_type": "Laboratory",
+    "service_price": 17000,
+    "discount_price": 0
+  },
+  {
+    "id": 422,
+    "test_title": "D-dimer",
+    "price_code": 603,
+    "lab_test_desc": "D-dimer",
+    "lab_type": "Laboratory",
+    "service_price": 15800,
+    "discount_price": 0
+  },
+  {
+    "id": 423,
+    "test_title": "Pap smear",
+    "price_code": 604,
+    "lab_test_desc": "Pap smear",
+    "lab_type": "Laboratory",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 428,
+    "test_title": "Touch panel",
+    "price_code": 609,
+    "lab_test_desc": "Touch Panel Test",
+    "lab_type": "Lab",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 437,
+    "test_title": "Hepatitis B immunization",
+    "price_code": 623,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 448,
+    "test_title": "Hepatitis B Vaccine",
+    "price_code": 635,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 455,
+    "test_title": "Hepatitis B Vaccine",
+    "price_code": 649,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 471,
+    "test_title": "Grouping and Crossmatching",
+    "price_code": 670,
+    "lab_test_desc": "Grouping & Crossmatching",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 473,
+    "test_title": "Screening + grouping & crossmatching + bleeding",
+    "price_code": 672,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 480,
+    "test_title": "Genotype (Hb Electrophoresis)",
+    "price_code": 688,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 6000,
+    "discount_price": 0
+  },
+  {
+    "id": 481,
+    "test_title": "Blood Group and Genotype (Hb Electrophoresis)",
+    "price_code": 689,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 514,
+    "test_title": "PROLACTIN (URGENT)",
+    "price_code": 728,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 562,
+    "test_title": "Progesterone (Day-3)",
+    "price_code": 785,
+    "lab_test_desc": "PROGESTERONE",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 579,
+    "test_title": "Barium enema",
+    "price_code": 808,
+    "lab_test_desc": "Barium enema",
+    "lab_type": "Radiology",
+    "service_price": 60000,
+    "discount_price": 0
+  },
+  {
+    "id": 590,
+    "test_title": "TOTAL B-HCG QUANTITATIVE",
+    "price_code": 823,
+    "lab_test_desc": "TOTAL  B-HCG  QUANTITATIVE",
+    "lab_type": "Lab",
+    "service_price": 10000,
+    "discount_price": 0
+  },
+  {
+    "id": 594,
+    "test_title": "Progesterone",
+    "price_code": 827,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 604,
+    "test_title": "Direct LDL Quantification",
+    "price_code": 837,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 5500,
+    "discount_price": 0
+  },
+  {
+    "id": 640,
+    "test_title": "Vit B12",
+    "price_code": 906,
+    "lab_test_desc": "Vit B12",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 641,
+    "test_title": "Lab Emergency Service Charge",
+    "price_code": 907,
+    "lab_test_desc": "Lab Emergency Service Charge",
+    "lab_type": "Laboratory",
+    "service_price": 3500,
+    "discount_price": 0
+  },
+  {
+    "id": 673,
+    "test_title": "",
+    "price_code": 956,
+    "lab_test_desc": "HIV Viral Load",
+    "lab_type": "Lab",
+    "service_price": 65000,
+    "discount_price": 0
+  },
+  {
+    "id": 674,
+    "test_title": "HIV Viral Load",
+    "price_code": 957,
+    "lab_test_desc": "Viral Load",
+    "lab_type": "Lab",
+    "service_price": 65000,
+    "discount_price": 0
+  },
+  {
+    "id": 675,
+    "test_title": "Hepatitis B panel (Elisa)",
+    "price_code": 958,
+    "lab_test_desc": "Hepatitis B Panel",
+    "lab_type": "Laboratory",
+    "service_price": 125000,
+    "discount_price": 0
+  },
+  {
+    "id": 676,
+    "test_title": "Hepatitis B viral load (Elisa)",
+    "price_code": 959,
+    "lab_test_desc": "Hepatitis B Viral Load",
+    "lab_type": "Laboratory",
+    "service_price": 35000,
+    "discount_price": 0
+  },
+  {
+    "id": 747,
+    "test_title": "COVID-19",
+    "price_code": 1040,
+    "lab_test_desc": "COVID-19 TEST",
+    "lab_type": "Laboratory",
+    "service_price": 2000,
+    "discount_price": 0
+  },
+  {
+    "id": 764,
+    "test_title": "Anti-Rhesus Antibody Titre",
+    "price_code": 1059,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 34500,
+    "discount_price": 0
+  },
+  {
+    "id": 820,
+    "test_title": "FSH, LH, Prolactin, Progesterone",
+    "price_code": 1123,
+    "lab_test_desc": "FSH, LH, Prolactin, Progesterone",
+    "lab_type": "Laboratory",
+    "service_price": 32500,
+    "discount_price": 0
+  },
+  {
+    "id": 821,
+    "test_title": "LH, FSH, Prolactin, Progesterone, estradiol (E2), Testosterone",
+    "price_code": 1124,
+    "lab_test_desc": "FSH, LH, Prolactin, Progesterone, Estradiol (E2), Testosterone",
+    "lab_type": "Laboratory",
+    "service_price": 42500,
+    "discount_price": 0
+  },
+  {
+    "id": 822,
+    "test_title": "FSH, LH, Prolactin, Progesterone, Eostradiol (E2)",
+    "price_code": 1125,
+    "lab_test_desc": "FSH, LH, Prolactin, Progesterone, Eostridiol (E2)",
+    "lab_type": "Laboratory",
+    "service_price": 35000,
+    "discount_price": 0
+  },
+  {
+    "id": 823,
+    "test_title": "FSH, LH, Prolactin, Progesterone, Estradiol(E2), TSH, DHEA-S",
+    "price_code": 1126,
+    "lab_test_desc": "FSH, LH, Prolactin, Progesterone, Estradiol (E2), Ths, DHEA-S",
+    "lab_type": "Laboratory",
+    "service_price": 75000,
+    "discount_price": 0
+  },
+  {
+    "id": 824,
+    "test_title": "FSH, LH, Prolactin, Progesterone, Testosterone",
+    "price_code": 1127,
+    "lab_test_desc": "Fsh, LH, Prolactin, Progesterone, Testosterone, E2",
+    "lab_type": "Laboratory",
+    "service_price": 38500,
+    "discount_price": 0
+  },
+  {
+    "id": 825,
+    "test_title": "FSH, LH, Prolactin, Progesterone, Testosterone, TSH",
+    "price_code": 1128,
+    "lab_test_desc": "FSH, LH, Prolactin, Progesterone, Testosterone, TSH",
+    "lab_type": "Laboratory",
+    "service_price": 42000,
+    "discount_price": 0
+  },
+  {
+    "id": 826,
+    "test_title": "FSH, LH, Prolactin, Progesterone, Estradiol, Testosterone, TSH",
+    "price_code": 1129,
+    "lab_test_desc": "FSH, LH, Prolactin, Progesterone, Estradiol, Testosterone, TSH",
+    "lab_type": "Laboratory",
+    "service_price": 58000,
+    "discount_price": 0
+  },
+  {
+    "id": 827,
+    "test_title": "FSH, LH, Prolactin, Progesterone, Estradiol (E2), Testosterone, TSH, DHEA-S",
+    "price_code": 1130,
+    "lab_test_desc": "FSH, LH, Prolactin, Progesterone, Estradiol (E2), Testosterone, TSH, DHEA-S",
+    "lab_type": "Laboratory",
+    "service_price": 100000,
+    "discount_price": 0
+  },
+  {
+    "id": 828,
+    "test_title": "Fasting Lipid Profile (Calc. LDL)",
+    "price_code": 1131,
+    "lab_test_desc": "Fasting Lipid Profile",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 829,
+    "test_title": "COVID-19 Antibody Test",
+    "price_code": 1132,
+    "lab_test_desc": "COVID-19 Antibody Test",
+    "lab_type": "Lab",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 836,
+    "test_title": "Coagulation Profile",
+    "price_code": 1139,
+    "lab_test_desc": "Coagulation Profile",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 842,
+    "test_title": "Anti-phospholipid Antibodies",
+    "price_code": 1145,
+    "lab_test_desc": "Anti-phospholipid Antibodies",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 843,
+    "test_title": "Anti-cardiolipin Antibodies",
+    "price_code": 1146,
+    "lab_test_desc": "Anti-cardiolipin Antibodies",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 844,
+    "test_title": "Lupus Antibody",
+    "price_code": 1147,
+    "lab_test_desc": "Lupus Antibody",
+    "lab_type": "Lab",
+    "service_price": 15500,
+    "discount_price": 0
+  },
+  {
+    "id": 860,
+    "test_title": "Nail Clipping",
+    "price_code": 1164,
+    "lab_test_desc": "KOH",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 866,
+    "test_title": "Paternity DNA Test",
+    "price_code": 1170,
+    "lab_test_desc": "Paternity DNA test",
+    "lab_type": "Laboratory",
+    "service_price": 165000,
+    "discount_price": 0
+  },
+  {
+    "id": 871,
+    "test_title": "Drugs of Abuse (Urine)",
+    "price_code": 1176,
+    "lab_test_desc": "Drugs of Abuse (Urine)",
+    "lab_type": "Laboratory",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 872,
+    "test_title": "Drugs of Abuse (Blood)",
+    "price_code": 1177,
+    "lab_test_desc": "Drugs of Abuse (Blood)",
+    "lab_type": "Lab",
+    "service_price": 68000,
+    "discount_price": 0
+  },
+  {
+    "id": 874,
+    "test_title": "FSH, LH, Prolactin, Progesterone, Testosterone, Estradiol (E2)",
+    "price_code": 1179,
+    "lab_test_desc": "FSH, LH, Prolactin, Progesterone, Testosterone, Estradiol (E2)",
+    "lab_type": "Laboratory",
+    "service_price": 42500,
+    "discount_price": 0
+  },
+  {
+    "id": 901,
+    "test_title": "Hepatitis C Genotyping",
+    "price_code": 1209,
+    "lab_test_desc": "Hepatitis C Genotyping ",
+    "lab_type": "Lab",
+    "service_price": 48500,
+    "discount_price": 0
+  },
+  {
+    "id": 902,
+    "test_title": "Hepatitis C Viral Load",
+    "price_code": 1210,
+    "lab_test_desc": "Hepatitis C Viral Load",
+    "lab_type": "Laboratory",
+    "service_price": 48500,
+    "discount_price": 0
+  },
+  {
+    "id": 904,
+    "test_title": "Hepatitis C panel (Elisa)",
+    "price_code": 1212,
+    "lab_test_desc": "Hepatitis C panel (Elisa)",
+    "lab_type": "Laboratory",
+    "service_price": 125000,
+    "discount_price": 0
+  },
+  {
+    "id": 959,
+    "test_title": "Gene Expert",
+    "price_code": 1270,
+    "lab_test_desc": "Gene Expert",
+    "lab_type": "Lab",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 987,
+    "test_title": "Herpes simplex Antibodies",
+    "price_code": 1302,
+    "lab_test_desc": "herps Simplex Antibodies",
+    "lab_type": "Lab",
+    "service_price": 36500,
+    "discount_price": 0
+  },
+  {
+    "id": 988,
+    "test_title": "Herpes simplex virus PCR",
+    "price_code": 1303,
+    "lab_test_desc": "Herpes simplex virus PCR",
+    "lab_type": "Laboratory",
+    "service_price": 65500,
+    "discount_price": 0
+  },
+  {
+    "id": 1009,
+    "test_title": "Pregnancy Test (Urine)",
+    "price_code": 1326,
+    "lab_test_desc": "Pregnancy Test (Urine)",
+    "lab_type": "Lab",
+    "service_price": 1000,
+    "discount_price": 0
+  },
+  {
+    "id": 1013,
+    "test_title": "HIV ELISA Test",
+    "price_code": 1331,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 7500,
+    "discount_price": 0
+  },
+  {
+    "id": 1015,
+    "test_title": "Insuline Analysis",
+    "price_code": 1333,
+    "lab_test_desc": "Insuline Analysis",
+    "lab_type": "Lab",
+    "service_price": 22500,
+    "discount_price": 0
+  },
+  {
+    "id": 1033,
+    "test_title": "Thyroid Function Test (TSH, free T3, free T4)",
+    "price_code": 1355,
+    "lab_test_desc": "Thyroid Function Test (TSH, free T3, free T4)",
+    "lab_type": "Laboratory",
+    "service_price": 32000,
+    "discount_price": 0
+  },
+  {
+    "id": 1045,
+    "test_title": "Blood Group Test",
+    "price_code": 1371,
+    "lab_test_desc": "Blood Group Test",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 1051,
+    "test_title": "Human Papillomavirus (HPV)",
+    "price_code": 1379,
+    "lab_test_desc": "Human Papillomavirus (HPV)",
+    "lab_type": "Laboratory",
+    "service_price": 45000,
+    "discount_price": 0
+  },
+  {
+    "id": 1053,
+    "test_title": "Adrenocorticotropic Hormone",
+    "price_code": 1382,
+    "lab_test_desc": "ACTH TEST",
+    "lab_type": "Lab",
+    "service_price": 28500,
+    "discount_price": 0
+  },
+  {
+    "id": 1054,
+    "test_title": "ACTH Test",
+    "price_code": 1383,
+    "lab_test_desc": "Adrenocorticotropic Hormone",
+    "lab_type": "Lab",
+    "service_price": 28500,
+    "discount_price": 0
+  },
+  {
+    "id": 1059,
+    "test_title": "GeneXpert TB",
+    "price_code": 1388,
+    "lab_test_desc": "GeneXpert TB",
+    "lab_type": "Laboratory",
+    "service_price": 48500,
+    "discount_price": 0
+  },
+  {
+    "id": 1060,
+    "test_title": "",
+    "price_code": 1389,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 0,
+    "discount_price": 0
+  },
+  {
+    "id": 1153,
+    "test_title": "Anti-Mullerian Hormone (AMH)",
+    "price_code": 1487,
+    "lab_test_desc": "Anti-Mullerian Horrmone (Ovarian reserve)",
+    "lab_type": "Laboratory",
+    "service_price": 68500,
+    "discount_price": 0
+  },
+  {
+    "id": 1270,
+    "test_title": "Emergency Ultrasound Scan (Abdominal)",
+    "price_code": 1642,
+    "lab_test_desc": "Emergency Ultrasound Scan (Abdominal)",
+    "lab_type": "Laboratory",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 1324,
+    "test_title": "Prolactin (Urgent)",
+    "price_code": 1698,
+    "lab_test_desc": "Prolactin (Urgent)",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1371,
+    "test_title": "Chest X-ray (PA)",
+    "price_code": 1750,
+    "lab_test_desc": "Chest X-ray",
+    "lab_type": "Laboratory",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 1404,
+    "test_title": "Hormonal (FSH, LH, Prolactine, Progesterone, Estradiol, TSH)",
+    "price_code": 1787,
+    "lab_test_desc": "Hormonal Assay",
+    "lab_type": "Laboratory",
+    "service_price": 45000,
+    "discount_price": 0
+  },
+  {
+    "id": 1413,
+    "test_title": "TOTAL AND DIRECT/CONJUGATED(NEONATE)",
+    "price_code": 1800,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 1414,
+    "test_title": "TOTAL AND DIRECT/CONJUGATED BILIRUBIN [NEONATE]",
+    "price_code": 1804,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 1500,
+    "discount_price": 0
+  },
+  {
+    "id": 1429,
+    "test_title": "Drug of Abus",
+    "price_code": 1821,
+    "lab_test_desc": "Drug of Abuse",
+    "lab_type": "Lab",
+    "service_price": 15000,
+    "discount_price": 0
+  },
+  {
+    "id": 1435,
+    "test_title": "Audiometry",
+    "price_code": 1827,
+    "lab_test_desc": "Audiometry",
+    "lab_type": "Lab",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 1436,
+    "test_title": "Electrocardiography (ECG)",
+    "price_code": 1828,
+    "lab_test_desc": "ECG",
+    "lab_type": "Laboratory",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1440,
+    "test_title": "Hepatitis A",
+    "price_code": 1832,
+    "lab_test_desc": "Hepatitis A",
+    "lab_type": "Lab",
+    "service_price": 15000,
+    "discount_price": 0
+  },
+  {
+    "id": 1487,
+    "test_title": "HBA1C",
+    "price_code": 1880,
+    "lab_test_desc": "HBA1C",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 1531,
+    "test_title": "FBC (5 Parts Differentials)",
+    "price_code": 1926,
+    "lab_test_desc": "FBC (5 Parts Differentials)",
+    "lab_type": "Laboratory",
+    "service_price": 5500,
+    "discount_price": 0
+  },
+  {
+    "id": 1532,
+    "test_title": "2D echo",
+    "price_code": 1927,
+    "lab_test_desc": "2D-Echo",
+    "lab_type": "Laboratory",
+    "service_price": 45000,
+    "discount_price": 0
+  },
+  {
+    "id": 1545,
+    "test_title": "OGTT",
+    "price_code": 1958,
+    "lab_test_desc": "OGTT",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1563,
+    "test_title": "Anomally Scan",
+    "price_code": 1976,
+    "lab_test_desc": "Anomally Scan",
+    "lab_type": "Lab",
+    "service_price": 75000,
+    "discount_price": 0
+  },
+  {
+    "id": 1564,
+    "test_title": "BLEEDING TIME",
+    "price_code": 1977,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 3000,
+    "discount_price": 0
+  },
+  {
+    "id": 1574,
+    "test_title": "Genexpert",
+    "price_code": 1987,
+    "lab_test_desc": "GeneExpert",
+    "lab_type": "Lab",
+    "service_price": 35000,
+    "discount_price": 0
+  },
+  {
+    "id": 1575,
+    "test_title": "GenXpert",
+    "price_code": 1988,
+    "lab_test_desc": "GeneXpert",
+    "lab_type": "Lab",
+    "service_price": 35000,
+    "discount_price": 0
+  },
+  {
+    "id": 1580,
+    "test_title": "Cardiology consult",
+    "price_code": 1993,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1583,
+    "test_title": "OBSTETRICS SCAN ",
+    "price_code": 1996,
+    "lab_test_desc": "OBSTETRICS SCAN ",
+    "lab_type": "Laboratory",
+    "service_price": 7000,
+    "discount_price": 0
+  },
+  {
+    "id": 1588,
+    "test_title": "HSG",
+    "price_code": 2001,
+    "lab_test_desc": "HSG",
+    "lab_type": "Laboratory",
+    "service_price": 65000,
+    "discount_price": 0
+  },
+  {
+    "id": 1618,
+    "test_title": "Prostate Scan",
+    "price_code": 2034,
+    "lab_test_desc": "Prostate Scan (Trans-ABD / TRUS)",
+    "lab_type": "Laboratory",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1626,
+    "test_title": "dermatology consultation",
+    "price_code": 2042,
+    "lab_test_desc": "consultation",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1636,
+    "test_title": "Service Charge",
+    "price_code": 2055,
+    "lab_test_desc": "Service Charge",
+    "lab_type": "Laboratory",
+    "service_price": 10000,
+    "discount_price": 0
+  },
+  {
+    "id": 1662,
+    "test_title": "Abdominal X-Ray (Supine & Erect)",
+    "price_code": 2082,
+    "lab_test_desc": "Abdominal X-Ray (Supine & Erect)",
+    "lab_type": "Lab",
+    "service_price": 13500,
+    "discount_price": 0
+  },
+  {
+    "id": 1666,
+    "test_title": "Left shoulder joint AP & Lat",
+    "price_code": 2086,
+    "lab_test_desc": "X-ray Shoulder joint",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 1672,
+    "test_title": "CERVICAL: AP & LAT",
+    "price_code": 2092,
+    "lab_test_desc": "Cervical: AP AND LAT",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 1679,
+    "test_title": "Gynea Consult (First time)",
+    "price_code": 2099,
+    "lab_test_desc": "Gynea consult (First time)",
+    "lab_type": "Laboratory",
+    "service_price": 8000,
+    "discount_price": 0
+  },
+  {
+    "id": 1680,
+    "test_title": "Gynea Consult (2nd Time)",
+    "price_code": 2100,
+    "lab_test_desc": "Gynea consult (2nd Time)",
+    "lab_type": "Laboratory",
+    "service_price": 4000,
+    "discount_price": 0
+  },
+  {
+    "id": 1688,
+    "test_title": "Gynae Consultation fee (follow up)",
+    "price_code": 2110,
+    "lab_test_desc": "Gynae Consultation fee (follow up)",
+    "lab_type": "Laboratory",
+    "service_price": 4000,
+    "discount_price": 0
+  },
+  {
+    "id": 1691,
+    "test_title": "Fetal Biophysical Profile With NST",
+    "price_code": 2114,
+    "lab_test_desc": "Fetal Biophysical Profile With NST",
+    "lab_type": "Lab",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 1692,
+    "test_title": "dermatology consultation",
+    "price_code": 2115,
+    "lab_test_desc": "dermatology cosultation fee",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1696,
+    "test_title": "Ultrasound guided prostate biopsy",
+    "price_code": 2119,
+    "lab_test_desc": "Ultrasound guided prostate biopsy",
+    "lab_type": "Lab",
+    "service_price": 175000,
+    "discount_price": 0
+  },
+  {
+    "id": 1698,
+    "test_title": "Lumbosacral Spine (AP & Lat)",
+    "price_code": 2121,
+    "lab_test_desc": "Lumbosacral Spine (AP & Lat)",
+    "lab_type": "Radiology",
+    "service_price": 14500,
+    "discount_price": 0
+  },
+  {
+    "id": 1699,
+    "test_title": "Renal Doppler",
+    "price_code": 2122,
+    "lab_test_desc": "Renal Doppler",
+    "lab_type": "Lab",
+    "service_price": 28500,
+    "discount_price": 0
+  },
+  {
+    "id": 1705,
+    "test_title": "Cervical X-Ray (AP, LAT & OBLIQUE)",
+    "price_code": 2128,
+    "lab_test_desc": "Cervical X-Ray (AP, LAT & OBLIQUE)",
+    "lab_type": "Laboratory",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1712,
+    "test_title": "Dermatology consult",
+    "price_code": 2135,
+    "lab_test_desc": "Dermatology consult\n",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1713,
+    "test_title": "Thoracolumber Spine (AP & LAT)",
+    "price_code": 2137,
+    "lab_test_desc": "Thoracolumber Spine (AP & LAT)",
+    "lab_type": "Lab",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 1718,
+    "test_title": "2D echo",
+    "price_code": 2143,
+    "lab_test_desc": "2D-Echo",
+    "lab_type": "Laboratory",
+    "service_price": 45000,
+    "discount_price": 0
+  },
+  {
+    "id": 1719,
+    "test_title": "Vaccin",
+    "price_code": 2185,
+    "lab_test_desc": "cerverix",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1720,
+    "test_title": "Vaccine",
+    "price_code": 2186,
+    "lab_test_desc": "Cerverix",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1727,
+    "test_title": "cardiology",
+    "price_code": 2195,
+    "lab_test_desc": "consultation bill",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1728,
+    "test_title": "Cardiologist consult",
+    "price_code": 2196,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1733,
+    "test_title": "Pelvis (AP)",
+    "price_code": 2203,
+    "lab_test_desc": "Pelvis (AP)",
+    "lab_type": "Lab",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 1734,
+    "test_title": "Left Hip (AP & LAT)",
+    "price_code": 2204,
+    "lab_test_desc": "Left Hip (AP & LAT)",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1735,
+    "test_title": "dermatology consult",
+    "price_code": 2205,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1736,
+    "test_title": "Dermatology Follow-up Consult",
+    "price_code": 2206,
+    "lab_test_desc": "Dermatology Follow-up Consult",
+    "lab_type": "Laboratory",
+    "service_price": 15000,
+    "discount_price": 0
+  },
+  {
+    "id": 1751,
+    "test_title": "Both foot (AP & Lat)",
+    "price_code": 2221,
+    "lab_test_desc": "Both feet (AP & Lat)",
+    "lab_type": "Radiology",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1759,
+    "test_title": "Cardiology Consult",
+    "price_code": 2230,
+    "lab_test_desc": "Cardiology consult",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1760,
+    "test_title": "Dermatology Consult",
+    "price_code": 2231,
+    "lab_test_desc": "Dermatology Consult",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1761,
+    "test_title": "ENT Consult",
+    "price_code": 2232,
+    "lab_test_desc": "ENT Consult",
+    "lab_type": "Lab",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1763,
+    "test_title": "",
+    "price_code": 2241,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 0,
+    "discount_price": 0
+  },
+  {
+    "id": 1764,
+    "test_title": "URGENT PSA FREE AND TOTAL",
+    "price_code": 2242,
+    "lab_test_desc": "URGENT PSA FREE AND TOTAL",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1765,
+    "test_title": "HIV SCREENING",
+    "price_code": 2244,
+    "lab_test_desc": "HIV 1 & 2",
+    "lab_type": "Laboratory",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 1768,
+    "test_title": "",
+    "price_code": 2247,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 0,
+    "discount_price": 0
+  },
+  {
+    "id": 1769,
+    "test_title": "Xray Ankle AP/LAT",
+    "price_code": 2248,
+    "lab_test_desc": "Xray Ankle AP/LAT",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1770,
+    "test_title": "Elbow AP/LAT",
+    "price_code": 2249,
+    "lab_test_desc": "Elbow AP/LAT",
+    "lab_type": "Laboratory",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 1771,
+    "test_title": "Leg AP/LAT",
+    "price_code": 2250,
+    "lab_test_desc": "Leg AP/LAT",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1772,
+    "test_title": "Foot AP/LAT",
+    "price_code": 2251,
+    "lab_test_desc": "Foot AP/LAT",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1773,
+    "test_title": "Muskuloskeletal Scan (MSK)",
+    "price_code": 2252,
+    "lab_test_desc": "Muskuloskeletal Scan (MSK)",
+    "lab_type": "Laboratory",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1774,
+    "test_title": "Both Knee (AP & Lat)",
+    "price_code": 2253,
+    "lab_test_desc": "Both Knee (AP & Lat)",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1776,
+    "test_title": "Both hips X-Ray  (AP & Lat)",
+    "price_code": 2255,
+    "lab_test_desc": "Both Ankles X-Ray  (AP & Lat)",
+    "lab_type": "Radiology",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1777,
+    "test_title": "Posterior Nasal Space (PNS)",
+    "price_code": 2256,
+    "lab_test_desc": "Posterior Nasal Space (PNS)",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1778,
+    "test_title": "PT (Prothrombin Time)",
+    "price_code": 2257,
+    "lab_test_desc": "PT(Prothrombin Time)",
+    "lab_type": "Lab",
+    "service_price": 6500,
+    "discount_price": 0
+  },
+  {
+    "id": 1779,
+    "test_title": "Bleeding Time",
+    "price_code": 2258,
+    "lab_test_desc": "Bleeding Time",
+    "lab_type": "Lab",
+    "service_price": 4000,
+    "discount_price": 0
+  },
+  {
+    "id": 1780,
+    "test_title": "Blood Filmt (Eli Cells)",
+    "price_code": 2259,
+    "lab_test_desc": "Bllod film (Eli Cells)",
+    "lab_type": "Lab",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 1782,
+    "test_title": "Transperineal scan",
+    "price_code": 2261,
+    "lab_test_desc": "Transperineal scan",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1783,
+    "test_title": "Both Hands X-Ray (AP & Lat)",
+    "price_code": 2262,
+    "lab_test_desc": "Both hands X-Ray (AP & Lat)",
+    "lab_type": "Radiology",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1785,
+    "test_title": "cardiology consult",
+    "price_code": 2264,
+    "lab_test_desc": "cardiology consult",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1789,
+    "test_title": "Follicular Tracking (Selection)",
+    "price_code": 2270,
+    "lab_test_desc": "Follicular Tracking (Selection)",
+    "lab_type": "Lab",
+    "service_price": 60000,
+    "discount_price": 0
+  },
+  {
+    "id": 1791,
+    "test_title": "Hepatitis B Vaccine",
+    "price_code": 2272,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1795,
+    "test_title": "FSH, LH, Prolactin, Progesterone, Estradiol, TSH",
+    "price_code": 2277,
+    "lab_test_desc": "FSH, LH, Prolactin, Progesterone, Estradiol, TSH",
+    "lab_type": "Lab",
+    "service_price": 45000,
+    "discount_price": 0
+  },
+  {
+    "id": 1796,
+    "test_title": "Cardiologist",
+    "price_code": 2278,
+    "lab_test_desc": "Cardiologist",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1799,
+    "test_title": "Cardiology consult",
+    "price_code": 2281,
+    "lab_test_desc": "",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1800,
+    "test_title": "2D-Echo",
+    "price_code": 2282,
+    "lab_test_desc": "2D-Echo",
+    "lab_type": "Laboratory",
+    "service_price": 35000,
+    "discount_price": 0
+  },
+  {
+    "id": 1803,
+    "test_title": "Cardiology Follow-up",
+    "price_code": 2285,
+    "lab_test_desc": "Cardiology Follow-up",
+    "lab_type": "Laboratory",
+    "service_price": 15000,
+    "discount_price": 0
+  },
+  {
+    "id": 1804,
+    "test_title": "Complete Thyroid Function Test (T3, T4, fT3, fT4, TSH)",
+    "price_code": 2286,
+    "lab_test_desc": "Complete Thyroid Function Test (T3, T4, fT3, fT4, TSH)",
+    "lab_type": "Lab",
+    "service_price": 38500,
+    "discount_price": 0
+  },
+  {
+    "id": 1805,
+    "test_title": "Paranasal sinuses (PNS)",
+    "price_code": 2287,
+    "lab_test_desc": "Paranasal sinuses (PNS)",
+    "lab_type": "Lab",
+    "service_price": 14500,
+    "discount_price": 0
+  },
+  {
+    "id": 1806,
+    "test_title": "Chest X-Ray (PA & Lat)",
+    "price_code": 2288,
+    "lab_test_desc": "Chest X-Ray (PA & Lat)",
+    "lab_type": "Radiology",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 1810,
+    "test_title": "",
+    "price_code": 2294,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 0,
+    "discount_price": 0
+  },
+  {
+    "id": 1811,
+    "test_title": "Both Ankles AP/LAT",
+    "price_code": 2295,
+    "lab_test_desc": "Both Ankles AP/LAT",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1812,
+    "test_title": "Wrist Xray AP/Lat",
+    "price_code": 2296,
+    "lab_test_desc": "Wrist Xray AP/Lat",
+    "lab_type": "Radiology",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1820,
+    "test_title": "Hepatitis C (ELISA)",
+    "price_code": 2304,
+    "lab_test_desc": "Hepatitis C (ELISA)",
+    "lab_type": "Lab",
+    "service_price": 28500,
+    "discount_price": 0
+  },
+  {
+    "id": 1825,
+    "test_title": "FSH, LH, PROLACTIN, TESTOSTERONE",
+    "price_code": 2310,
+    "lab_test_desc": "FSH, LH, PROLACTIN, TESTOSTERONE",
+    "lab_type": "Lab",
+    "service_price": 32500,
+    "discount_price": 0
+  },
+  {
+    "id": 1826,
+    "test_title": "Neck scan",
+    "price_code": 2311,
+    "lab_test_desc": "Neck scan",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1827,
+    "test_title": "Joint MSK Ultrasopund",
+    "price_code": 2312,
+    "lab_test_desc": "Joint MSK Ultrasopund",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1829,
+    "test_title": "Right shoulder joint AP & Lat",
+    "price_code": 2314,
+    "lab_test_desc": "Right shoulder joint AP & Lat",
+    "lab_type": "Radiology",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 1830,
+    "test_title": "Both shoulder joint AP & Lat",
+    "price_code": 2315,
+    "lab_test_desc": "Both shoulder joint AP & Lat",
+    "lab_type": "Radiology",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1835,
+    "test_title": "Testosterone, LH, FSH, Prolactin",
+    "price_code": 2320,
+    "lab_test_desc": "Testosterone, LH, FSH, Prolactin",
+    "lab_type": "Lab",
+    "service_price": 32500,
+    "discount_price": 0
+  },
+  {
+    "id": 1843,
+    "test_title": "MCU",
+    "price_code": 2328,
+    "lab_test_desc": "MCU",
+    "lab_type": "Lab",
+    "service_price": 45000,
+    "discount_price": 0
+  },
+  {
+    "id": 1844,
+    "test_title": "MCU + RUG",
+    "price_code": 2329,
+    "lab_test_desc": "MCU +RUG",
+    "lab_type": "Lab",
+    "service_price": 55000,
+    "discount_price": 0
+  },
+  {
+    "id": 1845,
+    "test_title": "Barium Swallow",
+    "price_code": 2330,
+    "lab_test_desc": "Barium Swallow",
+    "lab_type": "Lab",
+    "service_price": 45000,
+    "discount_price": 0
+  },
+  {
+    "id": 1846,
+    "test_title": "Barium meal/follow through",
+    "price_code": 2331,
+    "lab_test_desc": "Barium meal/follow through",
+    "lab_type": "Lab",
+    "service_price": 55000,
+    "discount_price": 0
+  },
+  {
+    "id": 1847,
+    "test_title": "LFT(Comprehensive)",
+    "price_code": 2332,
+    "lab_test_desc": "LFT(Comprehensive)",
+    "lab_type": "Laboratory",
+    "service_price": 16500,
+    "discount_price": 0
+  },
+  {
+    "id": 1848,
+    "test_title": "Barium meal & Swallow",
+    "price_code": 2333,
+    "lab_test_desc": "Barium meal & Swallow",
+    "lab_type": "Lab",
+    "service_price": 50000,
+    "discount_price": 0
+  },
+  {
+    "id": 1849,
+    "test_title": "Fistulogram",
+    "price_code": 2334,
+    "lab_test_desc": "Fistulogram",
+    "lab_type": "Lab",
+    "service_price": 50000,
+    "discount_price": 0
+  },
+  {
+    "id": 1850,
+    "test_title": "IVU",
+    "price_code": 2335,
+    "lab_test_desc": "IVU",
+    "lab_type": "Lab",
+    "service_price": 65000,
+    "discount_price": 0
+  },
+  {
+    "id": 1851,
+    "test_title": "Both Elbows AP/LAT",
+    "price_code": 2336,
+    "lab_test_desc": "Both Elbows AP/LAT",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1852,
+    "test_title": "Both Wrists AP/LAT",
+    "price_code": 2339,
+    "lab_test_desc": "Both Wrists XRAY AP/LAT",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1853,
+    "test_title": "H.Pylori",
+    "price_code": 2340,
+    "lab_test_desc": "H.Pylori",
+    "lab_type": "Lab",
+    "service_price": 2500,
+    "discount_price": 0
+  },
+  {
+    "id": 1855,
+    "test_title": "Perineal scan",
+    "price_code": 2343,
+    "lab_test_desc": "Perineal scan",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1861,
+    "test_title": "Total T4",
+    "price_code": 2350,
+    "lab_test_desc": "Total T4",
+    "lab_type": "Lab",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 1862,
+    "test_title": "Free T4",
+    "price_code": 2351,
+    "lab_test_desc": "Free T4",
+    "lab_type": "Lab",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 1870,
+    "test_title": "ENT Consult",
+    "price_code": 2359,
+    "lab_test_desc": "ENT Consult",
+    "lab_type": "Lab",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1871,
+    "test_title": "Groin Ultrasound",
+    "price_code": 2360,
+    "lab_test_desc": "Groin Ultrasound",
+    "lab_type": "Lab",
+    "service_price": 7500,
+    "discount_price": 0
+  },
+  {
+    "id": 1872,
+    "test_title": "CA-125",
+    "price_code": 2361,
+    "lab_test_desc": "CA-125",
+    "lab_type": "Lab",
+    "service_price": 25000,
+    "discount_price": 0
+  },
+  {
+    "id": 1876,
+    "test_title": "Pleural fluid cytology",
+    "price_code": 2365,
+    "lab_test_desc": "PLEURAL FLUID CYTOLOGY",
+    "lab_type": "Lab",
+    "service_price": 12000,
+    "discount_price": 0
+  },
+  {
+    "id": 1877,
+    "test_title": "",
+    "price_code": 2366,
+    "lab_test_desc": "pleural fluid glucose",
+    "lab_type": "Lab",
+    "service_price": 2000,
+    "discount_price": 0
+  },
+  {
+    "id": 1878,
+    "test_title": "",
+    "price_code": 2367,
+    "lab_test_desc": "Csf chemistry + cell count",
+    "lab_type": "Lab",
+    "service_price": 12500,
+    "discount_price": 0
+  },
+  {
+    "id": 1879,
+    "test_title": "cell count",
+    "price_code": 2368,
+    "lab_test_desc": "cell count",
+    "lab_type": "Lab",
+    "service_price": 3000,
+    "discount_price": 0
+  },
+  {
+    "id": 1880,
+    "test_title": "pleural fluid chemistry(Protein & Sugar) + cell count",
+    "price_code": 2369,
+    "lab_test_desc": "pleural fluid chemistry(Protein & Sugar) + cell count",
+    "lab_type": "Lab",
+    "service_price": 9500,
+    "discount_price": 0
+  },
+  {
+    "id": 1881,
+    "test_title": "Obstetrics Scan with Biophysical profile (4/5)",
+    "price_code": 2370,
+    "lab_test_desc": "Obstetrics Scan with Biophysical profile (4/5)",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1882,
+    "test_title": "Obstetrics Scan with Biophysical profile + Tocco",
+    "price_code": 2371,
+    "lab_test_desc": "Obstetrics Scan with Biophysical profile + Tocco",
+    "lab_type": "Lab",
+    "service_price": 18500,
+    "discount_price": 0
+  },
+  {
+    "id": 1883,
+    "test_title": "",
+    "price_code": 2372,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 0,
+    "discount_price": 0
+  },
+  {
+    "id": 1884,
+    "test_title": "RHEUMATOID FACTOR(Qualitative)",
+    "price_code": 2373,
+    "lab_test_desc": "RHEUMATOID FACTOR(Qualitative)",
+    "lab_type": "Lab",
+    "service_price": 8500,
+    "discount_price": 0
+  },
+  {
+    "id": 1890,
+    "test_title": "SKULL X-RAY",
+    "price_code": 2379,
+    "lab_test_desc": "SKULL X-RAY AP/LAT",
+    "lab_type": "Lab",
+    "service_price": 10500,
+    "discount_price": 0
+  },
+  {
+    "id": 1891,
+    "test_title": "Neurologist consult",
+    "price_code": 2380,
+    "lab_test_desc": "Neurologist Consult",
+    "lab_type": "Laboratory",
+    "service_price": 20000,
+    "discount_price": 0
+  },
+  {
+    "id": 1892,
+    "test_title": "",
+    "price_code": 2381,
+    "lab_test_desc": "",
+    "lab_type": "Lab",
+    "service_price": 0,
+    "discount_price": 0
+  }
+]
