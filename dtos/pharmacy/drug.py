@@ -26,6 +26,8 @@ class PharmDrugPackageDTO(BaseModel):
     parent_package_id: Optional[int] = None
     quantity_per_parent: Optional[int] = None
 
+    class Config:
+        from_attributes=True
 
 class DrugFormDTO(BaseModel):
     id: Optional[int] = None
@@ -49,6 +51,9 @@ class DrugInfoDTO(BaseModel):
     drug_form: Optional[List[DrugFormDTO]] = None
     drug_image_url: Optional[str] = None
     drug_group: Optional[List[DrugGroupDTO]] = None
+
+    class Config:
+        from_attributes=True
 
 
 class DrugDTO(BaseModel):

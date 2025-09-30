@@ -98,7 +98,7 @@ def add_consultation_queue(consultant_queue: ConsultationQueueDTO,
                            repo: ConsultantRepository = Depends(get_consultation_repository)):
     queue = repo.add_consultant_queue(consultant_queue)
     if queue is None:
-        raise HTTPException(status_code=404, detail="Booking not found")
+        raise HTTPException(status_code=422, detail="Problem persisting consultation queue")
     return queue
 
 
@@ -129,7 +129,7 @@ def get_consultation_booking(queue_id: int, refresh: int = 0,
 
     if cached_consultation and refresh == 0:
         consultation = json.loads(cached_consultation.decode("utf-8"))
-        print('Consultation is severed from cache')
+
         return JSONResponse(status_code=status.HTTP_200_OK, content=consultation)
 
     queue = repo.get_consultation_queue_by_id(queue_id)
@@ -143,15 +143,16 @@ def get_consultation_booking(queue_id: int, refresh: int = 0,
 
 @consultation_router.get("/consultation/consultant/queue/", response_model=List[ConsultationAppointmentDTO])
 def get_consultation_booking(consultant_id: int = 0, client_id=0, start_date='',
-                             last_date='', xstatus: str = QueueStatus.Processing, in_hour_id: int = 0,
+                             last_date='', status: str = QueueStatus.Processed, in_hour_id: int = 0,
                              repo: ConsultantRepository = Depends(get_consultation_repository)):
+
     return repo.get_consultant_queue(
         consultant_id,
         client_id,
         start_date,
         last_date,
         in_hour_id,
-        xstatus
+        status
     )
 
 
@@ -212,7 +213,7 @@ def get_consultations_repository(db: Session = Depends(get_db)) -> Consultations
 
 
 @consultation_router.get("/consultation/",
-                         response_model=List[ConsultationDTO],
+                         response_model=List[ConsultationDetailDTO],
                          tags=["Service", "Consultation"],
                          summary="Get a list of consultations",
                          description="Retrieve paginated service consultation with optional skip and limit"
@@ -227,16 +228,17 @@ def list_consultations(
 
 
 # GET a single consultation by ID
-@consultation_router.get("/{consultation_id}",
+@consultation_router.get("/consultation/report/",
                          tags=["Service", "Consultation"],
                          summary="Get a list of consultations",
                          description="Retrieve consultation by ID",
                          response_model=ConsultationDTO
-                         )
+                    )
 def get_consultation(
         consultation_id: int,
         repo: ConsultationsRepository = Depends(get_consultations_repository)
 ):
+    print('Fetching consultation with ID:', consultation_id)
     consultation = repo.get(consultation_id)
     if not consultation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Consultation not found")

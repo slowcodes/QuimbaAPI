@@ -58,7 +58,7 @@ class Specialist(Base, SoftDeleteMixin):
 
     # Relationships
     specializations = relationship("SpecialistSpecialization", backref="specialist", lazy='select')
-    consultations = relationship("Consultations", back_populates="creator", passive_deletes=True)
+    consultant = relationship("Consultations", back_populates="creator", passive_deletes=True)
     # Add index on user_id for efficient querying
     Index('ix_user_id', user_id)
 
@@ -117,8 +117,16 @@ class ConsultationType(str, Enum):
     follow_up = 'follow_up'
 
 
+class CaseStatus(str, Enum):
+    Open = 'Open'
+    Closed = 'Closed'
+    Referred = 'Referred'
+    Resolved = 'Resolved'
+
+
 class Consultations(Base, SoftDeleteMixin):
     __tablename__ = "consultations"
+
     id = Column(Integer, primary_key=True, index=True)
     consultation_type = Column(SqlEnum(ConsultationType), default=ConsultationType.base_case)
     queue_id = Column(Integer, ForeignKey("consultation_queue.id"))
@@ -127,10 +135,18 @@ class Consultations(Base, SoftDeleteMixin):
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     created_by = Column(Integer, ForeignKey("consultant_specialist.id", ondelete="cascade"))
     preliminary_diagnosis = Column(String(250), nullable=True)
-    # final_diagnosis = Column(String(250), nullable=True)
+    case_status = Column(SqlEnum(CaseStatus), default=CaseStatus.Open)
 
     queue = relationship("ConsultationQueue", back_populates="consultations", passive_deletes=True)
-    creator = relationship("Specialist", back_populates="consultations", passive_deletes=True)
+    creator = relationship("Specialist", back_populates="consultant", passive_deletes=True)
+
+    consultation_clinical_examinations = relationship(
+        "ConsultationClinicalExamination",
+        back_populates="consultation",
+        lazy="select"
+    )
+    consultation_prescriptions = relationship("ConsultationPrescription", backref="consultation", lazy='select')
+    review_of_systems = relationship("ConsultationRoS", back_populates="consultation", lazy='select')
 
 
 class ConsultationClinicalExamination(Base, SoftDeleteMixin):
@@ -140,6 +156,18 @@ class ConsultationClinicalExamination(Base, SoftDeleteMixin):
     consultation_id = Column(Integer, ForeignKey("consultations.id", ondelete="cascade"))
     clinical_examination_id = Column(Integer, ForeignKey("clinical_examination.id", ondelete="cascade"))
 
+    consultation = relationship(
+        "Consultations",
+        back_populates="consultation_clinical_examinations",
+        lazy="select"
+    )
+
+    clinical_examination = relationship(
+        "ClinicalExamination",
+        back_populates="consultation_clinical_examinations",
+        lazy='select'
+    )
+
 
 class ConsultationPrescription(Base, SoftDeleteMixin):
     __tablename__ = "consultation_prescription"
@@ -148,8 +176,10 @@ class ConsultationPrescription(Base, SoftDeleteMixin):
     consultation_id = Column(Integer, ForeignKey("consultations.id", ondelete="cascade"))
     prescription_id = Column(Integer, ForeignKey("pharmacy_prescription.id", ondelete="cascade"))
 
+    prescription = relationship("Prescription", backref="consultation_prescriptions", lazy='select')
 
-class ConsultationHierarchy(Base, SoftDeleteMixin):
+
+class ConsultationHierarchy(Base):
     __tablename__ = "consultation_hierarchy"
     id = Column(Integer, primary_key=True, index=True)
     base_consultation_id = Column(Integer, ForeignKey("consultations.id", ondelete="cascade"))
@@ -178,13 +208,16 @@ class ConsultationRoS(Base, SoftDeleteMixin):
     system = Column(SqlEnum(InternalSystems))
     note = Column(Text, nullable=True)
 
-    # consultations = relationship("Consultations", backref="consultation_review_of_system", lazy='select')
+    consultation = relationship("Consultations", back_populates="review_of_systems", lazy='select')
 
 
 class Symptom(Base, SoftDeleteMixin):
     __tablename__ = 'symptom'
     id = Column(Integer, primary_key=True, index=True)
     symptom = Column(String(150), index=True)
+
+    # relationships
+    presenting_symptoms = relationship("PresentingSymptom", back_populates="symptom", lazy='select')
 
 
 class PresentingSymptomsFrequency(str, Enum):
@@ -210,8 +243,8 @@ class PresentingSymptom(Base, SoftDeleteMixin):
     frequency = Column(SqlEnum(SymptomFrequency, name="symptom_frequency"))
 
     # Relationships
-    symptom = relationship("Symptom", backref="presenting_symptoms", lazy='select')
-    clinical_examination = relationship("ClinicalExamination", backref="presenting_symptoms", lazy='select')
+    symptom = relationship("Symptom", back_populates="presenting_symptoms", lazy='select')
+    clinical_examination = relationship("ClinicalExamination", back_populates="symptoms", lazy='select')
 
     # Index('ix_symptom_frequency', symptom_id, frequency)
 
@@ -227,8 +260,12 @@ class ClinicalExamination(Base, SoftDeleteMixin):
     # Relationships and indexes for fast access
     transaction = relationship("Transaction", backref="clinical_examinations", lazy='select')
     conducted_by_user = relationship("User", backref="clinical_examinations", lazy='select')
+    consultation_clinical_examinations = relationship(
+        "ConsultationClinicalExamination",
+        back_populates="clinical_examination",
+        lazy="select"
+    )
 
+    symptoms = relationship("PresentingSymptom", back_populates="clinical_examination", lazy='select')
     # Index('ix_transaction_id', transaction_id)
     Index('ix_exam_conducted_by', conducted_by)
-
-

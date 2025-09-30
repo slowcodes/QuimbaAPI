@@ -17,7 +17,6 @@ config = context.config
 # set sqlalchemy.url dynamically
 db_url = os.getenv("DATABASE_URL") + "?options=-csearch_path=public"  # To ensure deployment works
 if db_url:
-    print('migration url', db_url)
     config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.

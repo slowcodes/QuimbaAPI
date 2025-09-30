@@ -1,13 +1,15 @@
 # repositories/consultations_repository.py
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 
 from dtos.auth import UserDTO
 from dtos.consultation import ConsultationDTO, ConsultationCreate, ConsultationUpdate, ConsultationDetailDTO, \
-    PresentingSymptomDTO
+    PresentingSymptomDTO, ClinicalExaminationDTO, ConsultationRoSDTO
+from dtos.pharmacy.prescription import PrescriptionDTO, PrescriptionDetailDTO
 from models.consultation import Consultations, ClinicalExamination, ConsultationClinicalExamination, PresentingSymptom, \
-    ConsultationRoS, ConsultationQueue, ConsultationPrescription
+    ConsultationRoS, ConsultationQueue, ConsultationPrescription, ConsultationHierarchy
 from models.lab.lab import QueueStatus
+from models.pharmacy import Prescription
 from models.transaction import Transaction
 from repos.pharmacy.prescription_repository import PrescriptionRepository
 from repos.services.service_cart_repository import ServiceCartRepository
@@ -28,25 +30,105 @@ class ConsultationsRepository:
         )
         return ConsultationDTO.from_orm(consultation) if consultation else None
 
-    def get_all(self, skip: int = 0, limit: int = 100) -> List[ConsultationDTO]:
-        consultations = (
+    def get_all(self, skip: int = 0, limit: int = 100, client_id: int = 0) -> List[ConsultationDetailDTO]:
+        query = (
             self.db.query(Consultations)
+            .options(
+                joinedload(Consultations.queue),
+                joinedload(Consultations.creator),
+                joinedload(Consultations.consultation_clinical_examinations)
+                .joinedload(ConsultationClinicalExamination.clinical_examination)
+                .joinedload(ClinicalExamination.symptoms),
+                joinedload(Consultations.consultation_prescriptions)
+                .joinedload(ConsultationPrescription.prescription)
+                .joinedload(Prescription.details),  # make sure this matches your model
+                joinedload(Consultations.review_of_systems),
+            )
             .offset(skip)
             .limit(limit)
-            .all()
         )
-        return [ConsultationDTO.from_orm(c) for c in consultations]
+
+        if client_id:
+            query = query.join(Consultations.queue).filter(ConsultationQueue.client_id == client_id)
+
+        consultations = query.all()
+        result = []
+        for c in consultations:
+            # Clinical Examination (first one if any)
+            clinical_examination = None
+            clinical_examinations = [
+                ccx.clinical_examination for ccx in getattr(c, "consultation_clinical_examinations", [])
+                if ccx.clinical_examination
+            ]
+            if clinical_examinations:
+                ce = clinical_examinations[0]
+                symptoms = [PresentingSymptomDTO.from_orm(symptom) for symptom in getattr(ce, "symptoms", [])]
+                clinical_examination = ClinicalExaminationDTO(
+                    id=ce.id,
+                    presenting_complaints=ce.presenting_complaints,
+                    conducted_at=ce.conducted_at,
+                    conducted_by=ce.conducted_by,
+                    symptoms=symptoms,
+                    transaction_id=ce.transaction_id,
+                )
+
+            # Prescription (first one if any, with items)
+            prescription = None
+            prescriptions = [
+                cp.prescription for cp in getattr(c, "consultation_prescriptions", [])
+                if cp.prescription
+            ]
+            if prescriptions:
+                pres = prescriptions[0]
+                items = [PrescriptionDetailDTO.from_orm(item) for item in getattr(pres, "items", [])]
+                prescription = PrescriptionDTO(
+                    # fill in other prescription fields as needed
+                    id=pres.id,
+                    issued_by=pres.issued_by,
+                    issued_at=pres.issued_at,
+                    items=items,
+                    # ... add other fields from your PrescriptionDTO as needed
+                )
+
+            # Review of Systems
+            review_of_systems = [
+                ConsultationRoSDTO.from_orm(ros)
+                for ros in getattr(c, "review_of_systems", [])
+            ]
+
+            detail = ConsultationDetailDTO(
+                consultation=ConsultationDTO.from_orm(c),
+                clinical_examination=clinical_examination,
+                prescription=prescription,
+                review_of_systems=review_of_systems,
+            )
+            result.append(detail)
+        return result
 
     def create(self, consultation_data_detail: ConsultationDetailDTO, created_by: UserDTO) -> ConsultationDTO:
         try:
             consultation_data = consultation_data_detail.consultation
             consultation_data.created_by = created_by.id
+
+            # remove base_case_id from consultation_to match the Consultations model
+            cons_data = consultation_data.dict()
+            cons_data.pop('base_case_id', None)
+
+            print(cons_data)
             consultation = Consultations(
-                **consultation_data.dict(),
-                # created_by=created_by
+                **cons_data
             )
             self.db.add(consultation)
             self.db.flush()
+
+            if consultation_data.base_case_id:
+                # record hierarchy
+                self.db.add(
+                    ConsultationHierarchy(
+                        base_consultation_id=consultation_data.base_case_id,
+                        follow_up_consultation_id=consultation.id
+                    )
+                )
 
             # create transaction needed for clinical examinations
             transaction = Transaction(id=generate_transaction_id(), user_id=created_by.id, discount=0)
