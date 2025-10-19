@@ -42,6 +42,8 @@ class User(Base):
 
     auth_logs = relationship("AuthLogs", back_populates="user")
     client_service_cart = relationship("ClientServiceCart", back_populates="user")
+    consultant_specialist = relationship("Specialist", back_populates="user")
+    person = relationship("Person", back_populates="user", uselist=False)
     #
     # @property
     # def status(self):

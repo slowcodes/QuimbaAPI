@@ -4,9 +4,9 @@ from typing import List, Optional
 from sqlalchemy import and_, cast, DateTime
 from sqlalchemy.orm import Session
 
-from dtos.consultant import SpecialismDTO
+from dtos.consultant import BaseCaseDTO, ConsultationAppointmentDTO, ConsultationQueueDTO
 from dtos.consultation import SymptomDTO, ClinicalExaminationDTO, PresentingSymptomDTO, ConsultantDTO, \
-    InHoursDTO, ConsultationQueueDTO, ConsultationAppointmentDTO, BaseCaseDTO
+    InHoursDTO, SpecialismDTO
 from dtos.services import PriceCodeDTO
 from models.consultation import Symptom, ClinicalExamination, PresentingSymptom, Specialist, Specialism, \
     SpecialistSpecialization, InHours, InHourFrequency, ConsultationQueue, InternalSystems, Consultations
@@ -281,7 +281,7 @@ class ConsultantRepository:
         cos = []
         for result in res:
             consultant = self.get_consultant(result.specialist_id)
-            service_desc = result.department + " Consultation with " + consultant.user.first_name + " " + consultant.user.last_name
+            service_desc = result.department + " Consultation with " + consultant.user.person.first_name + " " + consultant.user.person.last_name
             cos.append({
                 'booking_details_id': result.booking_detail_id,
                 'service_id': result.service_id,
@@ -541,17 +541,18 @@ class ConsultantRepository:
         consultant = self.db.query(Specialist).filter(Specialist.id == consultant_id).one_or_none()
 
         if consultant:
-            specializations = self.db.query(Specialism) \
-                .join(SpecialistSpecialization, Specialism.id == SpecialistSpecialization.specialism_id) \
-                .filter(SpecialistSpecialization.specialist_id == consultant_id).all()
-            return ConsultantDTO(
-                id=consultant.id,
-                user=self.user_repository.get_usr_by_id(consultant.user_id),
-                title=consultant.title,
-                specializations=[
-                    SpecialismDTO(id=spec.id, department=spec.department, specialist_title=spec.specialist_title)
-                    for spec in specializations]
-            )
+            return ConsultantDTO.from_orm(consultant)
+            # specializations = self.db.query(Specialism) \
+            #     .join(SpecialistSpecialization, Specialism.id == SpecialistSpecialization.specialism_id) \
+            #     .filter(SpecialistSpecialization.specialist_id == consultant_id).all()
+            # return ConsultantDTO(
+            #     id=consultant.id,
+            #     user=self.user_repository.get_usr_by_id(consultant.user_id),
+            #     title=consultant.title,
+            #     specializations=[
+            #         SpecialismDTO(id=spec.id, department=spec.department, specialist_title=spec.specialist_title)
+            #         for spec in specializations]
+            # )
 
     def get_internal_systems(self) -> List[str]:
         # get enum internal systems

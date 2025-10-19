@@ -75,6 +75,7 @@ class Pharmacy(Base, SoftDeleteMixin):
     parents = relationship(
         "PharmacyHierarchy", foreign_keys="[PharmacyHierarchy.pharmacy_id]", backref="child_pharmacy"
     )
+    prescriptions = relationship("Prescription", back_populates="pharmacy", cascade="all, delete-orphan")
 
 
 class PharmacyHierarchy(Base, SoftDeleteMixin):
@@ -122,7 +123,7 @@ class Drug(Base, SoftDeleteMixin):
 
     product = relationship("Product", back_populates="pharmacy_drug")
     group_tags = relationship("DrugGroupTag", back_populates="drug")
-
+    prescription_details = relationship("PrescriptionDetail", back_populates="drug", cascade="all, delete-orphan")
     allergies = relationship("DrugAllergy", back_populates="drug", cascade="all, delete-orphan")
 
 
@@ -178,9 +179,13 @@ class Prescription(Base, SoftDeleteMixin):
     note = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    details = relationship("PrescriptionDetail", backref="prescription", cascade="all, delete-orphan")
-    client = relationship("Client")
-    consultant = relationship("Specialist")
+    prescriptions = relationship("PrescriptionDetail", back_populates="prescription", cascade="all, delete-orphan")
+    client = relationship("Client", back_populates="prescriptions")
+    consultant = relationship("Specialist", back_populates="prescriptions")
+    pharmacy = relationship("Pharmacy", back_populates="prescriptions")
+    consultation_prescriptions = relationship("ConsultationPrescription", back_populates="pharmacy_prescription", uselist=False)
+
+
 
 
 class PrescriptionDetail(Base, SoftDeleteMixin):
@@ -196,3 +201,7 @@ class PrescriptionDetail(Base, SoftDeleteMixin):
     duration = Column(String(20))
     status = Column(SqlEnum(PrescriptionStatus), default=PrescriptionStatus.Pending)
     is_prn = Column(Boolean, default=False)
+
+    # relationships
+    prescription = relationship("Prescription", back_populates="prescriptions")
+    drug = relationship("Drug", back_populates="prescription_details")

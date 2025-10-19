@@ -31,24 +31,6 @@ async def get_all_clients(skip: int = 0,
         clients = json.loads(cached_clients.decode("utf-8"))
         return JSONResponse(status_code=status.HTTP_200_OK, content=clients)
 
-    # faker = Faker()
-    # for i in range(3000):
-    #     new_client = ClientCommand(
-    #         phot o=faker.word(),
-    #         first_name=faker.unique.first_name(),
-    #         last_name=faker.unique.first_name(),
-    #         middle_name=faker.unique.first_name(),
-    #         sex='Male',
-    #         marital_status='Single',
-    #         date_of_birth=faker.date(),
-    #         blood_group='A+',
-    #         email=faker.unique.email(),
-    #         phone=faker.phone_number(),
-    #         address=faker.address(),
-    #         lga_id=10,
-    #         occupation=1
-    #     )
-    #     repos.client_repository.add_client(db, new_client)
     data = repo.get_all_client(skip, limit, keyword)
     safe_data = jsonable_encoder(data)
     redis.set(cache_key, json.dumps(safe_data), ex=300)  # Cache for 5 minutes

@@ -218,7 +218,6 @@ class ClientRepository:
         :param keyword: Optional keyword to filter clients by first name, last name, phone, or date of birth.
         :return: A dictionary containing the list of clients and the total count.
         """
-        print('limit', limit)
         try:
             # self.insert_data_from_csv()
             query = self.session.query(*self.col) \

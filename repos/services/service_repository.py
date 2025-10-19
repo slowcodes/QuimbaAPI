@@ -57,7 +57,13 @@ class ServiceRepository:
         return self.service_booking_to_DTO(db_service_booking)
 
     def create_service_booking_detail(self, service_booking: ServiceBookingDetailDTO) -> ServiceBookingDetailDTO:
-        db_service_booking_details = ServiceBookingDetail(**service_booking.dict())
+        db_service_booking_details = ServiceBookingDetail(
+            service_id=service_booking.service_id,
+            price_code=service_booking.price_code,
+            booking_id=service_booking.booking_id,
+            booking_type=service_booking.booking_type
+        )
+
         self.session.add(db_service_booking_details)
         self.session.commit()
         self.session.refresh(db_service_booking_details)

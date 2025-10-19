@@ -30,30 +30,56 @@ class PrescriptionRepository(BaseRepository):
 
         query = query.offset(skip).limit(limit).all()
         prescriptions = []
-        for prescription in query:
-            self.consultation_repository.get_consultant_by_id(
-                prescription.consultant_id) if prescription.consultant_id else None
+        # for prescription in query:
+        #     self.consultation_repository.get_consultant_by_id(
+        #         prescription.consultant_id) if prescription.consultant_id else None
+        #
+        #     consultant_specialist = self.consultation_repository.get_consultant_by_id(prescription.consultant_id)
+        #     prescriptions.append(
+        #         {
+        #             'id': prescription.id,
+        #             'status': prescription.status,
+        #             'note': prescription.note,
+        #             'instruction': prescription.instruction,
+        #             'created_at': (prescription.created_at).strftime("%Y-%m-%d %H:%M:%S"),
+        #             'client': self.client_repository.get_client(
+        #                 prescription.client_id) if prescription.client_id else None,
+        #             'consultant': {
+        #                 'title': "Professor",  # consultant_specialist.title,
+        #                 'id': prescription.consultant_id,
+        #                 'user': self.auth_repository.get_usr_by_id(1)
+        #             },
+        #             'pharmacy': self.pharmacy_repository.get_pharmacy_by_id(prescription.pharmacy_id),
+        #             'prescriptions': self.get_prescription_details(prescription.id)
+        #         })
+        return [PrescriptionDTO.from_orm(prescription) for prescription in query]
 
-            consultant_specialist = self.consultation_repository.get_consultant_by_id(prescription.consultant_id)
-            prescriptions.append(
-                {
-                    'id': prescription.id,
-                    'status': prescription.status,
-                    'note': prescription.note,
-                    'instruction': prescription.instruction,
-                    'created_at': (prescription.created_at).strftime("%Y-%m-%d %H:%M:%S"),
-                    'client': self.client_repository.get_client(
-                        prescription.client_id) if prescription.client_id else None,
-                    'consultant': {
-                        'title': "Professor",  # consultant_specialist.title,
-                        'id': prescription.consultant_id,
-                        'user': self.auth_repository.get_usr_by_id(1)
-                    },
-                    'pharmacy': self.pharmacy_repository.get_pharmacy_by_id(prescription.pharmacy_id),
-                    'prescriptions': self.get_prescription_details(prescription.id)
-                })
-        return prescriptions
+    def get(self, prescription_id: int) -> PrescriptionDTO:
+        prescription = self.db.query(Prescription).filter(Prescription.id == prescription_id).first()
+        if not prescription:
+            return None
 
+        consultant_specialist = self.consultation_repository.get_consultant_by_id(prescription.consultant_id)
+
+        ps = PrescriptionDTO(
+            id=prescription.id,
+            status=prescription.status,
+            note=prescription.note,
+            instruction=prescription.instruction,
+            pharmacy_id=prescription.pharmacy_id,
+            created_at=prescription.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            client=self.client_repository.get_client(
+                prescription.client_id) if prescription.client_id else None,
+            consultant={
+                'title': "Professor",  # consultant_specialist.title,
+                'id': prescription.consultant_id,
+                'user': self.auth_repository.get_usr_by_id(1)
+            } if prescription.consultant_id else None,
+        )
+
+        ps.prescriptions = self.get_prescription_details(prescription.id)
+
+        return ps
     def get_prescription_details(self, prescription_id: int):
         dts = self.db.query(PrescriptionDetail).filter(PrescriptionDetail.prescription_id == prescription_id).all()
         details = []

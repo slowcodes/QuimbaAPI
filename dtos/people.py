@@ -36,6 +36,16 @@ class OrganisationDTO(BaseModel):
     pharmacy_id: Optional[int] = None  # conditional based on org type
 
 
+class BasicPersonDTO(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    sex: Sex
+
+    class Config:
+        from_attributes = True
+
+
 class PersonDTO(BaseModel):
     id: Optional[int] = None
     first_name: str = Field(..., min_length=1, max_length=30)
@@ -46,8 +56,20 @@ class PersonDTO(BaseModel):
     email: Optional[EmailStr]
     phone: str = Field(..., min_length=11, max_length=11, pattern=r"^\d{11}$")
 
+    class Config:
+        from_attributes = True
 
-class ClientDTO(PersonDTO):
+
+class BasicClientDTO(BaseModel):
+    id: int
+    person_id: Optional[int] = None
+    person: Optional[BasicPersonDTO] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ClientDTO(BaseModel):
     marital_status: MaritalStatus
     date_of_birth: date
     blood_group: Optional[str] = Field(..., max_length=3)
@@ -56,6 +78,7 @@ class ClientDTO(PersonDTO):
     occupation: Optional[OccupationDTO] = None
     photo: Optional[bytes] = None
     # user_account: Optional[any] = None
+    person: Optional[PersonDTO] = None
     organization: Optional[OrganisationDTO] = None
 
     @validator("locality", pre=True, always=True)
@@ -86,7 +109,24 @@ class ClientDTO(PersonDTO):
 class ReferralDTO(BaseModel):
     id: Optional[int] = None
     person: Optional[PersonDTO]
-    org: Optional[OrganisationDTO] = None
+    person_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BasicReferralDTO(BaseModel):
+    id: int
+    person_id: int
+    person: BasicPersonDTO
+
+    class Config:
+        from_attributes = True
+
+
+class ReferralResponseDTO(BaseModel):
+    total: int
+    data: List[ReferralDTO]
 
 
 class VitalsDTO(BaseModel):

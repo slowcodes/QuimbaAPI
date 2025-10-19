@@ -338,8 +338,10 @@ class LabRepository:
 
     def get_lab_service_details_by_service_id(self, service_id: int):
         lab_service = self.session.query(LabService).filter(LabService.service_id == service_id).first()
+
         if lab_service:
-            return self.get_lab_service_details(lab_service.id)
+            lbs = self.get_lab_service_details(lab_service.id)
+            return lbs
         return None
 
     def get_lab_service_details(self, lab_id: int):

@@ -32,6 +32,10 @@ class BusinessServices(Base):
     visibility = Column(SqlEnum(StoreVisibility))
     serviceType = Column(SqlEnum(ServiceType))
 
+    # relationships
+    in_hours = relationship("InHours", back_populates="business_service")
+    pc = relationship("PriceCode", back_populates="business_services")
+
 
 class Bundles(Base):
     __tablename__ = "service_bundle"
@@ -67,6 +71,9 @@ class ServiceBooking(Base):
     booking_status = Column(SqlEnum(BookingStatus), default=BookingStatus.Processing)
     # booking_type = Column(SqlEnum(BookingType), default=BookingType.Laboratory)
 
+    booking_detail = relationship("ServiceBookingDetail", back_populates="booking")
+    client = relationship("Client", back_populates="service_bookings")
+
 
 class ServiceBookingDetail(Base):
     __tablename__ = "service_booking_detail"
@@ -76,6 +83,9 @@ class ServiceBookingDetail(Base):
     price_code = Column(Integer, ForeignKey("service_price_code.id", ondelete="cascade"))
     booking_id = Column(Integer, ForeignKey("service_booking.id", ondelete="cascade"))
     booking_type = Column(SqlEnum(BookingType), default=BookingType.Laboratory)
+
+    consultation_queue = relationship("ConsultationQueue", back_populates="booking_detail")
+    booking = relationship("ServiceBooking", back_populates="booking_detail")
 
 
 class ServiceClinicalExamination(Base):
@@ -92,6 +102,8 @@ class PriceCode(Base):
     id = Column(Integer, primary_key=True, index=True)
     service_price = Column(Double)
     discount = Column(Double)
+
+    business_services = relationship("BusinessServices", back_populates="pc")
 
 
 class CommunicationMode(str, Enum):

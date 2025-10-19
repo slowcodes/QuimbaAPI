@@ -2,7 +2,7 @@ from http.client import HTTPException
 
 from fastapi import APIRouter, Depends, Query
 
-from dtos.people import ReferralDTO, PersonDTO, OrganisationDTO
+from dtos.people import ReferralDTO, PersonDTO, OrganisationDTO, ReferralResponseDTO
 from db import get_db
 from sqlalchemy.orm import Session
 
@@ -76,7 +76,8 @@ def soft_delete_referral(referral_id: int, repo: ReferralRepository = Depends(ge
     return {"success": repo.soft_delete(referral_id)}
 
 
-@referral_router.get("/")
+@referral_router.get("/", response_model=ReferralResponseDTO)
 def get_all_referrals(skip: int = Query(0, alias="page"), limit: int = Query(10),
+                      searchtext: str = Query('', alias="searchtext"),
                       repo: ReferralRepository = Depends(get_referral_repository)):
-    return repo.get_all_referrals(skip=skip, limit=limit)
+    return repo.get_all_referrals(skip=skip, limit=limit, search_text=searchtext)

@@ -1,16 +1,21 @@
+import json
 from typing import List, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
+from starlette.responses import JSONResponse
 from twilio.rest import Client
 
+from cache.redis import get_redis_client
 from db import get_db
 from dtos.auth import UserDTO
-from dtos.consultation import ConsultationDTO, ConsultationCreate, ConsultationUpdate
+from dtos.service_dtos.client_cart_service import ClientServiceCartDTO, ProcessedCartDTO
 from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, ServiceBundleDTO, LabServiceBundleDTO
 from repos.consultation.consultation_repository import ConsultationsRepository
 from repos.lab.queue_repository import QueueRepository
 from repos.services.service_bundle_repository import ServiceBundleRepository
+from repos.services.service_cart_repository import ServiceCartRepository
 from repos.services.service_repository import ServiceRepository
 from repos.transaction_repository import TransactionRepository
 from security.dependencies import require_access_privilege
@@ -205,4 +210,47 @@ def delete_lab_bundle_collection(lab_collection_id: int,
         raise HTTPException(status_code=500, detail="Failed to retrieve lab service bundles") from e
 
 
+def get_service_cart_repository(db: Session = Depends(get_db)):
+    return ServiceCartRepository(db)
 
+
+@service_router.get(
+    "/client/cart/",
+    tags=["Service", "Bundles", "Consultation", "Laboratory"],
+    summary="Get client saved carts",
+    response_model=List[ClientServiceCartDTO],
+    description="Retrieve paginated carts item with optional client_id, skip and limit parameters."
+)
+def get_client_cart_items(client_id: int = Query(..., description="ID of the client"),
+                          skip: int = Query(0, ge=0, description="Number of items to skip"),
+                          limit: int = Query(20, ge=1, le=100, description="Maximum number of items to return"),
+                          refresh: int = Query(0, ge=0, description="Set to 1 to bypass cache"),
+                          repo: ServiceCartRepository = Depends(get_service_cart_repository)):
+    try:
+        redis = get_redis_client()
+        cache_key = f"clients-cart:{skip}:{limit}:{client_id}"
+        cached_client_cart = redis.get(cache_key)
+
+        if cached_client_cart and refresh == 0:
+            print("Returning cached client cart")
+            cart = json.loads(cached_client_cart.decode("utf-8"))
+            return JSONResponse(status_code=status.HTTP_200_OK, content=cart)
+        data = repo.get_client_carts(client_id=client_id, skip=skip, limit=limit)
+        safe_data = jsonable_encoder(data)
+        redis.set(cache_key, json.dumps(safe_data), ex=300)  # Cache for 5 minutes
+        print("Returning fresh client cart")
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to retrieve client cart items") from e
+
+
+@service_router.put(
+    "/client/cart/status/",
+    tags=["Service", "Consultation", "Laboratory"],
+    summary="Update client saved cart",
+    response_model=ProcessedCartDTO | None,
+    description="Update a client's saved cart status by cart ID.")
+def process_client_cart(cart: ProcessedCartDTO,
+                        # current_user: Annotated[UserDTO, Depends(require_access_privilege)],
+                        repo: ServiceCartRepository = Depends(get_service_cart_repository)):
+    return repo.update_cart_status(cart)

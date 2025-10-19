@@ -54,6 +54,9 @@ class Person(Base, SoftDeleteMixin):
     client = relationship("Client", back_populates="person", uselist=False, cascade="all, delete")
     person_type = relationship("PersonType", back_populates="person", cascade="all, delete")
     organization_people = relationship("OrganizationPeople", back_populates="person", cascade="all, delete")
+    user = relationship("User", back_populates="person", uselist=False, cascade="all, delete")
+    client_referral = relationship("Referral", back_populates="person", uselist=False,
+                                   cascade="all, delete")
 
     __table_args__ = (
         CheckConstraint("LENGTH(phone) <= 11", name="check_phone_length"),
@@ -108,7 +111,8 @@ class Client(Base, SoftDeleteMixin):
     drug_allergies = relationship("DrugAllergy", back_populates="client", cascade="all, delete-orphan")
     food_allergies = relationship("FoodAllergy", back_populates="client", cascade="all, delete-orphan")
     service_carts = relationship("ClientServiceCart", back_populates="client")
-
+    prescriptions = relationship("Prescription", back_populates="client", cascade="all, delete-orphan")
+    service_bookings = relationship("ServiceBooking", back_populates="client")
     # referral = relationship("OrganizationPeople", back_populates="client")
 
 
@@ -161,8 +165,7 @@ class OrganizationPeople(Base):
     # client = relationship("Client", back_populates="referral")
     person = relationship("Person", back_populates="organization_people")
     organization = relationship("Organization", back_populates="organization_people")
-    client_referral = relationship("Referral", back_populates="organization_people", uselist=False,
-                                   cascade="all, delete")
+
     __table_args__ = (
         CheckConstraint(
             "person_id IS NOT NULL OR organization_id IS NOT NULL",
@@ -346,7 +349,7 @@ class Referral(Base):
     created_at = Column(DateTime, default=func.now(), doc="Timestamp of when the record was created")
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), doc="Timestamp of last update")
     deleted_at = Column(DateTime, nullable=True, doc="Timestamp of soft deletion")
-    org_people_id = Column(Integer, ForeignKey("organization_people.id", ondelete="cascade"), nullable=True)
+    person_id = Column(Integer, ForeignKey("person.id", ondelete="cascade"), nullable=True)
 
-    organization_people = relationship("OrganizationPeople", back_populates="client_referral")
+    person = relationship("Person", back_populates="client_referral")
     client_service_carts = relationship("ClientServiceCart", back_populates="client_referral")

@@ -3,16 +3,14 @@ from typing import Optional, List
 
 from pydantic import BaseModel, Field
 
-from dtos.people import PersonDTO
+from dtos.people import PersonDTO, BasicPersonDTO
 from models.auth import AccountStatus
 
 
 class AccountDTO(BaseModel):
     id: Optional[int] = None
-    title: Optional[str] = None
     username: str
     password: Optional[str] = None
-    # confirm_password: Optional[str]
     created_at: Optional[str] = None
     status: Optional[AccountStatus] = AccountStatus.Active
     person_id: Optional[int] = None
@@ -45,12 +43,20 @@ class AccountActivityDTO(BaseModel):
 
 
 class UserDTO(AccountDTO):
-    first_name: str
-    last_name: str
     roles: Optional[List[int]] = None
     privileges: Optional[List[PrivilegeDTO]] = None
     # disabled: bool | None = None
 
+
+class BasicUserDTO(BaseModel):
+    id: int
+    username: str
+    password: Optional[str] = None
+    person_id: Optional[int] = None
+    person: Optional[BasicPersonDTO] = None
+
+    class Config:
+        from_attributes = True
 
 class RoleDTA(BaseModel):
     id: Optional[int] = None

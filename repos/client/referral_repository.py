@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime
 
+from dtos.people import ReferralDTO, ReferralResponseDTO
 from dtos.transaction import ReferredTransactionDTO
 from models.client import Referral, OrganizationPeople, Person
 from models.transaction import ReferredTransaction
@@ -65,30 +66,21 @@ class ReferralRepository:
         self.db.commit()
         return True
 
-    def get_all_referrals(self, skip: int = 0, limit: int = 10, search_text: str = '') -> List[dict]:
+    def get_all_referrals(self, skip: int = 0, limit: int = 10, search_text: str = '') -> ReferralResponseDTO:
         """Retrieve all referrals with joined Person and Organization data, with pagination."""
-        refs = self.db.query(Referral).options(joinedload(Referral.organization_people) \
-                     .joinedload(OrganizationPeople.organization),
-                     joinedload(Referral.organization_people).joinedload(OrganizationPeople.person)
-                     # Load Person separately
-                     )
-        counter = self.db.query(Referral).count()
+
+        query = self.db.query(Referral)
         if search_text:
-            refs = refs.filter(
-                Referral.deleted_at.is_(None),
-                (Referral.first_name.ilike(f'%{search_text}%') |
-                 Referral.last_name.ilike(f'%{search_text}%') |
-                 Referral.middle_name.ilike(f'%{search_text}%') |
-                 Referral.phone_number.ilike(f'%{search_text}%')
-            ))
-            counter = refs.count()
-        return {
-            'total': counter,
-            'data': refs
-            .offset(skip)
-            .limit(limit)
-            .all()
-        }
+            query = query.join(Person, Person.id == Referral.person_id).filter(Person.first_name.ilike(f'%{search_text}%') | Person.last_name.ilike(f'%{search_text}%') | Person.middle_name.ilike(f'%{search_text}%') | Person.phone.ilike(f'%{search_text}%'))
+
+        query = query.all()
+        counter = len(query)
+        query = query[skip: skip + limit]
+
+        return ReferralResponseDTO(
+            data=[ReferralDTO.from_orm(ref) for ref in query],
+            total=counter
+        )
 
     def get_active_referrals(self, skip: int = 0, limit: int = 10) -> List[Referral]:
         """Retrieve only active (non-deleted) referrals with pagination."""

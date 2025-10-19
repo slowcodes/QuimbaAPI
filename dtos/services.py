@@ -2,8 +2,22 @@ from enum import Enum
 from typing import Optional, List
 from pydantic import BaseModel
 from dtos.lab import LabBundleCollectionDTO
-from dtos.people import ClientDTO
+from dtos.people import ClientDTO, BasicClientDTO
 from models.services.services import ServiceType, StoreVisibility
+
+
+class ServiceBookingDTO(BaseModel):
+    id: Optional[int] = None
+    client_id: int
+    transaction_id: int
+    client: Optional[BasicClientDTO] = None
+    booking_status: Optional[str] = None
+    transaction_time: Optional[str] = None
+    client_first_name: Optional[str] = None
+    client_last_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 class ServiceBookingDetailDTO(BaseModel):
@@ -12,18 +26,10 @@ class ServiceBookingDetailDTO(BaseModel):
     price_code: int
     booking_id: Optional[int] = None
     booking_type: Optional[str] = None
+    booking: Optional[ServiceBookingDTO] = None
 
-
-class ServiceBookingDTO(BaseModel):
-    id: Optional[int] = None
-    client_id: int
-    transaction_id: int
-    client: Optional[ClientDTO] = None
-    booking_status: Optional[str] = None
-    transaction_time: Optional[str] = None
-    client_first_name: Optional[str] = None
-    client_last_name: Optional[str] = None
-
+    class Config:
+        from_attributes = True
 
 class ServiceBundleDTO(BaseModel):
     id: Optional[int] = None
@@ -96,7 +102,11 @@ class PriceCodeDTO(BaseModel):
 
 class BusinessServiceDTO(BaseModel):
     service_id: Optional[int] = None
-    price_code: Optional[PriceCodeDTO]
+    price_code: Optional[int] = None
+    pc: Optional[PriceCodeDTO] = None
     ext_turn_around_time: float
     visibility: Optional[StoreVisibility]
     serviceType: Optional[ServiceType]
+
+    class Config:
+        from_attributes = True

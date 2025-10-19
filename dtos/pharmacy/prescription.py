@@ -1,11 +1,21 @@
 from typing import Optional, List
+from datetime import datetime
 
 from pydantic import BaseModel
 
-from dtos.consultant import ConsultantDTO
-from dtos.people import ClientDTO
+from dtos.consultation import ConsultantDTO
+from dtos.people import ClientDTO, BasicClientDTO
 from dtos.pharmacy.drug import DrugDTO
 from models.pharmacy import Form, PrescriptionStatus
+
+
+class PharmacyDTO(BaseModel):
+    id: Optional[int] = None
+    is_active: Optional[bool] = None
+    org_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
 
 
 class PrescriptionDetailDTO(BaseModel):
@@ -21,7 +31,7 @@ class PrescriptionDetailDTO(BaseModel):
     interval: Optional[str]
 
     class Config:
-        from_attributes=True
+        from_attributes = True
 
 
 class PrescriptionDTO(BaseModel):
@@ -30,10 +40,14 @@ class PrescriptionDTO(BaseModel):
     prescriptions: Optional[list[PrescriptionDetailDTO]] = [];
     note: Optional[str]
     pharmacy_id: int
-    client: Optional[ClientDTO] = None
+    client_id: Optional[int]
     instruction: Optional[str]
+    created_at: Optional[datetime] = None
+
+    client: Optional[BasicClientDTO] = None
     consultant: Optional[ConsultantDTO] = None
-    created_at: Optional[str] = None
+    pharmacy: Optional[PharmacyDTO] = None
+    prescriptions: List[PrescriptionDetailDTO] = []
 
     class Config:
         from_attributes = True

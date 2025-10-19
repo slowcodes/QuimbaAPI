@@ -9,14 +9,17 @@ from starlette.responses import JSONResponse
 from cache.redis import get_redis_client
 from dtos.auth import UserDTO
 from dtos.client.icd10 import Icd10Response
+from dtos.consultant import ConsultationQueueDTO, ConsultationAppointmentDTO, ConsultationDetailDTO, ConsultationDTO, \
+    ConsultationUpdate
 from dtos.consultation import *
 from sqlalchemy.orm import Session
 from db import get_db
+from models.lab.lab import QueueStatus
 from repos.client.icd10_repository import Icd10Repository
 from repos.consultation.clinical_examination_repository import ClinicalExaminationRepository
 from repos.consultation.consultant_repository import ConsultantRepository
 from repos.consultation.consultation_repository import ConsultationsRepository
-from security.dependencies import require_access_privilege
+from security.dependencies import require_access_privilege, get_current_active_user
 
 consultation_router = APIRouter(prefix="/api/clinicals", tags=["Clinicals"])
 
@@ -145,7 +148,6 @@ def get_consultation_booking(queue_id: int, refresh: int = 0,
 def get_consultation_booking(consultant_id: int = 0, client_id=0, start_date='',
                              last_date='', status: str = QueueStatus.Processed, in_hour_id: int = 0,
                              repo: ConsultantRepository = Depends(get_consultation_repository)):
-
     return repo.get_consultant_queue(
         consultant_id,
         client_id,
@@ -232,17 +234,71 @@ def list_consultations(
                          tags=["Service", "Consultation"],
                          summary="Get a list of consultations",
                          description="Retrieve consultation by ID",
-                         response_model=ConsultationDTO
-                    )
+                         response_model=ConsultationDetailDTO
+                         )
 def get_consultation(
+        current_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
         consultation_id: int,
         repo: ConsultationsRepository = Depends(get_consultations_repository)
 ):
-    print('Fetching consultation with ID:', consultation_id)
-    consultation = repo.get(consultation_id)
+    consultation = repo.get_consultation_details_by_queue_id(consultation_id)
     if not consultation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Consultation not found")
     return consultation
+
+
+# GET consultation case-files
+@consultation_router.get("/consultation/case-files/",
+                         tags=["Case Files", "Consultation"],
+                         summary="Get a list of consultation case files",
+                         description="Retrieve consultation by a collection of variables",
+                         response_model=List[ConsultationDTO]
+                         )
+def get_consultation_case_files(
+        current_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
+        client_id: int = 0,
+        limit: int = 100,
+        skip: int = 0,
+        case_status: str = 'Open',
+        consultation_type: ConsultationType = ConsultationType.base_case,
+        repo: ConsultationsRepository = Depends(get_consultations_repository)
+):
+    case_files = repo.get_consultation_case_files(
+        client_id=client_id,
+        consultation_type=consultation_type,
+        limit=limit,
+        skip=skip,
+        case_status=case_status
+    )
+
+    if not case_files:
+
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Consultation not found")
+    return case_files
+
+
+@consultation_router.get("/consultation/case-files/history/",
+                         tags=["Case Files", "History", "Consultation"],
+                         summary="Get a list of consultation case files",
+                         description="Retrieve consultation by a collection of variables",
+                         response_model=List[ConsultationDTO]
+                         )
+def get_case_follow_ups(current_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
+                        case_id: int = 0,
+                        limit: int = 100,
+                        skip: int = 0,
+                        case_status: str = 'Open',
+                        repo: ConsultationsRepository = Depends(
+                            get_consultations_repository)) -> List[ConsultationDTO]:
+    follow_ups = repo.get_follow_up_consultation(
+        consultation_id=case_id,
+        limit=limit,
+        skip=skip,
+        case_status=case_status
+    )
+    if not follow_ups:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Consultation not found")
+    return follow_ups
 
 
 # POST create a new consultation
@@ -254,11 +310,11 @@ def get_consultation(
                           status_code=status.HTTP_201_CREATED
                           )
 def create_consultation(
-        current_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
+        privileged_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
         consultation_data: ConsultationDetailDTO,
         repo: ConsultationsRepository = Depends(get_consultations_repository)
 ):
-    return repo.create(consultation_data, created_by=current_user)
+    return repo.create(consultation_data, created_by=privileged_user)
 
 
 # put update an existing consultation

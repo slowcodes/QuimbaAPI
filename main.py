@@ -15,9 +15,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
+from routers.pharmacy.all_pharm_router import pharm_routers
+
 import redis
 
-from routers.pharmacy.all_pharm_router import pharm_routers
 
 app = FastAPI(default_response_class=ORJSONResponse)
 app.add_middleware(GZipMiddleware, minimum_size=1000)

@@ -49,6 +49,9 @@ class Specialism(Base, SoftDeleteMixin):
     department = Column(String(50), index=True)
     specialist_title = Column(String(50))
 
+    # Relationships
+    specialist_specializations = relationship("SpecialistSpecialization", back_populates="specialism", lazy='select')
+
 
 class Specialist(Base, SoftDeleteMixin):
     __tablename__ = "consultant_specialist"
@@ -59,6 +62,14 @@ class Specialist(Base, SoftDeleteMixin):
     # Relationships
     specializations = relationship("SpecialistSpecialization", backref="specialist", lazy='select')
     consultant = relationship("Consultations", back_populates="creator", passive_deletes=True)
+    prescriptions = relationship("Prescription", back_populates="consultant", lazy='select')
+    user = relationship("User", back_populates="consultant_specialist", lazy='select')
+    in_hours = relationship("InHours", back_populates="consultant", lazy='select')
+    client_consultation_booking_carts = relationship(
+        "ClientConsultationBookingCart",
+        back_populates="consultant",
+        lazy="select"
+    )
     # Add index on user_id for efficient querying
     Index('ix_user_id', user_id)
 
@@ -81,6 +92,13 @@ class InHours(Base, SoftDeleteMixin):
     service_id = Column(Integer, ForeignKey("service_listing.service_id"))
 
     # consultation_queue = relationship("ConsultationQueue", backref="consultant_in_hours")
+    consultant = relationship("Specialist", back_populates="in_hours", lazy='select')
+    business_service = relationship("BusinessServices", back_populates="in_hours", lazy='select')
+    client_consultation_booking_carts = relationship(
+        "ClientConsultationBookingCart",
+        back_populates="schedule",
+        lazy="select"
+    )
 
 
 class SpecialistSpecialization(Base, SoftDeleteMixin):
@@ -89,8 +107,15 @@ class SpecialistSpecialization(Base, SoftDeleteMixin):
     specialist_id = Column(Integer, ForeignKey("consultant_specialist.id", ))
     specialism_id = Column(Integer, ForeignKey("consultant_department.id", ))
 
+    specialism = relationship("Specialism", back_populates="specialist_specializations", lazy='select')
+
     # Indexes for optimized searching
     Index('ix_specialist_specialization', specialist_id, specialism_id)
+    client_consultation_booking_carts = relationship(
+        "ClientConsultationBookingCart",
+        back_populates="specialization",
+        lazy="select"
+    )
 
 
 class ConsultationQueue(Base, SoftDeleteMixin):
@@ -107,6 +132,7 @@ class ConsultationQueue(Base, SoftDeleteMixin):
     # Relationship to Schedule
     # in_hours = relationship("InHours", backref="consultation_queue", lazy='select')
     consultations = relationship("Consultations", back_populates="queue", passive_deletes=True)
+    booking_detail = relationship("ServiceBookingDetail", back_populates="consultation_queue", lazy='select')
 
     # Index for faster queries
     Index('ix_schedule_status', schedule_id, status)
@@ -129,7 +155,7 @@ class Consultations(Base, SoftDeleteMixin):
 
     id = Column(Integer, primary_key=True, index=True)
     consultation_type = Column(SqlEnum(ConsultationType), default=ConsultationType.base_case)
-    queue_id = Column(Integer, ForeignKey("consultation_queue.id"))
+    queue_id = Column(Integer, ForeignKey("consultation_queue.id"), unique=True)  # One-to-one relationship
     reason_for_visit = Column(Text)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
@@ -145,7 +171,7 @@ class Consultations(Base, SoftDeleteMixin):
         back_populates="consultation",
         lazy="select"
     )
-    consultation_prescriptions = relationship("ConsultationPrescription", backref="consultation", lazy='select')
+    # consultation_prescriptions = relationship("ConsultationPrescription", backref="consultation", lazy='select')
     review_of_systems = relationship("ConsultationRoS", back_populates="consultation", lazy='select')
 
 
@@ -173,10 +199,11 @@ class ConsultationPrescription(Base, SoftDeleteMixin):
     __tablename__ = "consultation_prescription"
 
     id = Column(Integer, primary_key=True, index=True)
-    consultation_id = Column(Integer, ForeignKey("consultations.id", ondelete="cascade"))
+    consultation_cart_id = Column(Integer, ForeignKey("client_service_cart.id", ondelete="cascade"))
     prescription_id = Column(Integer, ForeignKey("pharmacy_prescription.id", ondelete="cascade"))
 
-    prescription = relationship("Prescription", backref="consultation_prescriptions", lazy='select')
+    pharmacy_prescription = relationship("Prescription", back_populates="consultation_prescriptions", lazy='select')
+    client_service_cart = relationship("ClientServiceCart", back_populates="prescription", lazy='select')
 
 
 class ConsultationHierarchy(Base):
@@ -241,6 +268,7 @@ class PresentingSymptom(Base, SoftDeleteMixin):
     symptom_id = Column(Integer, ForeignKey("symptom.id", ondelete="cascade"))
     severity = Column(SqlEnum(Severity))
     frequency = Column(SqlEnum(SymptomFrequency, name="symptom_frequency"))
+    agreviating_factors = Column(Text, nullable=True)
 
     # Relationships
     symptom = relationship("Symptom", back_populates="presenting_symptoms", lazy='select')

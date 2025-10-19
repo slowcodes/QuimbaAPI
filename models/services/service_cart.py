@@ -33,6 +33,7 @@ class ClientServiceCart(Base):
         back_populates="client_service_cart",
         cascade="all, delete-orphan"
     )
+    prescription = relationship("ConsultationPrescription", back_populates="client_service_cart", uselist=False)
 
 
 class ClientServiceCartPackage(Base, SoftDeleteMixin):
@@ -60,6 +61,11 @@ class ClientServiceCartDetail(Base):
     client_service_cart = relationship("ClientServiceCart", back_populates="client_service_cart_details")
     price_code = relationship("PriceCode", backref="client_service_cart_details")
     service = relationship("BusinessServices", backref="client_service_cart_details")
+    client_consultation_booking_carts = relationship(
+        "ClientConsultationBookingCart",
+        back_populates="client_service_cart_detail",
+        cascade="all, delete-orphan"
+    )
 
 
 class ClientConsultationBookingCart(Base):
@@ -72,3 +78,12 @@ class ClientConsultationBookingCart(Base):
     schedule_id = Column(Integer, ForeignKey("consultant_in_hours.id"))
     note = Column(Text)
     scheduled_time = Column(DateTime)
+
+    client_service_cart_detail = relationship(
+        "ClientServiceCartDetail",
+        back_populates="client_consultation_booking_carts"
+    )
+    consultant = relationship("Specialist", back_populates="client_consultation_booking_carts", lazy='select')
+    specialization = relationship("SpecialistSpecialization", back_populates="client_consultation_booking_carts",
+                                  lazy='select')
+    schedule = relationship("InHours", back_populates="client_consultation_booking_carts", lazy='select')

@@ -1,16 +1,23 @@
 # repositories/consultations_repository.py
+import json
+
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 
 from dtos.auth import UserDTO
-from dtos.consultation import ConsultationDTO, ConsultationCreate, ConsultationUpdate, ConsultationDetailDTO, \
-    PresentingSymptomDTO, ClinicalExaminationDTO, ConsultationRoSDTO
+from dtos.consultant import ConsultationDTO, ConsultationDetailDTO, ConsultationRoSDTO, ConsultationUpdate
+from dtos.consultation import PresentingSymptomDTO, ClinicalExaminationDTO, InHoursDTO
 from dtos.pharmacy.prescription import PrescriptionDTO, PrescriptionDetailDTO
+from dtos.service_dtos.client_cart_service import AppointmentData, ClientConsultationBookingCartDTO
 from models.consultation import Consultations, ClinicalExamination, ConsultationClinicalExamination, PresentingSymptom, \
-    ConsultationRoS, ConsultationQueue, ConsultationPrescription, ConsultationHierarchy
+    ConsultationRoS, ConsultationQueue, ConsultationPrescription, ConsultationHierarchy, InHours, ConsultationType
 from models.lab.lab import QueueStatus
-from models.pharmacy import Prescription
+from models.pharmacy import Prescription, PrescriptionDetail
+from models.services.service_cart import ClientConsultationBookingCart
+from models.services.services import BookingType, ServiceBookingDetail, ServiceBooking
 from models.transaction import Transaction
+from repos.consultation.consultant_repository import ConsultantRepository
+from repos.lab.lab_repository import LabRepository
 from repos.pharmacy.prescription_repository import PrescriptionRepository
 from repos.services.service_cart_repository import ServiceCartRepository
 from utils.functions import generate_transaction_id
@@ -20,7 +27,9 @@ class ConsultationsRepository:
 
     def __init__(self, db: Session):
         self.db = db
+        self.consultant_repository = ConsultantRepository(db)  # Initialize your ConsultantRepository here if needed
         self.service_cart_repository = ServiceCartRepository(db)
+        self.lab_repository = LabRepository(db)  # Initialize your LabRepository here if needed
 
     def get(self, consultation_id: int) -> Optional[ConsultationDTO]:
         consultation = (
@@ -29,6 +38,88 @@ class ConsultationsRepository:
             .first()
         )
         return ConsultationDTO.from_orm(consultation) if consultation else None
+
+    def get_consultation_details_by_queue_id(self, queue_id: int) -> ConsultationDetailDTO | None:
+        # Fetch the consultation by queue_id
+        consultation_obj = (
+            self.db.query(Consultations)
+            .filter(Consultations.queue_id == queue_id)
+            .first()
+        )
+        if not consultation_obj:
+            return None
+
+        return self.get_consultation_details(consultation_obj)
+
+    def get_consultation_details(self, consultation_obj: Consultations) -> ConsultationDetailDTO | None:
+        # Fetch clinical examination (if any)
+        clinical_exam_link = (
+            self.db.query(ConsultationClinicalExamination)
+            .filter(ConsultationClinicalExamination.consultation_id == consultation_obj.id)
+            .first()
+        )
+
+        client_service_cart = None
+        clinical_exam_dto = None
+        if clinical_exam_link:
+            clinical_exam_obj = (
+                self.db.query(ClinicalExamination)
+                .filter(ClinicalExamination.id == clinical_exam_link.clinical_examination_id)
+                .first()
+            )
+            if clinical_exam_obj:
+                clinical_exam_dto = ClinicalExaminationDTO.from_orm(clinical_exam_obj)
+                client_service_cart = self.service_cart_repository.get_client_service_cart_by_transaction_id(
+                    clinical_exam_obj.transaction_id
+                )
+                cart = []
+                if client_service_cart:
+                    for item in client_service_cart.client_service_cart_details or []:
+                        if item.service_type == BookingType.Laboratory:
+                            # get lab details by service_id
+                            lab_details = self.lab_repository.get_lab_service_details_by_service_id(item.service_id)
+                            item.service_desc = lab_details["name"]
+                            cart.append(item)
+                        if item.service_type == BookingType.Appointment:
+                            # get consultation booking details by service_id
+                            item.service_desc = f"Appointment - Pending Desc"
+                            item.appointment_data = item.client_consultation_booking_carts
+                            cart.append(item)
+
+                    client_service_cart.client_service_cart_details = cart
+        # get prescription (if any)
+        prescription_link = self.db.query(ConsultationPrescription) \
+            .filter(ConsultationPrescription.consultation_cart_id == client_service_cart.id).one_or_none()
+        prescription_dto = None
+
+        if prescription_link:
+            prescription_obj = self.db.query(Prescription) \
+                .filter(Prescription.id == prescription_link.prescription_id).one_or_none()
+            if prescription_obj:
+                prescription_dto = PrescriptionDTO.from_orm(prescription_obj)
+                # Fetch prescription details
+                prescription_details = self.db.query(PrescriptionDetail) \
+                    .filter(PrescriptionDetail.prescription_id == prescription_obj.id).all()
+                prescription_dto.prescriptions = [PrescriptionDetailDTO.from_orm(detail) for detail in
+                                                  prescription_details]
+
+        # Fetch review of systems (if any)
+        ros_objs = (
+            self.db.query(ConsultationRoS)
+            .filter(ConsultationRoS.consultation_id == consultation_obj.id)
+            .all()
+        )
+        ros_dtos = [ConsultationRoSDTO.from_orm(ros) for ros in ros_objs] if ros_objs else []
+
+        # You may need to fetch and construct client_service_cart and prescription as well, as in ConsultationDetailDTO
+        # Here, set them to None or implement their retrieval if needed
+        return ConsultationDetailDTO(
+            consultation=ConsultationDTO.from_orm(consultation_obj),
+            clinical_examination=clinical_exam_dto,
+            review_of_systems=ros_dtos,
+            client_service_cart=client_service_cart,
+            prescription=prescription_dto
+        )
 
     def get_all(self, skip: int = 0, limit: int = 100, client_id: int = 0) -> List[ConsultationDetailDTO]:
         query = (
@@ -105,18 +196,21 @@ class ConsultationsRepository:
             result.append(detail)
         return result
 
-    def create(self, consultation_data_detail: ConsultationDetailDTO, created_by: UserDTO) -> ConsultationDTO:
+    def create(self, cdd: ConsultationDetailDTO, created_by: UserDTO) -> ConsultationDTO:
         try:
-            consultation_data = consultation_data_detail.consultation
-            consultation_data.created_by = created_by.id
+            consultation_data = cdd.consultation
 
-            # remove base_case_id from consultation_to match the Consultations model
-            cons_data = consultation_data.dict()
-            cons_data.pop('base_case_id', None)
+            # get consultant id by user id
+            consultant = self.consultant_repository.get_consultant_by_user_id(created_by.id)
+            if not consultant:
+                raise ValueError(f"No consultant found for user ID: {created_by.id}")
 
-            print(cons_data)
             consultation = Consultations(
-                **cons_data
+                consultation_type=cdd.consultation.consultation_type,
+                created_by=consultant.id,
+                queue_id=consultation_data.queue_id,
+                reason_for_visit=consultation_data.reason_for_visit,
+                preliminary_diagnosis=consultation_data.preliminary_diagnosis,
             )
             self.db.add(consultation)
             self.db.flush()
@@ -137,13 +231,14 @@ class ConsultationsRepository:
             self.db.flush()
 
             # create clinical examination if provided. use repository later
-            clinical_examination_data = consultation_data_detail.clinical_examination
+            clinical_examination_data = cdd.clinical_examination
             clinical_examination_data.transaction_id = transaction.id
             ced = clinical_examination_data.dict()
 
             # exclude symptoms to avoid issues with serialization
-            ced.pop('symptoms', None)
-            cedr = ClinicalExamination(**ced)
+            keys_to_exclude = ['symptoms', ]
+            cedr = {k: v for k, v in ced.items() if k not in keys_to_exclude}
+            cedr = ClinicalExamination(**cedr)
             cedr.conducted_by = created_by.id
             self.db.add(cedr)
             self.db.flush()
@@ -158,24 +253,30 @@ class ConsultationsRepository:
             for symptom in clinical_examination_data.symptoms or []:
                 symptom.clinical_examination_id = cedr.id
                 self.db.add(
-                    PresentingSymptom(**symptom.dict())
+                    PresentingSymptom(
+                        symptom_id=symptom.symptom_id,
+                        clinical_examination_id=cedr.id,
+                        severity=symptom.severity,
+                        frequency=symptom.frequency,
+                        agreviating_factors=symptom.agreviating_factors
+                    )
                 )
 
-            review_of_systems = consultation_data_detail.review_of_systems or []
+            review_of_systems = cdd.review_of_systems or []
             for ros in review_of_systems:
                 ros.consultation_id = consultation.id
                 if not ros.system or not ros.note:
                     continue
                 self.db.add(ConsultationRoS(**ros.dict()))
 
-            consultation_data_detail.client_service_cart.transaction_id = transaction.id
-            consultation_data_detail.client_service_cart.created_by = created_by.id
+            cdd.client_service_cart.transaction_id = transaction.id
+            cdd.client_service_cart.created_by = created_by.id
             self.service_cart_repository.create_client_service_cart(
-                consultation_data_detail.client_service_cart
+                cdd.client_service_cart
             )
 
             # process prescription if any
-            prescription = consultation_data_detail.prescription
+            prescription = cdd.client_service_cart.prescription
             if prescription:
                 prescription_repository = PrescriptionRepository(self.db)
                 prescription_id = prescription_repository.create(prescription, created_by)
@@ -219,3 +320,60 @@ class ConsultationsRepository:
         self.db.delete(consultation)
         self.db.commit()
         return True
+
+    def get_consultation_case_files(
+            self,
+            limit: int,
+            skip: int,
+            case_status: str,
+            client_id: int = 0,
+            consultation_type: ConsultationType = ConsultationType.base_case,
+            ) -> List[ConsultationDTO]:
+
+        query = (
+            self.db.query(Consultations)
+            .options(
+                joinedload(Consultations.queue)
+                .joinedload(ConsultationQueue.booking_detail)
+                .joinedload(ServiceBookingDetail.booking),
+                joinedload(Consultations.creator),
+            )
+            .order_by(Consultations.created_at.desc())
+        )
+
+        # Filter by consultation type
+        if consultation_type:
+            query = query.filter(Consultations.consultation_type == consultation_type)
+
+        # Filter by case status
+        if case_status:
+            query = query.filter(Consultations.case_status == case_status)
+
+        # Filter by client_id (through the booking chain)
+        if client_id:
+            query = (
+                query.join(Consultations.queue)
+                .join(ConsultationQueue.booking_detail)
+                .join(ServiceBookingDetail.booking)
+                .filter(ServiceBooking.client_id == client_id)
+            )
+
+        consultations = query.offset(skip).limit(limit).all()
+        return consultations # [ConsultationDTO.from_orm(c) for c in consultations]
+
+    def get_follow_up_consultation(self,
+                                   consultation_id: int,
+                                   skip: int = 0, limit: int = 100,
+                                   case_status: str = 'Open') -> List[ConsultationDTO]:
+        follow_ups = self.db.query(ConsultationHierarchy).filter(
+            ConsultationHierarchy.base_consultation_id == consultation_id
+        ).offset(skip).limit(limit).all()
+
+        results = []
+        for fu in follow_ups:
+            consultation = self.db.query(Consultations).filter(
+                Consultations.id == fu.follow_up_consultation_id
+            ).first()
+            if consultation:
+                results.append(ConsultationDTO.from_orm(consultation))
+        return results
