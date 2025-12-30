@@ -1,90 +1,24 @@
-from sqlalchemy.orm import Session
-from dtos.lab import CollectedSamplesDTO, SampleDetailDTO, LabServicesQueueDTO
+import traceback
+from typing import List
+
+from sqlalchemy import or_
+from sqlalchemy.orm import Session, joinedload
+
+from dtos.all import DataResponseDTO
+from dtos.lab import CollectedSamplesDTO, SampleDetailDTO, LabServicesQueueDTO, CollectedSamplesCreateDTO
 from models.auth import User
 from models.client import Person, Client
-from models.lab.lab import CollectedSamples, LabService, LabServicesQueue, QueueStatus, SampleType
+from models.lab.lab import CollectedSamples, LabService, LabServicesQueue, QueueStatus, SampleType, SampleResult
 from models.services.services import ServiceBookingDetail, ServiceBooking, BusinessServices
-from repos.auth_repository import UserRepository
-from repos.client.client_repository import ClientRepository
-from repos.lab.queue_repository import QueueRepository
+import datetime
+
+from repos.base_repository import BaseRepository
 
 
-class CollectedSamplesRepository:
+class CollectedSamplesRepository(BaseRepository):
     def __init__(self, db: Session):
+        super().__init__(db)
         self.db = db
-        self.cols = [
-            CollectedSamples.id.label("sample_id"),
-            CollectedSamples.sample_type,
-            CollectedSamples.collected_at,
-            CollectedSamples.container_label,
-            CollectedSamples.collected_by,
-            CollectedSamples.queue_id,
-            CollectedSamples.status,
-
-            LabServicesQueue.id,
-            LabServicesQueue.status.label("queue_status"),
-            LabServicesQueue.lab_service_id,
-            LabServicesQueue.priority,
-            LabServicesQueue.scheduled_at.label("queue_booked_at"),
-
-            User.username,
-
-            Person.first_name,
-            Person.last_name,
-
-            ServiceBookingDetail.service_id.label("booking_service_id"),
-            ServiceBookingDetail.id.label("service_booking_id"),
-
-            ServiceBooking.client_id,
-
-            LabService.lab_service_name,
-            LabService.service_id,
-
-            BusinessServices.ext_turn_around_time
-        ]
-        self.samples_collection_details = self.db.query(*self.cols).select_from(CollectedSamples) \
-            .join(LabServicesQueue, LabServicesQueue.id == CollectedSamples.queue_id) \
-            .join(User, User.id == CollectedSamples.collected_by) \
-            .join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
-            .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id) \
-            .join(Client, Client.id == ServiceBooking.client_id) \
-            .join(Person, Person.id == Client.person_id) \
-            .join(LabService, LabService.service_id == ServiceBookingDetail.service_id) \
-            .join(BusinessServices, LabService.service_id == BusinessServices.service_id)
-
-    def response_model(self, sample) -> SampleDetailDTO:
-        user_repo = UserRepository(self.db)
-        client_repo = ClientRepository(self.db)
-        client = client_repo.get_client(sample.client_id)
-
-        return {
-            'sample_type': sample.sample_type,
-            'sample_id': sample.sample_id,
-            'collected_at': sample.collected_at,
-            'container_label': sample.container_label,
-            'sample_status': sample.status,
-            'lab_service_id': sample.lab_service_id,
-            'ext_turn_around': sample.ext_turn_around_time,
-            'client': {
-                'first_name': sample.first_name,
-                'last_name': sample.last_name,
-                'sex': client['sex'],
-                'date_of_birth': client['date_of_birth']
-            },
-            'lab_service_name': sample.lab_service_name,
-            'queue': {
-                'queue_status': sample.queue_status,
-                'queue_priority': sample.priority,
-                'queue_id': sample.queue_id,
-                'queue_booking_time': sample.queue_booked_at
-            },
-            'user': user_repo.get_user(sample.username)
-        }
-
-    def get_collected_sample_by_id(self, sample_id: int):
-        return self.response_model(
-            self.samples_collection_details.filter(CollectedSamples.id == sample_id).first()
-        )
 
     def normalize_sample_type(self, sample_type):
         """Normalize sample_type to a proper SampleType enum member."""
@@ -101,105 +35,175 @@ class CollectedSamplesRepository:
                 raise ValueError(f"Invalid sample_type: {sample_type!r}")
         raise TypeError(f"sample_type must be str or SampleType, got {type(sample_type).__name__}")
 
-    def add_collected_sample(self, sample_data: CollectedSamplesDTO) -> CollectedSamplesDTO:
+    def get_sample_result_comments(self):
+        return [c.comment for c in self.db.query(SampleResult).all()]
+
+    def add_collected_sample(self, sample_data: CollectedSamplesCreateDTO) -> CollectedSamplesDTO:
+
+        print('smpl-repo:', sample_data)
+
         smpl = sample_data.__dict__.copy()  # copy to avoid modifying original DTO
         smpl['sample_type'] = self.normalize_sample_type(smpl['sample_type'])
 
+        smpl = sample_data.model_dump(exclude_unset=True, exclude={"id"})
         new_collected_sample = CollectedSamples(**smpl)
+
+        # update queue status as processed
+        self.update(sample_data.queue_id, LabServicesQueue, {'status': QueueStatus.Processed})
+
         self.db.add(new_collected_sample)
         self.db.commit()
         self.db.refresh(new_collected_sample)
 
-        return CollectedSamplesDTO(
-            id=new_collected_sample.id,
-            queue_id=new_collected_sample.queue_id,
-            container_label=new_collected_sample.container_label,
-            collected_at=new_collected_sample.collected_at,
-            sample_type=new_collected_sample.sample_type,
-            collected_by=new_collected_sample.collected_by
+        return CollectedSamplesDTO.from_orm(new_collected_sample)
+
+    def get_collected_samples(
+            self,
+            skip: int = 0,
+            limit: int = 10,
+            lab_id: int = 0,
+            booking_id: int = 0,
+            date_filter: dict = None,
+            search_keyword: str = None,
+            client_id: int = 0
+    ) -> DataResponseDTO[CollectedSamplesDTO]:
+        """
+            Retrieve collected samples from the database with optional filtering, searching, and pagination.
+
+            Args:
+                skip (int): Number of records to skip (for pagination).
+                limit (int): Maximum number of records to return.
+                lab_id (int): Optional lab service ID to filter samples by.
+                booking_id (int): Optional booking ID to filter samples by.
+                date_filter (dict): Optional date filter with 'start' and 'end' datetime strings or objects.
+                    Example: {"start": "2025-10-01", "end": "2025-10-22"}
+                search_keyword (str): Keyword to search by patient name, phone, or email.
+                client_id (int): Optional filter to restrict samples to a specific client (patient).
+
+            Returns:
+                list[CollectedSamples]: List of collected sample ORM objects with related user, person, and queue preloaded.
+            """
+
+        # --- Base Query with required joins ---
+        query = (
+            self.db.query(CollectedSamples)
+            .join(CollectedSamples.queue)
+            .join(LabServicesQueue.booking)
+            .join(ServiceBookingDetail.booking)
+            .join(User, CollectedSamples.collected_by == User.id)
+            .join(Person, User.person_id == Person.id)
+            .options(
+                joinedload(CollectedSamples.user).joinedload(User.person),
+                joinedload(CollectedSamples.queue),
+            )
         )
 
-    def get_collected_samples(self, skip: int = 0, limit: int = 10,
-                              lab_id: int = 0, booking_id: int = 0, date_filter: dict = None,
-                              search_keyword: str = None):
-        samples_collection = self.samples_collection_details
+        # --- Filter: Lab ID ---
+        if lab_id:
+            query = query.join(LabService, LabService.id == LabServicesQueue.lab_service_id).filter(LabService.lab_id == lab_id)
 
-        if date_filter:
-            start_date = date_filter['start_date']
-            last_date = date_filter['last_date']
-            status = date_filter['status']
+        # --- Filter: Booking ID ---
+        if booking_id:
+            query = query.filter(ServiceBookingDetail.booking_id == booking_id)
 
-            if start_date:
-                samples_collection = samples_collection.filter(CollectedSamples.collected_at >= start_date)
-            if last_date:
-                samples_collection = samples_collection.filter(CollectedSamples.collected_at <= last_date)
-            if status == QueueStatus.Processed or status == QueueStatus.Processing:
-                samples_collection = samples_collection.filter(CollectedSamples.status == status)
+        # --- Filter: Client ID ---
+        if client_id:
+            # Join through ServiceBookingDetail → ServiceBooking → Client (via Person)
+            query = query.join(Client, Client.person_id == Person.id)
+            query = query.filter(Client.id == client_id)
 
-        if lab_id != 0:
-            samples_collection = self.samples_collection_details.where(LabService.lab_id == lab_id)
+        # --- Filter: Date Range ---
+        if date_filter and isinstance(date_filter, dict):
 
+            start = date_filter.get("start_date")
+            end = date_filter.get("last_date")
+            status = date_filter.get("status")
+
+            if isinstance(start, str):
+                start = datetime.datetime.fromisoformat(start)
+            if isinstance(end, str):
+                end = datetime.datetime.fromisoformat(end)
+
+            if status in ("Processing", "Processed"):
+                query = query.filter(CollectedSamples.status == status)
+
+            if start and end:
+                query = query.filter(CollectedSamples.collected_at.between(start, end))
+            elif start:
+                query = query.filter(CollectedSamples.collected_at >= start)
+            elif end:
+                query = query.filter(CollectedSamples.collected_at <= end)
+
+        # --- Filter: Search Keyword ---
         if search_keyword:
-            samples_collection = samples_collection.filter(
-                LabService.lab_service_name.ilike(f"%{search_keyword}%") |
-                Person.first_name.ilike(f"%{search_keyword}%") |
-                Person.last_name.ilike(f"%{search_keyword}%") |
-                # User.username.ilike(f"%{search_keyword}%") |
-                CollectedSamples.container_label.ilike(f"%{search_keyword}%")
+            keyword = f"%{search_keyword}%"
+            query = query.filter(
+                or_(
+                    Person.first_name.ilike(keyword),
+                    Person.last_name.ilike(keyword),
+                    Person.phone.ilike(keyword),
+                    Person.email.ilike(keyword),
+                )
             )
 
-        samples_collection_details = samples_collection  # .filter(CollectedSamples.status != QueueStatus.Processed)
+        # --- Pagination and ordering ---
+        samples = (
+            query.order_by(CollectedSamples.collected_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
-        if booking_id != 0:
-            samples_collection_details = samples_collection.filter(ServiceBooking.id == booking_id)
+        data = [CollectedSamplesDTO.from_orm(sample) for sample in samples]
+        return DataResponseDTO[CollectedSamplesDTO](
+            data=data,
+            total=query.count()
+        )
 
-        total = samples_collection_details.count()
-        collected_samples = samples_collection_details.order_by(CollectedSamples.collected_at.desc()) \
-            .offset(skip).limit(limit).all()
+    def get_sample_by_id(self, sample_id) -> CollectedSamplesDTO | None:
+        return CollectedSamplesDTO.from_orm(
+            self.db.query(CollectedSamples).filter(CollectedSamples.id == sample_id).first()
+        )
 
-        data = []
-        for sample in collected_samples:
-            data.append(
-                self.response_model(sample)
-            )
-
-        return {
-            'data': data,
-            'total': total
-        }
-
-    def get_sample_by_id(self, sample_id):
-        return self.db.query(CollectedSamples).filter(CollectedSamples.id == sample_id).first()
+    def get_collected_sample_by_queue_id(self, queue_id: int):
+        return CollectedSamplesDTO.from_orm(
+            self.db.query(CollectedSamples).filter(CollectedSamples.queue_id == queue_id).first()
+        )
 
     def delete_collected_sample(self, sample_id: int) -> None:
-        sample = self.get_sample_by_id(sample_id)
+        try:
+            sample = self.db.query(CollectedSamples).filter(CollectedSamples.id == sample_id).first()
 
-        queue_repo = QueueRepository(self.db)
-        queue = queue_repo.get_queue(sample.queue_id)
+            queue = (
+                self.db.query(LabServicesQueue)
+                .filter(LabServicesQueue.id == sample.queue_id)
+                .first()
+            )
 
-        status_dict = LabServicesQueueDTO(
-            id=queue.id,
-            lab_service_id=queue.lab_service_id,
-            booking_id=queue.booking_id,
-            status=QueueStatus.Processing
-        )
-        # status_dict = {
-        #     "status": QueueStatus.Processing
-        # }
-        queue_repo.update_lab_service_queue(queue, status_dict)
+            if not queue:
+                raise ValueError("Queue not found")
 
-        sample = self.get_sample_by_id(sample_id)
-        self.db.delete(sample)
-        self.db.commit()
+            queue.status = QueueStatus.Processing
 
-    def update_processed_sample(self, sample_id: int, status: QueueStatus = QueueStatus.Processed) -> bool:
-        sample = self.get_sample_by_id(sample_id)
-        if sample:
-            # for key, value in new_data.items():
-            #     setattr(sample, key, value)
-            # self.session.commit()
-            setattr(sample, 'status', status)
+            # ✅ ORM delete (tracked)
+            self.db.delete(sample)
+
             self.db.commit()
-            return True
+        except Exception:
+            self.db.rollback()
+            traceback.print_exc()
+            raise
 
-        return False
+    def update_processed_sample(self, queue_id: int, status: QueueStatus = QueueStatus.Processed) -> bool:
+        sample = (
+            self.db.query(CollectedSamples)
+            .filter(CollectedSamples.queue_id == queue_id)
+            .one_or_none()
+        )
+
+        if not sample:
+            return False
+
+        sample.status = status
+        self.db.commit()
+        return True

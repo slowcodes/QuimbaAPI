@@ -12,13 +12,15 @@ class ReferralRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, org_people_id: Optional[int]) -> Referral:
+    def create(self, person_id: int) -> ReferralDTO:
         """Create a new referral."""
-        referral = Referral(org_people_id=org_people_id)
+        referral = Referral(
+                person_id=person_id
+            )
         self.db.add(referral)
         self.db.commit()
         self.db.refresh(referral)
-        return referral
+        return ReferralDTO.from_orm(referral)
 
     def get_referral_by_id(self, referral_id: int) -> Optional[Referral]:
         """Retrieve a referral by ID."""
@@ -100,7 +102,11 @@ class ReferralRepository:
         return self.db.query(ReferredTransaction).offset(skip).limit(limit).all()
 
     def create_referred_transaction(self, transaction_data: ReferredTransactionDTO):
-        db_transaction = ReferredTransaction(**transaction_data.dict())
+        print('referral passes to method',transaction_data)
+        db_transaction = ReferredTransaction(
+            transaction_id=transaction_data.transaction_id,
+            referral_id=transaction_data.referral_id
+        )
         self.db.add(db_transaction)
         self.db.commit()
         self.db.refresh(db_transaction)
@@ -135,10 +141,3 @@ class ReferralRepository:
 
     def get_all_referred_transaction(self, skip: int = 0, limit: int = 100):
         return self.db.query(ReferredTransaction).offset(skip).limit(limit).all()
-
-    def create_referred_transaction(self, transaction_data: ReferredTransactionDTO):
-        db_transaction = ReferredTransaction(**transaction_data.dict())
-        self.db.add(db_transaction)
-        self.db.commit()
-        self.db.refresh(db_transaction)
-        return db_transaction

@@ -56,21 +56,6 @@ class ClinicalExaminationDTO(BaseModel):
         from_attributes = True
 
 
-class InHoursDTO(BaseModel):
-    id: Optional[int] = None
-    start_time: Optional[datetime.datetime] = None
-    end_time: Optional[datetime.datetime] = None
-    specialist_id: Optional[int] = None
-    frequency: Optional[InHourFrequency]
-
-    business_service: Optional[BusinessServiceDTO]
-
-    # consultant: Optional[ConsultantDTO] = None
-
-    class Config:
-        from_attributes = True
-
-
 class SpecialistSpecializationDTO(BaseModel):
     id: Optional[int] = None
     specialist_id: int
@@ -82,18 +67,47 @@ class SpecialistSpecializationDTO(BaseModel):
         from_attributes = True
 
 
-class ConsultantDTO(BaseModel):
+class BasicConsultantDTO(BaseModel):
     id: Optional[int] = None
-    user_id: int
-    title: Optional[str] = None
     user: BasicUserDTO
-
+    title: Optional[str] = None
     specializations: List[SpecialistSpecializationDTO] = []
-    in_hours: List[InHoursDTO] = []
-
-    # consultant: List[ConsultationDTO] = None
-    # prescriptions: List[PrescriptionDTO] = []
-    # client_consultation_booking_carts: List[ClientConsultationBookingCartDTO] = []
 
     class Config:
         from_attributes = True
+
+
+class InHoursDTO(BaseModel):
+    id: Optional[int] = None
+    start_time: Optional[datetime.datetime] = None
+    end_time: Optional[datetime.datetime] = None
+    specialist_id: Optional[int] = None
+    frequency: Optional[InHourFrequency]
+
+    business_service: Optional[BusinessServiceDTO]
+    consultant: Optional[BasicConsultantDTO] = None
+
+    # consultant: Optional[ConsultantDTO] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ConsultantBaseDTO(BaseModel):
+    id: Optional[int] = None
+    user_id: int
+    title: Optional[str] = None
+
+
+class ConsultantDTO(ConsultantBaseDTO):
+
+    user: BasicUserDTO
+    specializations: List[SpecialistSpecializationDTO] = []
+    in_hours: List[InHoursDTO] = []
+
+    class Config:
+        from_attributes = True
+
+
+class ConsultantCreateDTO(ConsultantBaseDTO):
+    specializations: List[int] = []  # list of specialism IDs

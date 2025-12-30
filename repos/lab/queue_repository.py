@@ -2,14 +2,16 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from dtos.lab import LabServicesQueueDTO, QueueDTO, VerifiedResultEntryDTO
+from dtos.lab import LabServicesQueueDTO, QueueDTO, VerifiedResultEntryDTO, SampleResultDTO, LabServicesQueueCreateDTO
 from dtos.services import ServiceEventDTO, EventType, ServiceTrackingDTO
 from models.client import Client, Person
 from models.lab.lab import LabServicesQueue, Laboratory, QueueStatus, LabService, CollectedSamples, SampleResult, \
     LabVerifiedResult
 from models.services.services import ServiceBooking, BusinessServices, ServiceBookingDetail
 from repos.auth_repository import UserRepository
-from repos.lab.experiment_repository import ExperimentRepository
+from repos.lab.lab_repository import LabRepository
+from repos.lab.sample_repository import CollectedSamplesRepository
+from repos.services.service_repository import ServiceRepository
 from repos.transaction_repository import TransactionRepository
 
 
@@ -40,21 +42,17 @@ class QueueRepository:
 
         self.transaction_repository = TransactionRepository(self.db_session)
         self.user_repository = UserRepository(self.db_session)
+        self.lab_repository = LabRepository(self.db_session)
+        self.service_repository = ServiceRepository(self.db_session)
+        self.sample_repository = CollectedSamplesRepository(self.db_session)
 
-    def create_lab_service_queue(self, lab_service_queue_dto: LabServicesQueueDTO) -> LabServicesQueueDTO:
+    def create_lab_service_queue(self, lab_service_queue_dto: LabServicesQueueCreateDTO) -> LabServicesQueueDTO:
         lab_service_queue = LabServicesQueue(**lab_service_queue_dto.dict())
         self.db_session.add(lab_service_queue)
         self.db_session.commit()
         self.db_session.refresh(lab_service_queue)
-        queue = {
-            'id': lab_service_queue.id,
-            'lab_service_id': lab_service_queue.lab_service_id,
-            'scheduled_at': lab_service_queue.scheduled_at,
-            'status': lab_service_queue.status,
-            'priority': lab_service_queue.priority,
-            'booking_id': lab_service_queue.booking_id
-        }
-        return queue
+
+        return LabServicesQueueDTO.from_orm(lab_service_queue)
 
     def search_lab_service_queue(self, keyword='', skip=0, limit=10, lab_id: int = 0) -> QueueDTO:
         query = self.base_query. \
@@ -78,89 +76,66 @@ class QueueRepository:
 
     def get_lab_service_queue(self, lab_id: int = 0, skip: int = 0,
                               limit: int = 10, booking_id: int = 0,
-                              last_date: str = None, start_date: str = None, status: str = None) -> QueueDTO:
+                              last_date: str = None, start_date: str = None, status: str = QueueStatus.Processing):
 
-        query = self.base_query
+        base_query = self.db_session.query(LabServicesQueue)
         if lab_id != 0:
-            query = query.filter(Laboratory.id == lab_id)
+            base_query = base_query.join(LabService, LabServicesQueue.lab_service_id == LabService.id)\
+                .join(Laboratory, Laboratory.id == LabService.lab_id).filter(Laboratory.id == lab_id)
 
         if booking_id != 0:
-            query = query.filter(ServiceBookingDetail.booking_id == booking_id)
+            base_query = base_query.join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id).filter(ServiceBookingDetail.booking_id == booking_id)
 
         if last_date is not None and start_date is not None:
             last_date = last_date + " 23:59:59.000001"
             start_date = start_date + " 00:00:00.000001"
-            query = query.filter(
+            base_query = base_query.filter(
                 LabServicesQueue.scheduled_at.between(start_date, last_date)
                 if start_date and last_date else
                 LabServicesQueue.scheduled_at >= start_date if start_date else
                 LabServicesQueue.scheduled_at <= last_date
             )
 
-        processed_queue = query.filter(LabServicesQueue.status == QueueStatus.Processed)
-        if status is None or status == QueueStatus.Processing:  # by default, get processing
-            query = query.filter(LabServicesQueue.status == QueueStatus.Processing)
+        processed_queue = base_query.filter(LabServicesQueue.status == QueueStatus.Processed)
 
-        elif status == QueueStatus.Processed:
-            query = query.filter(LabServicesQueue.status == QueueStatus.Processed)
-        else:
-            query = query  # apply no filter. filter(LabServicesQueue.status == QueueStatus.Processing)
+        if status in QueueStatus.__members__:
+            base_query = base_query.filter(LabServicesQueue.status == status)
 
-        count = query.count()
-        query = query.order_by(LabServicesQueue.id.desc()).offset(skip).limit(limit)
+        count = base_query.count()
+        query = base_query.order_by(LabServicesQueue.id.desc()).offset(skip).limit(limit)
         results = query.all()
 
         return {
-            'queue': self.generate_queue_list(results),
+            'queue': [LabServicesQueueDTO.from_orm(queue) for queue in results],
             'total': count,  # total processing
             'total_processed': processed_queue.count()
         }
 
     def get_queue(self, queue_id: int) -> LabServicesQueueDTO:
-        return self.db_session.query(LabServicesQueue).filter(LabServicesQueue.id == queue_id).first()
+        return LabServicesQueueDTO.from_orm(
+            self.db_session.query(LabServicesQueue).filter(LabServicesQueue.id == queue_id).first()
+        )
 
     def get_queue_by_booking_id(self, booking_id: int) -> LabServicesQueueDTO:
         return self.db_session.query(LabServicesQueue).filter(LabServicesQueue.booking_id == booking_id).first()
 
     def get_lab_service_queue_by_booking_id(self, booking_id: int):
-
-        cols = [LabServicesQueue.id.label("queue_id"),
-                LabServicesQueue.status,
-                LabServicesQueue.booking_id,
-                LabServicesQueue.priority,
-                ServiceBooking.transaction_id,
-                LabServicesQueue.scheduled_at,
-                LabService.lab_service_name,
-                BusinessServices.ext_turn_around_time
-                ]
-
-        result = self.db_session.query(*cols).select_from(LabServicesQueue) \
+        q_result = self.db_session.query(LabServicesQueue) \
             .join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
-            .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id) \
-            .join(LabService, LabService.id == LabServicesQueue.lab_service_id) \
-            .join(BusinessServices, BusinessServices.service_id == LabService.service_id) \
-            .filter(ServiceBooking.id == booking_id).all()
+            .filter(ServiceBookingDetail.booking_id == booking_id).all()
 
-        response = []
-
-        for res in result:
-            sample_elements = self.get_collected_sample_by_queue_id(res.queue_id)
-            response.append({
-                'queue_id': res.queue_id,
-                'status': res.status,
-                'booking_id': res.booking_id,
-                'priority': res.priority,
-                'scheduled_at': res.scheduled_at,
-                'lab_service_name': res.lab_service_name,
-                'samples': sample_elements,
-                'ext_turn_around': res.ext_turn_around_time,
-                'transaction_id': res.transaction_id
-            })
-        return response
+        return [LabServicesQueueDTO.from_orm(queue) for queue in q_result]
 
     def track_booking_from_queue(self, booking_id: int):
-        # get booking elements
+        """
+        Not all transactions have lab services booked
+        Transaction may have consultation services, sales or neither.
+        Sales need not be tracked here as they are instant.
+        A transaction may be initiated due to patient registration alone.
+        Transaction may also be initiated when a when services are placed in a clients cart"""
+
         elements = self.get_lab_service_queue_by_booking_id(booking_id)
+        consultation_elements = []
 
         service_tracks: List[ServiceTrackingDTO] = []  # List[ServiceTrackingDTO]
 
@@ -236,39 +211,25 @@ class QueueRepository:
             )
 
         # return service_tracks
-        transaction_id = elements[0]["transaction_id"] if elements else None
+        transaction_id = 998774401717  # elements[0]["transaction_id"] if elements else None
         # return TrackingDataDTO(
         #     service_tracking=service_tracks,
         #     transaction=self.transaction_repository.get_laboratory_transaction(transaction_id),
         # )
 
-        booking_transaction = self.transaction_repository.get_laboratory_transaction(transaction_id)
-        booking_transaction['services'] = self.get_lab_services_booking(transaction_id)
+        booking_transaction = (self.transaction_repository.get_transaction_by_id(transaction_id)).dict()
+        booking_transaction['services'] = self.lab_repository.get_lab_services_booking(transaction_id)
+
         return {
             'service_tracking': service_tracks,
-            'transaction': booking_transaction
+            'transaction': self.sales_service_repository.get_full_transaction_details(transaction_id)
         }
 
     def get_result_by_sample_id(self, sample_id: int):
-
         res = self.db_session.query(SampleResult).filter(SampleResult.sample_id == sample_id).first()
-
-        experiment_repository = ExperimentRepository(self.db_session)
-
         if res:
-            user_repository = UserRepository(self.db_session)
-            user = user_repository.get_user_by_id(res.created_by)
-            usr = user_repository.get_user(user.username)
-            return {
-                'id': res.id,
-                'sample_id': res.sample_id,
-                'comment': res.comment,
-                'verification': self.get_result_verification(res.id),
-                'created_at': res.created_at,
-                'created_by': usr.first_name + " " + usr.last_name,
-                'experiment_readings': experiment_repository.get_readings_by_sample_id(res.sample_id)
-            }
-        return
+            return [SampleResultDTO.from_orm(res)]
+        return None
 
     def get_result_verification(self, result_id) -> VerifiedResultEntryDTO:
         verification_details = self.db_session.query(LabVerifiedResult) \
@@ -284,24 +245,6 @@ class QueueRepository:
             )
 
         return None
-
-    def get_collected_sample_by_queue_id(self, queue_id: int):
-        samples_query = self.db_session.query(CollectedSamples).filter(CollectedSamples.queue_id == queue_id).all()
-
-        collected_samples = []
-        for collected_sample in samples_query:
-            res = self.get_result_by_sample_id(collected_sample.id)
-            collected_samples.append({
-                'collected_by': collected_sample.collected_by,
-                'collected_at': collected_sample.collected_at,
-                'sample_type': collected_sample.sample_type,
-                'queue_id': collected_sample.queue_id,
-                'status': collected_sample.status,
-                'container_label': collected_sample.container_label,
-                'id': collected_sample.id,
-                'sample_result': res  # self.get_result_by_sample_sample_id(collected_sample.id)
-            })
-        return collected_samples
 
     def get_collected_sample_by_sample_id(self, sample_id: int):
         return self.db_session.query(CollectedSamples).filter(CollectedSamples.id == sample_id).first()
@@ -331,7 +274,7 @@ class QueueRepository:
         for var, value in queue_data.items():
             setattr(queue, var, value) if value else None
         self.db_session.commit()
-        self.db_session.refresh(lab_service_queue)
+        # self.db_session.refresh(lab_service_queue)
         return lab_service_queue
 
     def delete_lab_service_queue(self, queue_id: int):
@@ -361,7 +304,7 @@ class QueueRepository:
             }
 
     def update_lab_queue(self, queue_id, updates: dict) -> LabServicesQueue:
-        lab_service_queue: LabServicesQueue = self.get_queue(queue_id)
+        lab_service_queue = self.db_session.query(LabServicesQueue).filter(LabServicesQueue.id == queue_id).first()
 
         if lab_service_queue:
             for key, value in updates.items():

@@ -1,3 +1,4 @@
+import traceback
 from collections import defaultdict
 from datetime import datetime
 
@@ -8,7 +9,7 @@ from dtos.auth import UserDTO
 from dtos.lab import SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, LabResultLogCreate
 from models.client import Person, Client
 from models.lab.lab import SampleResult, LabVerifiedResult, QueueStatus, ResultStatus, LabResultLog, CollectedSamples, \
-    LabServicesQueue, LabService
+    LabServicesQueue, LabService, LabType
 from models.services.services import ServiceBooking, BookingStatus, ServiceBookingDetail, BusinessServices
 from models.transaction import Transaction, TransactionType
 from repos.auth_repository import UserRepository
@@ -31,44 +32,71 @@ class ResultRepository:
         self.service_repository = ServiceRepository(self.db_session)
         self.queue_repository = QueueRepository(self.db_session)
         self.referral_repository = ReferralRepository(self.db_session)
+        self.collected_sample_repository = CollectedSamplesRepository(self.db_session)
+        self.transaction_repository = TransactionRepository(self.db_session)
 
     def create_result(self, sample_result: SampleResultDTO) -> SampleResultDTO:
-        result = SampleResult(sample_id=sample_result.sample_id,
+        result = SampleResult(queue_id=sample_result.queue_id,
                               created_by=sample_result.created_by,
                               comment=sample_result.comment)
         self.db_session.add(result)
+
+        # update collected sample as processed
+        self.collected_sample_repository.update_processed_sample(
+            result.queue_id
+        )
+
+        # update queue status as processed
+        self.queue_repository.update_lab_queue(result.queue_id, {'status': QueueStatus.Processed})
+
         self.db_session.commit()
         return {
             'id': result.id,
-            'sample_id': result.sample_id,
+            'queue_id': result.queue_id,
             'comment': result.comment,
             'created_at': result.created_at,
             'created_by': result.created_by
         }
 
     def delete_result(self, sample_result_id: int) -> bool:
-        result = self.get_result_by_id(sample_result_id)
+        try:
+            result = self.get_result_by_id(sample_result_id)
 
-        if result is not None:
+            if result is not None:
 
-            # delete experiment reading
-            errr = ExperimentRepository(self.db_session)
-            errr.delete_experiment_reading_sample_id(result.sample_id)
+                # delete experiment reading
+                errr = ExperimentRepository(self.db_session)
+                errr.delete_experiment_reading_result_id(result.id)
 
-            # update sample status to processing
-            csr = CollectedSamplesRepository(self.db_session)
-            csr.update_processed_sample(result.sample_id, QueueStatus.Processing)
+                # delete verification if it exists
+                self.db_session.query(LabVerifiedResult).filter(LabVerifiedResult.result_id == result.id).delete()
 
-            sample_result = self.db_session.query(SampleResult).filter(SampleResult.id == sample_result_id).first()
-            self.db_session.delete(sample_result)
-            self.db_session.commit()
-            return True
+                if result.queue.lab_service.lab_type == LabType.Observation:
+                    # set queue as processing
+                    self.queue_repository.update_lab_queue(
+                        result.queue_id,
+                        {'status': QueueStatus.Processing}
+                    )
+                else:
+                    # update sample status to processing
+                    csr = CollectedSamplesRepository(self.db_session)
+                    csr.update_processed_sample(result.queue_id, QueueStatus.Processing)
 
-        else:
-            return False
+                sample_result = self.db_session.query(SampleResult).filter(SampleResult.id == sample_result_id).first()
+                self.db_session.delete(sample_result)
+                self.db_session.commit()
+                return True
+
+            else:
+                return False
+
+        except Exception as e:
+            self.db_session.rollback()
+            traceback.print_exc()  # ✅ FULL STACK TRACE
+            raise  #
 
     def sample_result_exist(self, sample_result: SampleResultDTO) -> bool:
-        exist = self.db_session.query(SampleResult).filter(SampleResult.sample_id == sample_result.sample_id).first()
+        exist = self.db_session.query(SampleResult).filter(SampleResult.queue_id == sample_result.queue_id).first()
 
         if exist:
             return True
@@ -79,119 +107,43 @@ class ResultRepository:
         res = self.db_session.query(SampleResult).filter(SampleResult.id == result_id).first()
 
         if res:
-            return SampleResultDTO(
-                id=res.id,
-                sample_id=res.sample_id,
-                comment=res.comment,
-                created_at=res.created_at,
-                created_by=res.created_by
-            )
+            return SampleResultDTO.from_orm(res)
         return None
-
-    # def get_result_by_sample_id(self, sample_id: int) -> SampleResultDTO:
-    #     res = self.db_session.query(SampleResult).filter(SampleResult.id == sample_id).first()
-    #
-    #     experiment_repository = ExperimentResultReadingRepository(self.db_session)
-    #     return SampleResultDTO(id=res.id,
-    #                            sample_id=res.sample_id,
-    #                            comment=res.comment,
-    #                            created_at=res.created_at,
-    #                            created_by=res.created_by,
-    #                            experiment_readings=experiment_repository.get_reading_by_sample_id(res.sample_id))
 
     def get_all_sample_results(self, limit: int, skip: int, lab_id=0, search_keyword: str = '',
                                dateFilter: DateFilterDTO = None) -> dict:
-        cols = [
-            SampleResult.id,
-            SampleResult.sample_id,
-            SampleResult.created_at,
-            SampleResult.created_by,
-            SampleResult.comment,
 
-            CollectedSamples.id.label("sample_id"),
-            CollectedSamples.sample_type,
-            CollectedSamples.collected_at,
-            CollectedSamples.container_label,
-            CollectedSamples.collected_by,
-            CollectedSamples.queue_id,
-
-            Person.first_name.label('client_first_name'),
-            Person.last_name.label('client_last_name'),
-
-            LabServicesQueue.id.label("queue_id"),
-            LabServicesQueue.status,
-            LabServicesQueue.lab_service_id,
-            LabServicesQueue.priority,
-            LabServicesQueue.scheduled_at.label("queue_booked_at"), LabService.lab_service_name,
-
-            LabService.lab_id,
-            LabService.lab_service_name,
-
-            ServiceBooking.id.label("booking_id"),
-        ]
-
-        # initialize base query
-        base_query = None
-
-        if dateFilter['status'] == "Verified":
-            base_query = self.db_session.query(*cols).select_from(LabVerifiedResult) \
-                .join(SampleResult, SampleResult.id == LabVerifiedResult.result_id) \
-                .join(CollectedSamples, CollectedSamples.id == SampleResult.sample_id)
-
-        elif dateFilter['status'] == "Not Verified":
-            # Entirely written by AI
-            base_query = self.db_session.query(*cols).select_from(SampleResult) \
-                .join(CollectedSamples, CollectedSamples.id == SampleResult.sample_id) \
-                .filter(SampleResult.id.notin_(self.db_session.query(LabVerifiedResult.result_id)))
-        else:
-            base_query = self.db_session.query(*cols).select_from(SampleResult) \
-                .join(CollectedSamples, CollectedSamples.id == SampleResult.sample_id)
-
-        res = base_query.join(LabServicesQueue, LabServicesQueue.id == CollectedSamples.queue_id) \
-            .join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
-            .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id) \
-            .join(Client, Client.id == ServiceBooking.client_id) \
-            .join(Person, Person.id == Client.person_id) \
-            .join(LabService, LabService.service_id == ServiceBookingDetail.service_id)
+        base_query = self.db_session.query(SampleResult)
 
         if lab_id != 0:
-            res = res.filter(LabService.lab_id == lab_id)
+            base_query = base_query.join(LabServicesQueue, LabServicesQueue.id == SampleResult.queue_id) \
+                .join(LabService, LabService.id == LabServicesQueue.lab_service_id).filter(LabService.lab_id == lab_id)
+
+        if dateFilter['status'] in ResultStatus.__members__:
+            base_query = base_query.filter(LabVerifiedResult.status == dateFilter['status'])
 
         if search_keyword:
-            res = res.filter(Person.first_name.ilike(f'%{search_keyword}%') |
-                             Person.last_name.ilike(f'%{search_keyword}%') |
-                             LabService.lab_service_name.ilike(f'%{search_keyword}%'))
+            base_query = base_query.join(LabServicesQueue, LabServicesQueue.id == SampleResult.queue_id) \
+                .join(LabService, LabService.id == LabServicesQueue.lab_service_id) \
+                .join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
+                .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id) \
+                .join(Client, Client.id == ServiceBooking.client_id) \
+                .join(Person, Person.id == Client.person_id) \
+                .filter(Person.first_name.ilike(f'%{search_keyword}%') |
+                        Person.last_name.ilike(f'%{search_keyword}%') |
+                        LabService.lab_service_name.ilike(f'%{search_keyword}%'))
 
         if dateFilter:
             if dateFilter['start_date']:
-                res = res.filter(SampleResult.created_at >= dateFilter['start_date'])
+                base_query = base_query.filter(SampleResult.created_at >= dateFilter['start_date'])
             if dateFilter['last_date']:
-                res = res.filter(SampleResult.created_at <= dateFilter['last_date'])
+                base_query = base_query.filter(SampleResult.created_at <= dateFilter['last_date'])
 
-        total = res.count()
-        res = res.limit(limit).offset(skip).all()
+        total = base_query.count()
+        res = base_query.limit(limit).offset(skip).all()
 
-        response = []
-
-        for r in res:
-            sample_info = self.queue_repository.get_collected_sample_by_queue_id(r.queue_id)
-            user = self.user_repository.get_user_by_id(r.created_by)
-            response.append(
-                {
-                    'id': r.id,
-                    'booking_id': r.booking_id,
-                    'sample': sample_info,  # has results
-                    'investigation': r.lab_service_name,
-                    'sample_id': r.sample_id,
-                    'comment': r.comment,
-                    'client_first_name': r.client_first_name,
-                    'client_last_name': r.client_last_name,
-                    'created_at': r.created_at,
-                    'created_by': self.user_repository.get_user(user.username),
-                }
-            )
         return {
-            'data': response,
+            'data': [SampleResultDTO.from_orm(record) for record in res],
             'total': total
         }
 
@@ -361,14 +313,25 @@ class ResultRepository:
 
         return {record.lab_service_name: record.total_bookings for record in rs}
 
+    def get_collated_result_by_queue(self, limit, skip, lab_id,
+                                     booking_status: BookingStatus, search_text: str,
+                                     client_id: int, date_filter: DateFilterDTO):
+
+        trx = self.transaction_repository.get_all_lab(
+            client_id=client_id,
+            lab_id=lab_id,
+            # date_filter=date_filter,
+            limit=limit,
+            skip=skip
+        )
+        return trx
+
     def get_collated_result(self, limit, skip, lab_id,
                             booking_status: BookingStatus, search_text: str,
                             client_id: int, date_filter: DateFilterDTO, booking_id: int = 0):
 
         trp = TransactionRepository(self.db_session)
-        rs = trp.get_transactions(limit, skip, lab_id,
-                                  booking_status, search_text,
-                                  TransactionType.All, client_id, date_filter, booking_id)
+        rs = trp.get_all_lab(skip, limit, lab_id, client_id)
         response = []
         for lab_booking in rs['transactions']:
             # get queue elements
@@ -399,74 +362,40 @@ class ResultRepository:
         }
 
     def get_result_by_booking_id(self, booking_id: int):
-        cols = [
-            Transaction.id,
-            Transaction.transaction_time,
-            ServiceBooking.booking_status,
-            Person.last_name,
-            Person.first_name,
-            Client.id.label("client_id"),
-            ServiceBooking.booking_status,
-            ServiceBooking.id.label("booking_id")
-        ]
+        res = self.db_session.query(SampleResult) \
+            .join(LabServicesQueue, LabServicesQueue.id == SampleResult.queue_id) \
+            .join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
+            .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id) \
+            .filter(ServiceBooking.id == booking_id).all()
 
-        rs = self.db_session.query(*cols).select_from(ServiceBooking) \
-            .join(Transaction, Transaction.id == ServiceBooking.transaction_id) \
-            .join(Client, Client.id == ServiceBooking.client_id) \
-            .join(Person, Person.id == Client.person_id) \
-            .filter(ServiceBooking.id == booking_id).first()
-
-        queue_repository = QueueRepository(self.db_session)
-
-        if rs:
-            queue_elements = queue_repository.get_lab_service_queue_by_booking_id(booking_id)
-            client_repo = ClientRepository(self.db_session)
-            approval = ApprovedLabBookingResultRepository(self.db_session)
-            return {
-                'transaction_id': rs.id,
-                'transaction_time': rs.transaction_time,
-                'status': rs.booking_status,
-                'client': client_repo.get_client(rs.client_id),
-                'booking_id': rs.booking_id,
-                'booking_completion_status': self.service_repository.get_booking_completion_status(booking_id),
-                'queue': queue_elements,
-                'approval': approval.get_by_booking_id(booking_id),
-                'archived_log': LabResultLogRepository(self.db_session).get_by_booking_id(booking_id,
-                                                                                          ResultStatus.Archived),
-                'referral': self.referral_repository.get_referred_transaction_referral(rs.id)
-            }
-        return None
+        return [SampleResultDTO.from_orm(record) for record in res]
 
     def verify_result(self, verified_result_entry: VerifiedResultEntryDTO,
                       loggedInUser: UserDTO) -> VerifiedResultEntryDTO:
-
-        verified_result_entry.verified_by = loggedInUser.id
-        new_verified_result_entry = LabVerifiedResult(**verified_result_entry.__dict__)
-        self.db_session.add(new_verified_result_entry)
+        verified = LabVerifiedResult(
+            result_id=verified_result_entry.result_id,
+            verified_by=loggedInUser.id,
+            comment=verified_result_entry.comment,
+            status=verified_result_entry.status
+        )
+        self.db_session.add(verified)
         self.db_session.commit()
-        self.db_session.refresh(new_verified_result_entry)
+        self.db_session.refresh(verified)
 
         # get all other results associated to this booking ID
-        sample_id = self.get_result_by_id(verified_result_entry.result_id).sample_id
-        csr = CollectedSamplesRepository(self.db_session)
-        collected_sample = csr.get_sample_by_id(sample_id)
-
-        qr = QueueRepository(self.db_session)
-        queue = qr.get_queue(collected_sample.queue_id)
-
-        result = self.get_result_by_booking_id(queue.booking_id)
+        res = self.get_result_by_id(verified_result_entry.result_id)
+        other_booking_results = self.get_result_by_booking_id(res.queue.booking_id)
 
         all_verified: bool = True
-        for queue_element in result['queue']:
-            for smpl in queue_element.sample:
-                if smpl.sample_result.verification:
-                    all_verified = False
+        for fellow_result in other_booking_results:
+            if fellow_result.verification is None:
+                all_verified = False
 
         if all_verified:
             # update booking status to All  Verified
-            self.service_repository.update_booking_status(queue.booking_id, BookingStatus.Verified)
+            self.service_repository.update_booking_status(res.queue.booking_id, BookingStatus.Verified)
 
-        return new_verified_result_entry
+        return verified
 
     def archive_result(self, booking_id: int, user: UserDTO):
         LabResultLogRepository(self.db_session).create(LabResultLogCreate(

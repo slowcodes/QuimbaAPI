@@ -9,7 +9,7 @@ from starlette.responses import JSONResponse
 from cache.redis import get_redis_client
 from dtos.auth import UserDTO
 from dtos.client.icd10 import Icd10Response
-from dtos.consultant import ConsultationQueueDTO, ConsultationAppointmentDTO, ConsultationDetailDTO, ConsultationDTO, \
+from dtos.consultant import ConsultationQueueDTO, ConsultationDetailDTO, ConsultationDTO, \
     ConsultationUpdate
 from dtos.consultation import *
 from sqlalchemy.orm import Session
@@ -46,7 +46,7 @@ def read_specializations(skip: int = 0, limit: int = 100,
 
 
 @consultation_router.post("/consultation/consultants", response_model=ConsultantDTO, tags=["Consultants"])
-def add_consultant(consultant: ConsultantDTO, repo: ConsultantRepository = Depends(get_consultation_repository)):
+def add_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository = Depends(get_consultation_repository)):
     """
     Add a new consultant to the system.
     """
@@ -54,7 +54,7 @@ def add_consultant(consultant: ConsultantDTO, repo: ConsultantRepository = Depen
 
 
 @consultation_router.put("/consultation/consultants", response_model=ConsultantDTO, tags=["Consultants"])
-def update_consultant(consultant: ConsultantDTO, repo: ConsultantRepository = Depends(get_consultation_repository)):
+def update_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository = Depends(get_consultation_repository)):
     """
     Update a consultant in the system.
     """
@@ -73,12 +73,15 @@ def get_consultants(skip: int = 0, limit: int = 100,
     return repo.get_consultants(skip=skip, limit=limit)
 
 
-@consultation_router.get("/consultation/consultant/", response_model=ConsultantDTO, tags=["Consultants"])
-def get_consultant(id: int, repo: ConsultantRepository = Depends(get_consultation_repository)):
+@consultation_router.get("/consultation/consultant/", response_model=ConsultantDTO | None, tags=["Consultants"])
+def get_consultant(
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+        repo: ConsultantRepository = Depends(get_consultation_repository),
+        id: int = 0):
     """
     Get a consultant.
     """
-    return repo.get_consultant(id)
+    return repo.get_consultant(id) if id != 0 else repo.get_consultant_by_user_id(current_user.id)
 
 
 @consultation_router.post("/consultation/consultants/inhours", response_model=InHoursDTO)
@@ -91,8 +94,15 @@ def add_consulting_hours(in_hours: InHoursDTO,
 
 
 @consultation_router.get("/consultation/consultants/inhours")
-def get_all_consulting_hours(start_time: str, end_time: str, consultant_id: int,
-                             repo: ConsultantRepository = Depends(get_consultation_repository)):
+def get_all_consulting_hours(start_time: str, end_time: str,
+                             current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+                             repo: ConsultantRepository = Depends(get_consultation_repository),
+                             consultant_id: int = 0,
+                             ):
+    if consultant_id == 0:  # Get consultations of current use
+        consultant = repo.get_consultant_by_user_id(current_user.id)
+        return repo.get_expanded_in_hours(start_time, end_time, consultant.id)
+
     return repo.get_expanded_in_hours(start_time, end_time, consultant_id)
 
 
@@ -144,7 +154,7 @@ def get_consultation_booking(queue_id: int, refresh: int = 0,
     return queue
 
 
-@consultation_router.get("/consultation/consultant/queue/", response_model=List[ConsultationAppointmentDTO])
+@consultation_router.get("/consultation/consultant/queue/", response_model=List[ConsultationQueueDTO])
 def get_consultation_booking(consultant_id: int = 0, client_id=0, start_date='',
                              last_date='', status: str = QueueStatus.Processed, in_hour_id: int = 0,
                              repo: ConsultantRepository = Depends(get_consultation_repository)):
@@ -272,7 +282,6 @@ def get_consultation_case_files(
     )
 
     if not case_files:
-
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Consultation not found")
     return case_files
 

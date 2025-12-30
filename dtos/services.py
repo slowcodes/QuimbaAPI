@@ -1,20 +1,43 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional, List
-from pydantic import BaseModel
-from dtos.lab import LabBundleCollectionDTO
-from dtos.people import ClientDTO, BasicClientDTO
+from pydantic import BaseModel, ConfigDict
+
+from dtos.auth import BasicUserDTO
+from dtos.people import ClientDTO, BasicClientDTO, ReferralDTO
 from models.services.services import ServiceType, StoreVisibility
+
+
+class ServiceBookingLightDTO(BaseModel):
+    id: int
+    client_id: int
+    transaction_id: int
+    booking_status: Optional[str] = None
+
+
+class CopyApprovedLabBookingResultDTO(BaseModel):
+    id: Optional[int] = None
+    booking_id: int
+    approved_at: Optional[datetime] = None
+    approved_by: Optional[int] = None
+    comment: Optional[str] = None
+    status: str
+
+    user: Optional[BasicUserDTO] = None
+
+    class Config:
+        from_attributes = True
 
 
 class ServiceBookingDTO(BaseModel):
     id: Optional[int] = None
     client_id: int
     transaction_id: int
+    referral_id: Optional[int] = None
     client: Optional[BasicClientDTO] = None
+    lab_booking_completion: int = 0
     booking_status: Optional[str] = None
-    transaction_time: Optional[str] = None
-    client_first_name: Optional[str] = None
-    client_last_name: Optional[str] = None
+    result_approval: Optional[CopyApprovedLabBookingResultDTO] = None  # Placeholder for ApprovedLabBookingResultDTO
 
     class Config:
         from_attributes = True
@@ -26,33 +49,12 @@ class ServiceBookingDetailDTO(BaseModel):
     price_code: int
     booking_id: Optional[int] = None
     booking_type: Optional[str] = None
-    booking: Optional[ServiceBookingDTO] = None
 
-    class Config:
-        from_attributes = True
+    booking: Optional[ServiceBookingDTO] = None  # forward ref as string
+    price_code_rel: Optional['PriceCodeDTO'] = None
+    business_service: Optional['BusinessServiceDTO'] = None
 
-class ServiceBundleDTO(BaseModel):
-    id: Optional[int] = None
-    bundles_name: Optional[str] = None
-    bundles_desc: Optional[str] = None
-    discount: float
-    bundle_type: ServiceType
-
-    class Config:
-        # orm_mode = True
-        from_attributes = True
-
-
-class LabServiceBundleDTO(BaseModel):
-    id: Optional[int] = None
-    bundles_name: Optional[str] = None
-    bundles_desc: Optional[str] = None
-    discount: float
-    bundle_type: ServiceType
-    collections: List[LabBundleCollectionDTO]
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EventType(str, Enum):
@@ -106,7 +108,7 @@ class BusinessServiceDTO(BaseModel):
     pc: Optional[PriceCodeDTO] = None
     ext_turn_around_time: float
     visibility: Optional[StoreVisibility]
-    serviceType: Optional[ServiceType]
+    service_type: Optional[ServiceType]
 
     class Config:
         from_attributes = True

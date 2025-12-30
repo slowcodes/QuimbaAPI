@@ -1,3 +1,5 @@
+import traceback
+
 from sqlalchemy import select
 from typing import Optional
 
@@ -45,6 +47,7 @@ class ServiceCartRepository:
             print(f"Database error while fetching client carts: {e}")
             raise e
         except Exception as e:
+            traceback.print_exc()
             print(f"Unexpected error while fetching client carts: {e}")
             raise e
 

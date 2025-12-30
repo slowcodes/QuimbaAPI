@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional, List
 
@@ -11,13 +12,14 @@ class AccountDTO(BaseModel):
     id: Optional[int] = None
     username: str
     password: Optional[str] = None
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
     status: Optional[AccountStatus] = AccountStatus.Active
     person_id: Optional[int] = None
+
     person: Optional[PersonDTO] = None
-    #
-    # class Config:
-    #     orm_mode = True
+
+    class Config:
+        from_attributes = True
 
 
 class SignUpResponseDTO(BaseModel):
@@ -57,6 +59,7 @@ class BasicUserDTO(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class RoleDTA(BaseModel):
     id: Optional[int] = None

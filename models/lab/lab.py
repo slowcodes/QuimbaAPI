@@ -16,7 +16,7 @@ class Laboratory(Base):
     lab_name = Column(String(100), nullable=False, unique=True)
     lab_desc = Column(String(200))
 
-    lab_service = relationship('LabService', back_populates="Laboratory")
+    lab_service = relationship('LabService', back_populates="laboratory", uselist=True)
     __table_args__ = (UniqueConstraint("lab_name", name="uq_lab_name"),)
 
 
@@ -28,6 +28,11 @@ class LabServiceGroup(Base):
     group_desc = Column(String(100))
 
 
+class LabType(str, Enum):
+    Experiment = 'Experiment'
+    Observation = 'Observation'
+
+
 class LabService(Base):
     __tablename__ = "lab_service"
 
@@ -35,28 +40,26 @@ class LabService(Base):
     lab_id = Column(Integer, ForeignKey("laboratory.id", ondelete="cascade"))
     lab_service_name = Column(String(100))
     lab_service_desc = Column(String(150))
-    service_id = Column(Integer, ForeignKey("service_listing.service_id", ondelete="cascade" ))
+    lab_type = Column(SqlEnum(LabType), default=LabType.Experiment)
+    service_id = Column(Integer, ForeignKey("service_listing.service_id", ondelete="cascade"), unique=True)
 
-    Laboratory = relationship("Laboratory", back_populates="lab_service")
+    laboratory = relationship("Laboratory", back_populates="lab_service")
     # business_service = relationship("Business_Service", uselist=False, back_populates="lab_service")
     lab_service_group_tag = relationship("LabServiceGroupTag", back_populates="lab_service")
+    lab_service_queue = relationship("LabServicesQueue", back_populates="lab_service")
+    business_service = relationship("BusinessServices", back_populates="lab_service", uselist=False, lazy="selectin")
+    lab_experiments = relationship("LabServiceExperiment", uselist=True)
+
 
 class LabServiceGroupTag(Base):
     __tablename__ = "lab_service_group_tag"
 
     id = Column(Integer, primary_key=True, index=True)
-    lab_service_group = Column(Integer, ForeignKey("lab_service_group.id", ondelete="cascade" ))
-    lab_service_id = Column(Integer, ForeignKey("lab_service.id", ondelete="cascade" ))
+    lab_service_group = Column(Integer, ForeignKey("lab_service_group.id", ondelete="cascade"))
+    lab_service_id = Column(Integer, ForeignKey("lab_service.id", ondelete="cascade"))
 
     lab_service = relationship("LabService", back_populates="lab_service_group_tag")
-
-
-class LabResult(Base):
-    __tablename__ = "lab_result"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="cascade" ))
-    comment = Column(Text)
+    group = relationship("LabServiceGroup")
 
 
 class Experiment(Base):
@@ -64,6 +67,8 @@ class Experiment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     description = Column(Text, default='Methodology/Experiment')
+
+    parameters = relationship("ExperimentParameter", back_populates="lab_experiment")
 
 
 class ParameterType(str, Enum):
@@ -81,7 +86,10 @@ class ExperimentParameter(Base):
     parameter = Column(String(50))
     measuring_unit = Column(String(50))
     parameter_type = Column(SqlEnum(ParameterType))
-    exp_id = Column(Integer, ForeignKey("lab_experiment.id", ondelete="cascade" ))
+    exp_id = Column(Integer, ForeignKey("lab_experiment.id", ondelete="cascade"))
+
+    lab_experiment = relationship("Experiment", back_populates="parameters")
+    boundary = relationship("ExperimentParameterBounds", back_populates="parameter", uselist=True)
 
 
 class LabServiceExperiment(Base):
@@ -89,7 +97,9 @@ class LabServiceExperiment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     lab_service_id = Column(Integer, ForeignKey("lab_service.id", ondelete="cascade"))
-    experiment_id = Column(Integer, ForeignKey("lab_experiment.id", ondelete="cascade" ))
+    experiment_id = Column(Integer, ForeignKey("lab_experiment.id", ondelete="cascade"))
+
+    experiment = relationship("Experiment", uselist=False)
 
 
 class BoundaryType(str, Enum):
@@ -102,10 +112,12 @@ class ExperimentParameterBounds(Base):
     __tablename__ = "lab_experiment_parameter_bounds"
 
     id = Column(Integer, primary_key=True, index=True)
-    parameter_id = Column(Integer, ForeignKey("lab_experiment_parameter.id", ondelete="cascade" ))
-    upper_bound = Column(String(50))    # String because fractions like 1/3 should be held in original format
+    parameter_id = Column(Integer, ForeignKey("lab_experiment_parameter.id", ondelete="cascade"))
+    upper_bound = Column(String(50))  # String because fractions like 1/3 should be held in original format
     lower_bound = Column(String(50))
     boundary_type = Column(SqlEnum(BoundaryType))
+
+    parameter = relationship("ExperimentParameter", back_populates="boundary", uselist=False)
 
 
 class LabResultExperiments(Base):
@@ -120,7 +132,7 @@ class Lab_Collected_Result(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     collected_at = Column(DateTime, default=datetime.datetime.utcnow)
-    issued_by = Column(Integer, ForeignKey("users.id", ondelete="cascade" ))
+    issued_by = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
     collected_by = Column(Integer)  # Column(Integer, ForeignKey("Client.id", ))
 
 
@@ -143,10 +155,16 @@ class LabServicesQueue(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     priority = Column(SqlEnum(QueuePriority), default=QueuePriority.Normal)
-    lab_service_id = Column(Integer, ForeignKey("lab_service.id", ondelete="cascade"  ))
+    lab_service_id = Column(Integer, ForeignKey("lab_service.id", ondelete="cascade"))
     scheduled_at = Column(DateTime, default=datetime.datetime.utcnow)
     status = Column(SqlEnum(QueueStatus), default=QueueStatus.Processing)
-    booking_id = Column(Integer, ForeignKey("service_booking_detail.id", ondelete="cascade" ))
+    booking_id = Column(Integer, ForeignKey("service_booking_detail.id", ondelete="cascade"))
+
+    lab_service = relationship("LabService", back_populates="lab_service_queue")
+    booking = relationship("ServiceBookingDetail", back_populates="lab_service_queue")
+    sample = relationship("CollectedSamples", back_populates="queue", uselist=False)
+    lab_result = relationship("SampleResult", back_populates="queue",
+                              uselist=False)  # observation based results may not have samples
 
 
 class SampleType(str, Enum):
@@ -185,22 +203,28 @@ class CollectedSamples(Base):
     __tablename__ = "lab_collected_sample"
 
     id = Column(Integer, primary_key=True, index=True)
-    queue_id = Column(Integer, ForeignKey("lab_service_queue.id", ondelete="cascade" ))
+    queue_id = Column(Integer, ForeignKey("lab_service_queue.id", ondelete="cascade"))
     collected_at = Column(DateTime, default=datetime.datetime.utcnow)
-    sample_type = Column(SqlEnum(SampleType, name="sampletype") )
+    sample_type = Column(SqlEnum(SampleType, name="sampletype"))
     collected_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"))
     container_label = Column(String(50))
     status = Column(SqlEnum(QueueStatus), default=QueueStatus.Processing)
+
+    user = relationship("User")
+    queue = relationship("LabServicesQueue", back_populates="sample", uselist=False)
 
 
 class ExperimentResultReading(Base):
     __tablename__ = "lab_experiment_result_reading"
 
     id = Column(Integer, primary_key=True, index=True)
-    parameter_id = Column(Integer, ForeignKey("lab_experiment_parameter.id", ondelete="cascade"  ))
+    parameter_id = Column(Integer, ForeignKey("lab_experiment_parameter.id", ondelete="cascade"))
     parameter_value = Column(String(100))
-    sample_id = Column(Integer, ForeignKey("lab_collected_sample.id", ondelete="cascade" ))
+    result_id = Column(Integer, ForeignKey("lab_sample_result.id", ondelete="cascade"))
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    sample_result = relationship("SampleResult", back_populates="experiment_readings")
+    parameter = relationship("ExperimentParameter")
 
 
 class ResultStatus(str, Enum):
@@ -214,28 +238,31 @@ class SampleResult(Base):
     __tablename__ = "lab_sample_result"
 
     id = Column(Integer, primary_key=True, index=True)
-    sample_id = Column(Integer, ForeignKey("lab_collected_sample.id", ondelete="cascade" ))
+    queue_id = Column(Integer, ForeignKey("lab_service_queue.id",
+                                          ondelete="cascade"))  # some results may not be linked to samples. Eg observation based results
     created_at = Column(DateTime, default=datetime.date.today())
     created_by = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
     comment = Column(Text)
     status = Column(SqlEnum(ResultStatus), default=ResultStatus.Ready)
 
-    class Config:
-        orm_mode = True
+    user = relationship("User")
+    queue = relationship("LabServicesQueue", back_populates="lab_result", uselist=False)
+    experiment_readings = relationship("ExperimentResultReading", back_populates="sample_result", uselist=True)
+    verification = relationship("LabVerifiedResult", back_populates="sample_result", uselist=False)
 
 
 class LabVerifiedResult(Base):
     __tablename__ = "lab_verified_result"
 
     id = Column(Integer, primary_key=True, index=True)
-    result_id = Column(Integer, ForeignKey("lab_sample_result.id", ondelete="cascade"  ))
+    result_id = Column(Integer, ForeignKey("lab_sample_result.id", ondelete="cascade"))
     verified_at = Column(DateTime, default=datetime.datetime.utcnow)
-    verified_by = Column(Integer, ForeignKey("users.id", ondelete="cascade" ))
+    verified_by = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
     comment = Column(Text)
-    status = Column(SqlEnum(ResultStatus))
+    status = Column(SqlEnum(ResultStatus), default=ResultStatus.Ready)  # This is only useful at the frontend
 
-    class Config:
-        orm_mode = True
+    user = relationship("User")
+    sample_result = relationship("SampleResult", back_populates="verification", uselist=False)
 
 
 class LabResultLog(Base):
@@ -244,32 +271,34 @@ class LabResultLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     logged_at = Column(DateTime, default=datetime.datetime.utcnow)
     booking_id = Column(Integer, ForeignKey("service_booking.id", ondelete="cascade"))
-    logged_by = Column(Integer, ForeignKey("users.id", ondelete="cascade" ))
+    logged_by = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
     action = Column(SqlEnum(ResultStatus))
 
-    class Config:
-        orm_mode = True
 
 class LabBundleCollection(Base):
     __tablename__ = "lab_service_bundle_collection"
 
     id = Column(Integer, primary_key=True, index=True)
-    bundles_id = Column(Integer, ForeignKey("service_bundle.id", ondelete="cascade" ))
-    lab_service_id = Column(Integer, ForeignKey("service_listing.service_id", ondelete="cascade"))
+    bundles_id = Column(Integer, ForeignKey("service_bundle.id", ondelete="cascade"))
+    lab_service_id = Column(Integer, ForeignKey("lab_service.service_id", ondelete="cascade"))
 
     bundle = relationship("Bundles", back_populates="lab_service_bundle")
-    class Config:
-        orm_mode = True
+    # business_service = relationship("BusinessServices")
+    lab_service = relationship("LabService", uselist=False)
+
 
 class ApprovedLabBookingResult(Base):
-    __tablename__ = "approved_lab_booking_result"
+    __tablename__ = "lab_approved_booking_result"
 
     id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("service_booking.id", ondelete="cascade" ))
+    booking_id = Column(Integer, ForeignKey("service_booking.id", ondelete="cascade"), unique=True)
     approved_at = Column(DateTime, default=datetime.datetime.utcnow)
-    approved_by = Column(Integer, ForeignKey("users.id", ondelete="cascade" ))
+    approved_by = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
     comment = Column(Text)
     status = Column(SqlEnum(ResultStatus))
+
+    booking = relationship("ServiceBooking", back_populates="result_approval", uselist=False)
+    user = relationship("User")
 
     class Config:
         orm_mode = True

@@ -18,7 +18,7 @@ def get_drug_repository(db: Session = Depends(get_db)):
     return DrugRepository(db)
 
 
-@drug_router.post("/", response_model=DrugDTO, status_code=status.HTTP_201_CREATED)
+@drug_router.post("/", status_code=status.HTTP_201_CREATED)
 def create_drug(
         drug: DrugDTO,
         repo: DrugRepository = Depends(get_drug_repository)

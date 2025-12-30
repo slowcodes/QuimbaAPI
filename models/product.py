@@ -1,9 +1,8 @@
-from enum import Enum
-
 from sqlalchemy import Enum as SqlEnum, Column, Integer, String, ForeignKey, Index, Double, Date
 from sqlalchemy.orm import relationship
 from db import Base
 from models.mixins import SoftDeleteMixin
+from enum import Enum
 
 
 class Product(Base, SoftDeleteMixin):
@@ -17,22 +16,47 @@ class Product(Base, SoftDeleteMixin):
     manufacturer = Column(String(100))  # Manufacturer of the drug
 
     pharmacy_drug = relationship("Drug", back_populates="product")  # Use string reference
-
+    product_package = relationship("ProductPackage", back_populates="product")
     __table_args__ = (
         Index('ix_product_name', 'product_desc'),
         Index('ix_brand_name', 'brand_name'),
     )
+    sales = relationship("BusinessSales", back_populates="product")
 
 
 class PackagingType(str, Enum):
-    Cartoon = 'Cartoon'
-    Card = 'Card'
-    Tablet = 'Tablet'
-    Pack = 'Pack'
-    Capsule = 'Capsule'
-    Can = 'Can'
-    Bottle = 'Bottle'
-    Patch = 'Patch'
+    # Existing
+    Cartoon = "Cartoon"
+    Card = "Card"
+    Tablet = "Tablet"
+    Pack = "Pack"
+    Capsule = "Capsule"
+    Can = "Can"
+    Bottle = "Bottle"
+    Patch = "Patch"
+    Box = "Box"
+    Blister = "Blister"
+    Sachet = "Sachet"
+    Strip = "Strip"
+    Tube = "Tube"
+    Jar = "Jar"
+    Ampoule = "Ampoule"
+    Vial = "Vial"
+    Syringe = "Syringe"
+    Dropper = "Dropper"
+    Bag = "Bag"
+    Pouch = "Pouch"
+    Spray = "Spray"
+    Injector = "Injector"
+    Cartridge = "Cartridge"
+    Stick = "Stick"
+    Tray = "Tray"
+    Roll = "Roll"
+    Bottle_Spray = "Bottle_Spray"
+    Bottle_Drop = "Bottle_Drop"
+    Dispenser = "Dispenser"
+    Box_Set = "Box_Set"
+    Kit = "Kit"
 
 
 # Not to be used drugs
@@ -46,7 +70,8 @@ class ProductPackage(Base, SoftDeleteMixin):
 
     # barcode = relationship("Barcode", back_populates="product_packaging")
     sales_price_code = relationship("SalesPriceCode", back_populates="product_package")
-    sales = relationship("BusinessSales", back_populates="product_package")
+    # sales = relationship("BusinessSales", back_populates="product_package")
+    product = relationship("Product", back_populates="product_package")
 
 
 class PackageHierarchy(Base, SoftDeleteMixin):
@@ -62,6 +87,6 @@ class Barcode(Base, SoftDeleteMixin):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     barcode = Column(String(100))
-    product_packaging_id = Column(Integer, ForeignKey("pharmacy_drug_form_package.id", ondelete="cascade" ))  # FIXED
+    product_packaging_id = Column(Integer, ForeignKey("pharmacy_drug_form_package.id", ondelete="cascade"))  # FIXED
 
     pharmacy_drug_form_package = relationship("PharmDrugFormPackage", back_populates="product_barcode")

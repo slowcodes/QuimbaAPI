@@ -6,11 +6,13 @@ from starlette import status
 from starlette.responses import JSONResponse
 
 from dtos.auth import Token, UserDTO, UserGroupDTO, UserGroupMemberDTO, AccountDTO, SignUpResponseDTO
+from dtos.conf import ConfSettingDTO
 from repos.auth_repository import UserRepository
 from db import get_db
 from sqlalchemy.orm import Session
 
 from repos.client.person_repository import PersonRepository
+from repos.conf_setting_repository import ConfSettingRepository
 from security.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from security.dependencies import get_current_active_user, create_access_token, require_role_and_privilege
 
@@ -62,12 +64,9 @@ async def sign_up(signup_dto: AccountDTO,
 @security_router.post("/signup", response_model=SignUpResponseDTO, status_code=status.HTTP_201_CREATED)
 async def sign_up(signup_dto: AccountDTO,
                   auth=Depends(auth_repo),
-                  person_repo=Depends(get_person_repository),
+                  repo=Depends(auth_repo),
                   security=Depends(require_role_and_privilege(20, "write"))
                   ):
-    if person_repo.person_exists(signup_dto.person):
-        return JSONResponse(status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                            content=dict(error=True, msg='A similar entry already exist'))
     new_user = auth.register_user(signup_dto)
     return SignUpResponseDTO(error=False, data=new_user, msg='User registered successfully')
 
@@ -84,6 +83,13 @@ async def get_all_user(skip: int = 0, limit: int = 20, auth=Depends(auth_repo),
                        security=Depends(require_role_and_privilege(20, "read"))
                        ):
     return auth.get_all_users(limit, skip)
+
+
+@security_router.get("/users/roles")
+async def get_roles(
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+        auth=Depends(auth_repo)):
+    return auth.get_all_roles()
 
 
 @security_router.get("/users/{id}")
@@ -129,11 +135,6 @@ async def reset_user_password(password: str,
                         content=dict(error=False, msg='unable to reset password. A similar entry already exist'))
 
 
-@security_router.get("/users/roles")
-async def get_roles(
-        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
-        auth=Depends(auth_repo)):
-    return auth.get_all_roles()
 
 
 @security_router.get("/users/group/")  # response_model=List[UserGroupDTO]
@@ -178,3 +179,12 @@ def get_all_user_group_members(user_id: int,
                                security=Depends(require_role_and_privilege(20, "read"))
                                ):
     return auth.get_all_user_groups(user_id)
+
+
+def conf_repo(db: Session = Depends(get_db)) -> ConfSettingRepository:
+    return ConfSettingRepository(db)
+
+
+@security_router.get("/config/setting", response_model=List[ConfSettingDTO])
+def list_conf_settings(repo: Session = Depends(conf_repo)):
+    return repo.get_all()

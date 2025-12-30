@@ -6,8 +6,8 @@ from pydantic import BaseModel
 from datetime import date
 
 from dtos.auth import UserDTO, BasicUserDTO
-from dtos.consultation import ConsultantDTO, ClinicalExaminationDTO
-from dtos.people import ClientDTO
+from dtos.consultation import ConsultantDTO, ClinicalExaminationDTO, InHoursDTO, SpecialismDTO
+from dtos.people import ClientDTO, BasicClientDTO
 from dtos.service_dtos.client_cart_service import ClientServiceCartDTO
 from dtos.services import ServiceBookingDetailDTO
 from models.consultation import InternalSystems, CaseStatus, ConsultationType
@@ -29,11 +29,14 @@ class ConsultationQueueDTO(BaseModel):
     status: Optional[QueueStatus] = QueueStatus.Processing
     booking_id: Optional[int] = None
     notes: Optional[str] = None
-    booking_detail: Optional[ServiceBookingDetailDTO] = None
-    client: Optional[dict] = None
     specialization_id: Optional[int] = None
     consultation_time: Optional[datetime.datetime] = None
     base_cases: List[BaseCaseDTO] = []
+
+    booking_detail: Optional[ServiceBookingDetailDTO] = None
+    client: Optional[BasicClientDTO] = None
+    schedule: Optional[InHoursDTO] = None
+    specialization: Optional[SpecialismDTO] = None
 
     class Config:
         from_attributes = True
@@ -47,18 +50,6 @@ class ConsultationRoSDTO(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-class ConsultationAppointmentDTO(BaseModel):
-    specialist: Optional[ConsultantDTO]
-    client: Optional[ClientDTO]
-    time_of_appointment: Optional[str] = None
-    date_of_appointment: Optional[str] = None
-    booking_id: Optional[int] = None
-    transaction_id: Optional[int] = None
-    scheduled_at: Optional[str] = None
-    status: Optional[str] = None
-    id: Optional[int] = None
 
 
 class ConsultationBase(BaseModel):
@@ -107,12 +98,8 @@ class ConsultationDetailDTO(BaseModel):
     clinical_examination: Optional[ClinicalExaminationDTO] = None
     review_of_systems: Optional[List[ConsultationRoSDTO]] = []
     client_service_cart: Optional[ClientServiceCartDTO] = None
+
     # prescription: Optional[PrescriptionDTO] = None
 
     class Config:
         from_attributes = True
-
-
-
-
-

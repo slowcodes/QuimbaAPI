@@ -1,6 +1,6 @@
 
 
-from models.lab.lab import LabService, LabServiceGroupTag
+from models.lab.lab import LabService, LabServiceGroupTag, LabType
 from models.services.services import PriceCode, BusinessServices, ServiceType
 
 
@@ -21,7 +21,7 @@ def insert_lab_service(session, data):
             price_code=test["price_code"],
             ext_turn_around_time=120,  # Default
             visibility="Active",  # Adjust based on your logic
-            serviceType=ServiceType.Laboratory  # Adjust based on enum
+            service_type=ServiceType.Laboratory  # Adjust based on enum
         )
         session.add(service_entry)
         session.flush()
@@ -31,6 +31,7 @@ def insert_lab_service(session, data):
             id=test["id"],
             lab_id=1,
             lab_service_name=test["test_title"],
+            lab_type=LabType.Experiment,
             lab_service_desc=test["lab_test_desc"],
             service_id=service_entry.service_id
         )

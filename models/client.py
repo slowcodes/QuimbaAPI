@@ -53,7 +53,8 @@ class Person(Base, SoftDeleteMixin):
 
     client = relationship("Client", back_populates="person", uselist=False, cascade="all, delete")
     person_type = relationship("PersonType", back_populates="person", cascade="all, delete")
-    organization_people = relationship("OrganizationPeople", back_populates="person", cascade="all, delete")
+    organization_people = relationship("OrganizationPeople", back_populates="person", cascade="all, delete",
+                                       uselist=True)
     user = relationship("User", back_populates="person", uselist=False, cascade="all, delete")
     client_referral = relationship("Referral", back_populates="person", uselist=False,
                                    cascade="all, delete")
@@ -105,6 +106,7 @@ class Client(Base, SoftDeleteMixin):
     occupation_id = Column(Integer, ForeignKey("client_occupation.id", ondelete="cascade"), nullable=True)
 
     person = relationship("Person", back_populates="client")
+
     lga = relationship("Lga", back_populates="client")
     occupation = relationship("Occupation", back_populates="clients")
     lifestyles = relationship("ClientLifestyle", back_populates="patient")
@@ -183,7 +185,6 @@ class Icd10(Base):
     name = Column(String(300), nullable=True)
 
 
-
 class State(Base):
     __tablename__ = "state"
 
@@ -219,6 +220,7 @@ class Organization(Base):
     lga = relationship("Lga", back_populates="organization")
     organization_people = relationship("OrganizationPeople", back_populates="organization",
                                        cascade="all, delete")
+    pharmacy = relationship("Pharmacy", back_populates="company", uselist=False, cascade="all, delete")
 
 
 class Occupation(Base):
@@ -352,4 +354,5 @@ class Referral(Base):
     person_id = Column(Integer, ForeignKey("person.id", ondelete="cascade"), nullable=True)
 
     person = relationship("Person", back_populates="client_referral")
+    referred_transactions = relationship("ReferredTransaction", back_populates="referral")
     client_service_carts = relationship("ClientServiceCart", back_populates="client_referral")

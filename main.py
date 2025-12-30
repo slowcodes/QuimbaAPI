@@ -6,16 +6,15 @@ from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 
 from db import engine, Base
-from routers import supply_router, service_router, transaction_router, consultation_router, security_router
-from routers.client import organisation_router, client_router, referral_router
-from routers.client import vital_router, notification_router
-from routers.lab import lab_router, queue_router, samples_router, result_router
 import bootstrap.db_data_init
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
 from routers.pharmacy.all_pharm_router import pharm_routers
+from routers.all_base_router import base_routers
+from routers.sales.all import sales_router
+
 
 import redis
 
@@ -73,22 +72,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(client_router.client_router)
-app.include_router(organisation_router.org_router)
-app.include_router(lab_router.lab_router)
-app.include_router(supply_router.supply_router)
-app.include_router(result_router.result_router)
-app.include_router(samples_router.sample_collection_router)
-app.include_router(queue_router.queue_router)
-app.include_router(service_router.service_router)
-app.include_router(transaction_router.transaction_router)
-app.include_router(consultation_router.consultation_router)
-app.include_router(security_router.security_router)
-app.include_router(vital_router.vital_router)
-app.include_router(notification_router.notification_router)
-app.include_router(referral_router.referral_router)
+# app.include_router(client_router.client_router)
+# app.include_router(organisation_router.org_router)
+# app.include_router(lab_router.lab_router)
+# app.include_router(supply_router.supply_router)
+# app.include_router(result_router.result_router)
+# app.include_router(samples_router.sample_collection_router)
+# app.include_router(queue_router.queue_router)
+# app.include_router(service_router.service_router)
+# app.include_router(business_service_router)
+# app.include_router(transaction_router.transaction_router)
+# app.include_router(consultation_router.consultation_router)
+# app.include_router(security_router.security_router)
+# app.include_router(vital_router.vital_router)
+# app.include_router(notification_router.notification_router)
+# app.include_router(referral_router.referral_router)
 
 for route in pharm_routers:
+    app.include_router(route, prefix='')
+
+for route in sales_router:
+    app.include_router(route, prefix='')
+
+for route in base_routers:
     app.include_router(route, prefix='')
 
 

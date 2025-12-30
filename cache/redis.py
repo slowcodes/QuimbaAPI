@@ -1,13 +1,21 @@
-import json
-
-from fastapi.encoders import jsonable_encoder
-from starlette.responses import JSONResponse
-
 import redis
+import os
 
 
 def get_redis_client():
-    return redis.Redis(host="localhost", port=6379, db=0)
+    # Use environment variable or default to 'cache' (Docker service name)
+    redis_host = os.getenv("REDIS_HOST", "cache")
+    redis_port = int(os.getenv("REDIS_PORT", 6379))
+
+    return redis.Redis(
+        host=redis_host,
+        port=redis_port,
+        db=0,
+        decode_responses=True,  # Important for string responses
+        socket_connect_timeout=5,  # Connection timeout
+        socket_keepalive=True,  # Keep connection alive
+        retry_on_timeout=True  # Retry on timeout
+    )
 
 
 #

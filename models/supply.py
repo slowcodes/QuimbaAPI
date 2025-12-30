@@ -1,11 +1,9 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, Double, String, DateTime, Date, Enum as SqlEnum, Text, \
     BLOB, BIGINT
 from db import Base
-from enum import Enum
 
 from models.consultation import SoftDeleteMixin
 from models.pharmacy import Form
-from models.transaction import Transaction
 
 
 class Supplier(Base, SoftDeleteMixin):

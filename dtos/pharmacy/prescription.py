@@ -7,12 +7,15 @@ from dtos.consultation import ConsultantDTO
 from dtos.people import ClientDTO, BasicClientDTO
 from dtos.pharmacy.drug import DrugDTO
 from models.pharmacy import Form, PrescriptionStatus
+from dtos.client.organization import OrganisationDTO
 
 
 class PharmacyDTO(BaseModel):
     id: Optional[int] = None
     is_active: Optional[bool] = None
     org_id: Optional[int] = None
+
+    company: Optional[OrganisationDTO] = None
 
     class Config:
         from_attributes = True

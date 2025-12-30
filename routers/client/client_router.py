@@ -53,7 +53,7 @@ def enroll_client(client: ClientDTO, repo: ClientRepository = Depends(get_client
             msg='Client successfully registered with Person ID' + str(update.id)))
     enrolled_client = repo.add_client(client)
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=dict(
-        msg='Client successfully registered with Person ID' + str(enrolled_client)))
+        msg='Client successfully registered with Person ID' + str(enrolled_client.id), data=jsonable_encoder(enrolled_client)))
 
 
 @client_router.get('/api/clients/check_email', response_model=None, tags=['Clients', 'Enrollment', 'Username'])

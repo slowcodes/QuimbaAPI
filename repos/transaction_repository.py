@@ -1,90 +1,36 @@
-from sqlalchemy.orm import Session
+from collections import defaultdict
+from typing import Optional, Type, TypeVar
+from datetime import datetime
 
-from dtos.lab import DateFilterDTO
-from dtos.transaction import TransactionDTO, TransactionPackageDTO
+from sqlalchemy import select, or_
+from sqlalchemy.orm import Session, joinedload
+
+from db import Base
+from dtos.consultant import ConsultationQueueDTO
+from dtos.lab import DateFilterDTO, LabServicesQueueDTO, LabResultByQueueDTO
+from dtos.people import BasicClientDTO
+from dtos.pharmacy.dispensed import DispensedPrescriptionRead
+from dtos.transaction import TransactionDTO, TransactionPackageDTO, ReferredTransactionSettlementResponseDTO
 from models.auth import User
 from models.client import Person, Client
-from models.services.services import ServiceBooking, BookingStatus, Bundles
-from models.transaction import Transaction, TransactionType, ReferredTransaction, PackageTransaction
-from repos.auth_repository import UserRepository
-from repos.client.client_repository import ClientRepository
-from repos.client.referral_repository import ReferralRepository
-from repos.consultation.consultant_repository import ConsultantRepository
-from repos.lab.lab_repository import LabRepository
-from repos.payment_repository import PaymentRepository
-from repos.services.service_bundle_repository import ServiceBundleRepository
+from models.consultation import ConsultationQueue, InHours, Specialist
+from models.lab.lab import LabServicesQueue, LabService
+from models.pharmacy import DispensedPrescriptionDetail, PrescriptionDetail, Drug
+from models.sales import BusinessSales
+from models.services.services import ServiceBooking, BookingStatus, Bundles, ServiceBookingDetail, BookingType
+from models.transaction import Transaction, TransactionType, ReferredTransaction, PackageTransaction, \
+    ReferredTransactionSettlement, ReferredTransactionSettlementDetail, ReferredTransactionStatus
 from repos.services.service_repository import ServiceRepository
-from utils.functions import generate_transaction_id
+from utils.functions import generate_transaction_id, sqlalchemy_to_dict
 
 
 class TransactionRepository:
 
     def __init__(self, db_session: Session):
         self.db_session = db_session
-        self.user_id = 1  # getLoggedInUser()['id']
-        self.result_cols = [
-            Transaction.id,
-            Transaction.transaction_time,
-            Transaction.discount,
-            Transaction.user_id,
-            Person.last_name,
-            Person.first_name,
-            ServiceBooking.client_id,
-            # Client.id.label("client_id"),
-            ServiceBooking.booking_status,
-            ServiceBooking.id.label("booking_id")
-        ]
         self.service_repository = ServiceRepository(self.db_session)
-        self.service_bundle_repository = ServiceBundleRepository(self.db_session)
-        self.referral_repository = ReferralRepository(self.db_session)
 
-    def get_transactions(self, limit, skip, lab_id,
-                         booking_status: BookingStatus, search_text: str, transaction_type: TransactionType,
-                         client_id: int, date_filter: DateFilterDTO, booking_id: int = 0,
-                         only_referred_transaction: bool = False):
-
-        rs = self.db_session.query(*self.result_cols).select_from(ServiceBooking) \
-            .join(Transaction, Transaction.id == ServiceBooking.transaction_id) \
-            .join(Client, Client.id == ServiceBooking.client_id) \
-            .join(Person, Person.id == Client.person_id)
-
-        if only_referred_transaction:
-            rs = rs.join(ReferredTransaction, ReferredTransaction.transaction_id == Transaction.id)
-
-        if transaction_type != TransactionType.All:
-            rs = rs.filter(Transaction.transaction_status == transaction_type)
-
-        if booking_status:
-            rs = rs.filter(ServiceBooking.booking_status == booking_status)
-
-        if booking_id != 0:
-            rs = rs.filter(ServiceBooking.id == booking_id)
-
-        if date_filter.get("start_date") or date_filter.get("last_date"):
-            start_date = date_filter.get("start_date")
-            last_date = date_filter.get("last_date") + ' 23:59:59.999999'
-            rs = rs.filter(
-                Transaction.transaction_time.between(start_date, last_date)
-                if start_date and last_date else
-                Transaction.transaction_time >= start_date if start_date else
-                Transaction.transaction_time <= last_date
-            )
-
-        if client_id != 0:
-            rs = rs.filter(Client.id == client_id)
-
-        if len(search_text) > 2:
-            rs = rs.where((Person.first_name.ilike(f"%{search_text}%")) |
-                          (Person.last_name.ilike(f"%{search_text}%")) |
-                          (Person.phone.ilike(f"%{search_text}%"))
-                          )
-
-        total = rs.count()
-        transactions = rs.order_by(Transaction.transaction_time.desc()).offset(skip).limit(limit).all()
-        return {
-            'transactions': transactions,
-            'total': total
-        }
+    ModelType = TypeVar("ModelType", bound=Base)
 
     def get_lab_transaction_packages(self, transaction_id):
         cols = [Bundles.bundles_name,
@@ -113,81 +59,281 @@ class TransactionRepository:
             )
         return package_transactions
 
-    def get_laboratory_transaction(self, transaction_id):
+    def get_by_id(self, transaction_id: int) -> TransactionDTO:
+        tx = (
+            self.db_session.query(Transaction)
+            .options(joinedload(Transaction.package_transactions))
+            .filter(Transaction.id == transaction_id)
+            .first()
+        )
+        return self.get_list(tx, BookingType.Aggregate)
 
-        rs = self.db_session.query(*self.result_cols) \
-            .select_from(Transaction) \
-            .join(User, User.id == Transaction.user_id) \
-            .join(Person, User.person_id == Person.id) \
-            .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id) \
-            .filter(Transaction.id == transaction_id).one_or_none()
+    def get_all(
+            self,
+            date_filter: DateFilterDTO,
+            skip: int = 0,
+            limit: int = 100,
+            referred: bool = False,
+            referral_id: Optional[int] = None
+    ):
+        query = self.db_session.query(Transaction)
 
-        if rs is None:
-            return None
+        # --- Referral filter ---
+        if referred or referral_id is not None:
+            query = query.join(ReferredTransaction)
+            if referred:
+                query = query.filter(ReferredTransaction.referral_id.isnot(None))
+            if referral_id is not None:
+                query = query.filter(ReferredTransaction.referral_id == referral_id)
 
-        client = ClientRepository(self.db_session)
-        payments = PaymentRepository(self.db_session)
-
-        user = UserRepository(self.db_session)
-
-        userWithOutPerson = user.get_user_by_id(rs.user_id)
-        userWithPerson = user.get_user(userWithOutPerson.username)
-
-        client = client.get_client(rs.client_id)
-        transaction_date = str(rs.transaction_time)
-        return {
-            'transaction_id': rs.id,
-            'discount': rs.discount,
-            'processed_by': rs.first_name + ' ' + rs.last_name,
-            'client': client,
-            'user': userWithPerson,
-            'transaction_package': self.get_lab_transaction_packages(transaction_id),
-            'client_first_name': client['first_name'],
-            'client_last_name': client['last_name'],
-            'booking_status': rs.booking_status,
-            'transaction_time': transaction_date,
-            'payment': payments.get_transaction_payments(transaction_id),
-            # 'services': lab.get_lab_services_booking(transaction_id)
-        }
-
-    def get_laboratory_transaction_details(self, limit, skip, lab_id,
-                                           booking_status: BookingStatus, search_text: str,
-                                           client_id: int, date_filter: DateFilterDTO,
-                                           transaction_type: TransactionType, only_referred_transactions: bool = False):
-        rs = self.get_transactions(limit, skip, lab_id,
-                                   booking_status, search_text, transaction_type,
-                                   client_id, date_filter, 0, only_referred_transactions)
-
-        prp = PaymentRepository(self.db_session)
-        urp = UserRepository(self.db_session)
-        lrp = LabRepository(self.db_session)
-
-        response = []
-        for lab_booking in rs['transactions']:
-            payments = prp.get_transaction_payments(lab_booking.id)
-            user = urp.get_user_by_id(lab_booking.user_id)
-            lab_services = lrp.get_lab_services_booking(lab_booking.id)
-            response.append(
-                {
-                    'transaction_id': lab_booking.id,
-                    'transaction_time': lab_booking.transaction_time,
-                    'status': lab_booking.booking_status,
-                    'client_first_name': lab_booking.first_name,
-                    'client_last_name': lab_booking.last_name,
-                    'discount': lab_booking.discount,
-                    'service_agent': user,
-                    'teller': urp.get_user(user.username),
-                    'booking_completion_status': self.service_repository.get_booking_completion_status(
-                        lab_booking.booking_id),
-                    'payment': payments,
-                    'services': lab_services,
-                    'referral': self.referral_repository.get_referred_transaction_referral(lab_booking.id)
-                }
+        # --- Date filtering ---
+        if date_filter and date_filter.start_date:
+            last_date = date_filter.last_date or datetime.utcnow()
+            query = query.filter(
+                Transaction.transaction_date.between(date_filter.start_date, last_date)
             )
+
+        if getattr(date_filter, "status", None):
+            status_value = date_filter.status
+            if status_value in ("Open", "Closed"):
+                query = query.filter(Transaction.transaction_status == status_value)
+            # if 'all' or anything else, no status filter is applied
+
+        # --- Count total before pagination ---
+        total = query.count()
+
+        # --- Ordering (optional but recommended) ---
+        query = query.order_by(Transaction.transaction_date.desc())
+
+        # # --- Pagination ---
+        if skip:
+            query = query.offset(skip)
+        if limit:
+            query = query.limit(limit)
+
+        # --- Execute query ---
+        results = query.all()
+
+        # --- Return structured response ---
         return {
-            'data': response,
-            'total': rs['total']
+            "data": [self.get_list(datum, BookingType.Aggregate) for datum in results],
+            "total": total
         }
+
+    def get_all_lab(self, skip: int = 0, limit: int = 0, lab_id: int = 0, client_id: int = 0):
+        query = (
+            self.db_session.query(Transaction)
+            .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id)
+            .join(ServiceBooking.booking_detail)
+            .join(ServiceBookingDetail.lab_service_queue)
+            .join(LabServicesQueue.lab_service)
+            .join(LabService.laboratory)
+            .filter(ServiceBookingDetail.booking_type == BookingType.Laboratory)
+            .distinct(Transaction.id)
+            .options(
+                joinedload(Transaction.sales_services)
+                .joinedload(ServiceBooking.booking_detail)
+                .joinedload(ServiceBookingDetail.lab_service_queue)
+                .joinedload(LabServicesQueue.lab_service)
+            )
+        )
+
+        if lab_id != 0:
+            query = query.filter(LabService.lab_id == lab_id)
+
+        if client_id != 0:
+            query = query.filter(ServiceBooking.client_id == client_id)
+
+        # --- Pagination ---
+        total = query.count()
+        if skip:
+            query = query.offset(skip)
+        if limit:
+            query = query.limit(limit)
+
+        return {
+            'data': [self.get_list(datum, BookingType.Laboratory) for datum in query.all()],
+            'total': total
+        }
+
+    def get_all_consultation(self):
+        query = (
+            self.db_session.query(Transaction)
+            .filter(
+                Transaction.sales_services.has(
+                    ServiceBooking.booking_detail.any(
+                        ServiceBookingDetail.consultation_queue.has()  # ✅ one-to-one → use .has()
+                    )
+                )
+            )
+            .options(
+                joinedload(Transaction.sales_services)
+                .joinedload(ServiceBooking.booking_detail)
+                .joinedload(ServiceBookingDetail.consultation_queue)
+                .joinedload(ConsultationQueue.specialization),
+
+                joinedload(Transaction.sales_services)
+                .joinedload(ServiceBooking.booking_detail)
+                .joinedload(ServiceBookingDetail.consultation_queue)
+                .joinedload(ConsultationQueue.schedule)
+                .joinedload(InHours.consultant)
+                .joinedload(Specialist.user)
+                .joinedload(User.person),
+
+                joinedload(Transaction.sales_services)
+                .joinedload(ServiceBooking.booking_detail)
+                .joinedload(ServiceBookingDetail.price_code_rel),
+            )
+        )
+
+        return {
+            'data': [self.get_list(datum, BookingType.Appointment) for datum in query.all()],
+            'total': query.count()
+        }
+
+    def get_all_dispensaries(self):
+        query = (
+            self.db_session.query(Transaction)
+            .filter(
+                Transaction.sales_services.has(
+                    ServiceBooking.business_sales.any(
+                        BusinessSales.dispensed_prescriptions.any()
+                    )  # ✅ at least one business_sales record
+                )
+            )
+            .options(
+                joinedload(Transaction.sales_services)
+                .joinedload(ServiceBooking.business_sales)
+                .joinedload(BusinessSales.dispensed_prescriptions)
+                .joinedload(DispensedPrescriptionDetail.prescription_detail)
+                .joinedload(PrescriptionDetail.drug)
+                .joinedload(Drug.product)
+            )
+        )
+        return {
+            'data': [self.get_list(datum, BookingType.Dispensary) for datum in query.all()],
+            'total': query.count()
+        }
+
+    def get_list(self, model: Type[ModelType], bookingType: BookingType):
+        lab_list = []
+        dispensary_list = []
+        consultation_list = []
+        enrollments = []
+
+        if model.sales_services:
+            if not model.sales_services.booking_detail:
+                lab_list = []
+                dispensary_list = []
+                consultation_list = []
+                enrollments = []
+            else:
+                for booking_detail in model.sales_services.booking_detail:
+                    if booking_detail.booking_type == BookingType.Laboratory:
+
+                        if booking_detail.lab_service_queue:
+                            lab_list.append(LabResultByQueueDTO.from_orm(
+                                booking_detail.lab_service_queue
+                            ))
+                    elif booking_detail.booking_type == BookingType.Enrollment:
+                        enrollments.append({
+                            'service_id': booking_detail.service_id,
+                            'service_type': booking_detail.booking_type,
+                            'service_name': 'New Client Enrollment',
+                            'price': booking_detail.price_code_rel.service_price,
+                            'price_code': booking_detail.price_code_rel.id,
+                            'ext_turn_around_time': 10
+                        })
+                    elif booking_detail.booking_type == BookingType.Consultation or booking_detail.booking_type == BookingType.Appointment:
+                        dtl = ConsultationQueueDTO.from_orm(
+                            booking_detail.consultation_queue) if booking_detail.consultation_queue else None
+                        dtl = f"Consultation - {dtl.specialization.department} with {dtl.schedule.consultant.user.person.first_name} {dtl.schedule.consultant.user.person.last_name} ({dtl.notes})" if dtl and dtl.specialization else "Consultation Service"
+                        consultation_list.append({
+                            'service_id': booking_detail.service_id,
+                            'service_type': booking_detail.booking_type,
+                            'service_name': dtl,
+                            'price': booking_detail.price_code_rel.service_price,
+                            'price_code': booking_detail.price_code_rel.id,
+                            'ext_turn_around_time': 15
+                        })
+
+            if (
+                    bookingType == BookingType.Dispensary or bookingType == BookingType.Aggregate) and model.sales_services.business_sales:
+
+                for sale in model.sales_services.business_sales:
+                    dispensed = DispensedPrescriptionRead.from_orm(
+                        sale.dispensed_prescriptions[0]) if sale.dispensed_prescriptions else None
+                    if dispensed:
+                        dispensary_list.append({
+                            'pack': dispensed.sale.package.package_container.value,
+                            'selling_price': dispensed.sale.package.sales_price_code.selling_price,
+                            'quantity': dispensed.sale.quantity if dispensed else 0,
+                            'product': dispensed.sale.product.product_name,
+                            'prescription': {
+                                'product': dispensed.prescription_detail.drug.product.product_name,
+                                'form': dispensed.prescription_detail.form,
+                                'frequency': dispensed.prescription_detail.frequency,
+                                'duration': dispensed.prescription_detail.duration,
+                                'dosage': dispensed.prescription_detail.dosage
+                            } if dispensed.prescription_detail else None
+                        })
+
+        tx = TransactionDTO.from_orm(model)  # serialize to get necessary fields
+        tx.sales_services.lab_booking_completion = self.service_repository.get_booking_completion_status(
+            tx.sales_services.id)
+        tx = tx.dict()
+
+        if not tx.get('sales_services'):
+            tx['sales_services'] = {}
+        if bookingType in (
+                BookingType.Consultation,
+                BookingType.Appointment,
+                BookingType.Aggregate):
+            tx['sales_services']['consultation_services'] = consultation_list
+        if bookingType == BookingType.Laboratory or bookingType == BookingType.Aggregate:
+            tx['sales_services']['lab_services'] = lab_list
+        if bookingType == BookingType.Dispensary or bookingType == BookingType.Aggregate:
+            tx['sales_services']['dispensary_services'] = dispensary_list
+        if bookingType == BookingType.Enrollment or bookingType == BookingType.Aggregate:
+            tx['sales_services']['enrollment'] = enrollments
+
+        return tx
+
+    def get_all_enrollment(self, skip: int = 0, limit: int = 100):
+
+        query = (
+            self.db_session.query(Transaction)
+            .join(Transaction.sales_services)
+            .join(ServiceBooking.booking_detail)
+            .join(ServiceBookingDetail.business_service)
+            .filter(
+                ServiceBookingDetail.booking_type == BookingType.Enrollment)  # ensures there is at least one LabServicesQueue
+            .options(
+                joinedload(Transaction.sales_services)
+                .options(
+                    joinedload(ServiceBooking.booking_detail)
+                    .options(
+                        joinedload(ServiceBookingDetail.business_service)
+                    )
+                )
+            )
+        )
+
+        total = query.count()
+
+        if skip:
+            query = query.offset(skip)
+        if limit:
+            query = query.limit(limit)
+
+        return {
+            'data': [self.get_list(datum, BookingType.Laboratory) for datum in query.all()],
+            'total': total
+        }
+
+    # generate services list
+    def get_all_referred_transactions(self):
+        pass
 
     def tid_exist(self, tid: int) -> bool:
         exits = self.db_session.query(Transaction).filter(Transaction.id == tid)
@@ -195,14 +341,14 @@ class TransactionRepository:
             return True
         return False
 
-    def create_transaction(self, discount: float):
+    def create_transaction(self, discount: float, user_id: int):
         tid = generate_transaction_id()
 
         continue_tid_generation = True
         while continue_tid_generation:
             continue_tid_generation = not self.tid_exist(tid)
 
-        new_transaction = Transaction(id=tid, user_id=self.user_id, discount=discount)
+        new_transaction = Transaction(id=tid, user_id=user_id, discount=discount)
         self.db_session.add(new_transaction)
         self.db_session.commit()
 
@@ -226,7 +372,9 @@ class TransactionRepository:
         return TransactionPackageDTO.from_orm(pt)
 
     def get_transaction_by_id(self, transaction_id: int) -> TransactionDTO:
-        return self.db_session.query(Transaction).filter(Transaction.id == transaction_id).first()
+        return TransactionDTO.from_orm(
+            self.db_session.query(Transaction).filter(Transaction.id == transaction_id).first()
+        )
 
     def update_transaction_discount(self, transaction_id: int, new_discount: float):
         transaction = self.get_transaction_by_id(transaction_id)
@@ -246,49 +394,138 @@ class TransactionRepository:
 
     def get_clients_with_open_transactions(self,
                                            limit: int = 100, skip: int = 0):
-        cols = [
-            Client.person_id,
-            Client.address,
-            Person.first_name,
-            Person.last_name,
-            Client.id
-        ]
-        lab_repository = LabRepository(self.db_session)
-        consultation_repository = ConsultantRepository(self.db_session)
+        stmt = (
+            select(Client, Transaction)
+            .join(ServiceBooking, Client.id == ServiceBooking.client_id)
+            .join(Transaction, ServiceBooking.transaction_id == Transaction.id)
+            .where(Transaction.transaction_status == TransactionType.Open)
+        )
 
-        clients_with_open_transactions = self.db_session.query(*cols) \
-            .select_from(Client) \
-            .join(ServiceBooking, ServiceBooking.client_id == Client.id) \
-            .join(Transaction, Transaction.id == ServiceBooking.transaction_id) \
-            .join(Person, Person.id == Client.person_id) \
-            .distinct() \
-            .filter(Transaction.transaction_status == 'Open') \
-            .offset(skip).limit(limit).all()
+        rows = self.db_session.execute(stmt).all()
 
-        result = []
-        for client in clients_with_open_transactions:
-            open_transactions = self.db_session.query(Transaction) \
-                .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id) \
-                .filter(ServiceBooking.client_id == client.id,
-                        Transaction.transaction_status == TransactionType.Open
-                        ).all()
+        # Group transactions per user
+        grouped = defaultdict(list)
+        for client, transaction in rows:
+            grouped[client].append(transaction)
 
-            transaction = []
-            for txn in open_transactions:
-                transaction.append(
-                    {
-                        'id': txn.id,
-                        'discount': txn.discount,
-                        'transaction_time': txn.transaction_time,
-                        'details': lab_repository.get_lab_services_booking(txn) + consultation_repository.get_consultation_service_booking(txn)
-                    }
-                )
-
-            result.append({
-                'client_id': client.id,
-                'first_name': client.first_name,
-                'last_name': client.last_name,
-                'open_transactions': transaction
+        results = []
+        for client, transactions in grouped.items():
+            results.append({
+                "client": BasicClientDTO.from_orm(client),
+                "transactions": [
+                    self.get_list(t, BookingType.Aggregate)
+                    for t in transactions
+                ]
             })
 
-        return result
+        return results
+
+    def get_settlement(
+            self,
+            limit: int,
+            skip: int,
+            start_date: str = '',
+            last_date: str = '',
+            referral_id: int = 0,
+            search_text: str = ''
+    ):
+        query = self.db_session.query(ReferredTransactionSettlement)
+        search_text = (search_text or '').strip()
+
+        if referral_id:
+            query = query.filter(ReferredTransactionSettlement.created_for == referral_id)
+
+        if start_date and last_date:
+            query = query.filter(
+                ReferredTransactionSettlement.created_at.between(start_date, last_date)
+            )
+        elif start_date:
+            query = query.filter(ReferredTransactionSettlement.created_at >= start_date)
+        elif last_date:
+            query = query.filter(ReferredTransactionSettlement.created_at <= last_date)
+
+        if search_text:
+            query = (
+                query.join(ReferredTransactionSettlement.referral)
+                .join(Person)
+                .filter(
+                    or_(
+                        Person.first_name.ilike(f"%{search_text}%"),
+                        Person.last_name.ilike(f"%{search_text}%"),
+                        Person.middle_name.ilike(f"%{search_text}%"),
+                        Person.phone.ilike(f"%{search_text}%")
+                    )
+                )
+            )
+
+        count = query.count()
+        if skip:
+            query = query.offset(skip)
+        if limit:
+            query = query.limit(limit)
+
+        st = query.all()
+
+        results = []
+        for settlement in st:
+            # base settlement fields
+            dto = ReferredTransactionSettlementResponseDTO.from_orm(settlement).dict()
+
+            # replace each transaction payload with the fully built version from get_by_id
+            details = []
+            for detail in settlement.settlement_detail:
+                tx_full = self.get_by_id(detail.ref_transaction_id) if detail.ref_transaction_id else None
+                details.append({
+                    "id": detail.id,
+                    "ref_transaction_id": detail.ref_transaction_id,
+                    "transaction": tx_full
+                })
+
+            dto["settlement_detail"] = details
+            results.append(dto)
+
+        return {
+            'data': results,
+            'total': count
+        }
+
+    def create_settlement(self,
+                          created_for: int,
+                          commission: float,
+                          created_by: int,
+                          ref_transaction_ids: list[int]
+                          ) -> ReferredTransactionSettlement:
+
+        settlement = ReferredTransactionSettlement(
+            created_for=created_for,
+            commission=commission,
+            created_by=created_by
+        )
+
+        self.db_session.add(settlement)
+        self.db_session.flush()  # ensures settlement.id is generated
+
+        details = []
+
+        for tx_id in ref_transaction_ids:
+            # create settlement detail
+            detail = ReferredTransactionSettlementDetail(
+                settlement_id=settlement.id,
+                ref_transaction_id=tx_id
+            )
+            details.append(detail)
+
+            # update referred transaction status
+            ref = (
+                self.db_session.query(ReferredTransaction)
+                .filter(ReferredTransaction.transaction_id == tx_id)
+                .first()
+            )
+            if ref:
+                ref.status = ReferredTransactionStatus.Settled
+
+        self.db_session.add_all(details)
+        self.db_session.commit()
+        self.db_session.refresh(settlement)
+
+        return ReferredTransactionSettlementResponseDTO.from_orm(settlement)

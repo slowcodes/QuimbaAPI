@@ -7,7 +7,7 @@ from db import Base
 from enum import Enum
 from sqlalchemy.orm import relationship
 
-from models.consultation import SoftDeleteMixin
+from models.mixins import SoftDeleteMixin
 
 
 class StoreVisibility(str, Enum):
@@ -21,6 +21,7 @@ class ServiceType(str, Enum):
     Administration = 'Administration'  # e.g enrollment
     Consultation = 'Consultation'
     Appointment = 'Appointment'
+    Enrollment = 'Enrollment'
 
 
 class BusinessServices(Base):
@@ -30,23 +31,31 @@ class BusinessServices(Base):
     price_code = Column(Integer, ForeignKey("service_price_code.id", ))
     ext_turn_around_time = Column(Double)
     visibility = Column(SqlEnum(StoreVisibility))
-    serviceType = Column(SqlEnum(ServiceType))
+    service_type = Column("service_type", SqlEnum(ServiceType), nullable=False)
 
     # relationships
     in_hours = relationship("InHours", back_populates="business_service")
     pc = relationship("PriceCode", back_populates="business_services")
+    lab_service = relationship("LabService", back_populates="business_service", lazy="joined", uselist=False)
+    booking_detail = relationship("ServiceBookingDetail", back_populates="business_service")
 
 
-class Bundles(Base):
+class BundleStatus(str, Enum):
+    Active = 'Active'
+    Suspended = 'Suspended'
+
+
+class Bundles(Base, SoftDeleteMixin):
     __tablename__ = "service_bundle"
 
     id = Column(Integer, primary_key=True, index=True)
     bundles_name = Column(String(100))
     bundles_desc = Column(String(100))
     discount = Column(Double)
-    bundle_type = Column(SqlEnum(ServiceType))
+    bundle_type = Column(SqlEnum(BundleStatus), default=BundleStatus.Active)
 
-    lab_service_bundle = relationship("LabBundleCollection", back_populates="bundle")
+    lab_service_bundle = relationship("LabBundleCollection", back_populates="bundle", uselist=True)
+    package_transactions = relationship("PackageTransaction", back_populates="package")
 
 
 class BookingStatus(str, Enum):
@@ -60,6 +69,9 @@ class BookingType(str, Enum):
     Laboratory = 'Laboratory'
     Consultation = 'Consultation'
     Appointment = 'Appointment'
+    Dispensary = 'Dispensary'
+    Aggregate = 'Aggregate'
+    Enrollment = 'Enrollment'
 
 
 class ServiceBooking(Base):
@@ -67,12 +79,16 @@ class ServiceBooking(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey("client.id", ondelete="cascade"))
-    transaction_id = Column(BIGINT, ForeignKey("transaction.id", ondelete="cascade"))
+    transaction_id = Column(BIGINT, ForeignKey("transaction.id", ondelete="cascade"), nullable=False, unique=True)
     booking_status = Column(SqlEnum(BookingStatus), default=BookingStatus.Processing)
-    # booking_type = Column(SqlEnum(BookingType), default=BookingType.Laboratory)
+    referral_id = Column(Integer, ForeignKey("client_referral.id", ondelete="cascade"), nullable=True)
 
-    booking_detail = relationship("ServiceBookingDetail", back_populates="booking")
+    booking_detail = relationship("ServiceBookingDetail", back_populates="booking", uselist=True)
     client = relationship("Client", back_populates="service_bookings")
+    # referral = relationship("Referral", back_populates="service_bookings")
+    business_sales = relationship("BusinessSales", back_populates="sales_service")
+    transaction = relationship("Transaction", back_populates="sales_services")
+    result_approval = relationship("ApprovedLabBookingResult", back_populates="booking", uselist=False)
 
 
 class ServiceBookingDetail(Base):
@@ -84,8 +100,11 @@ class ServiceBookingDetail(Base):
     booking_id = Column(Integer, ForeignKey("service_booking.id", ondelete="cascade"))
     booking_type = Column(SqlEnum(BookingType), default=BookingType.Laboratory)
 
-    consultation_queue = relationship("ConsultationQueue", back_populates="booking_detail")
+    consultation_queue = relationship("ConsultationQueue", back_populates="booking_detail", uselist=False)
     booking = relationship("ServiceBooking", back_populates="booking_detail")
+    business_service = relationship("BusinessServices", back_populates="booking_detail")
+    price_code_rel = relationship("PriceCode", back_populates="service_booking_detail", uselist=False)
+    lab_service_queue = relationship("LabServicesQueue", back_populates="booking", uselist=False)
 
 
 class ServiceClinicalExamination(Base):
@@ -104,6 +123,7 @@ class PriceCode(Base):
     discount = Column(Double)
 
     business_services = relationship("BusinessServices", back_populates="pc")
+    service_booking_detail = relationship("ServiceBookingDetail", back_populates="price_code_rel")
 
 
 class CommunicationMode(str, Enum):

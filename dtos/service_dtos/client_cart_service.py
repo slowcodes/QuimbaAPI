@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from dtos.auth import BasicUserDTO
 from dtos.consultation import ConsultantDTO
 from dtos.people import BasicClientDTO, BasicReferralDTO
-from dtos.pharmacy.prescription import PrescriptionDTO
+from dtos.pharmacy.prescription import PrescriptionDTO, PrescriptionDetailDTO
 from dtos.services import BusinessServiceDTO, PriceCodeDTO
 from models.consultation import InHourFrequency
 from models.services.service_cart import ClientConsultationBookingCart
@@ -115,17 +115,22 @@ class ClientServiceCartBase(BaseModel):
     transaction_id: Optional[int] = None
 
 
-
 class ClientServiceCartCreate(ClientServiceCartBase):
     created_by: int
 
 
 class ConsultationPrescriptionDTO(BaseModel):
     id: Optional[int] = None
-    consultation_cart_id: int
-    prescription_id: int
+    consultation_cart_id: Optional[int] = None
+    prescription_id: Optional[int] = None
+    pharmacy_id: Optional[int] = None
+    instruction: Optional[str] = None
+    note: Optional[str] = None
 
     pharmacy_prescription: Optional[PrescriptionDTO] = None
+    client: Optional[BasicClientDTO] = None
+    consultant: Optional[ConsultantDTO] = None
+    prescriptions: List[PrescriptionDetailDTO] = []
 
     class Config:
         from_attributes = True

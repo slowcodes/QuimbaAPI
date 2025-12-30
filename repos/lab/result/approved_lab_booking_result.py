@@ -28,7 +28,7 @@ class ApprovedLabBookingResultRepository:
         if result:
             # user = user_repo.get_user_by_id(result.approved_by)
             response = ApprovedLabBookingResultDTO.from_orm(result)
-            response.approved_user = user_repo.get_usr_by_id(result.approved_by)
+            response.user = user_repo.get_usr_by_id(result.approved_by)
             return response
         return None
 

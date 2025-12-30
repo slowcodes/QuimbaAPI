@@ -28,3 +28,8 @@ id,role_id,privilege,description
 27,1,Enroll Referral,Permissions to manage referrals
 28,1,Manage Organizations,Permissions to manage organizations
 29,1,Generate Referral Settlement,Permissions to generate and manage settlements for referrals
+30,5,Create Prescription,Permission to create prescription
+31,5,Manage Supply, Manage In-stock of Pharmaceutical Products
+32,5,Dispense Prescription, Manage dispensaries
+33,5,Pharmacies, Permissions to create and manage pharmacies
+34,5,Drug Catalogue, Permissions to create and manage drug catalogues

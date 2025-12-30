@@ -2,8 +2,9 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
+from dtos.all import DataResponseDTO
 from dtos.lab import LabBundleCollectionDTO
-from dtos.services import ServiceBundleDTO
+from dtos.service_dtos.bundles import BundleDTO
 from models.lab.lab import LabBundleCollection
 from models.services.services import Bundles, ServiceType
 from repos.lab.lab_repository import LabRepository
@@ -14,30 +15,46 @@ class ServiceBundleRepository:
         self.session = session
         self.lab_repository = LabRepository(session)
 
-    def add_service_bundle(self, service_bundle: ServiceBundleDTO):
+    def add_service_bundle(self, service_bundle: BundleDTO):
         sb = Bundles(**service_bundle.dict(exclude_unset=True))
         self.session.add(sb)
         self.session.commit()
         self.session.refresh(sb)
-        return ServiceBundleDTO.from_orm(sb)  # coverts orm back to dto
+        return BundleDTO.from_orm(sb)  # coverts orm back to dto
 
-    def get_service_bundle(self, limit: int = 20, skip: int = 0, service_type: ServiceType = None):
+    def update_bundle(self, service_bundle: BundleDTO):
+        bdl = self.session.query(Bundles).filter(Bundles.id == service_bundle.id).first()
+        bdl.bundles_name = service_bundle.bundles_name
+        bdl.bundles_desc = service_bundle.bundles_desc
+        bdl.discount = service_bundle.discount
+        bdl.bundle_type = service_bundle.bundle_type
+
+        bdl.lab_service_bundle.clear()
+        for bundle_collection in service_bundle.lab_service_bundle:
+            bdl.lab_service_bundle.append(
+                LabBundleCollection(
+                    lab_service_id=bundle_collection.lab_service_id
+                )
+            )
+        self.session.commit()
+        self.session.refresh(bdl)
+        return bdl
+
+    def get_all_bundles(self, limit: int = 20, skip: int = 0, service_type: ServiceType = None):
         bundles = self.session.query(Bundles)
-        count = 0
-        if service_type is None:
-            count = bundles.count()
-            bundles = bundles.offset(skip).limit(limit).all()
-        count = bundles.filter(Bundles.bundle_type == service_type).count()
+        total = bundles.count()
+        bundles = bundles.offset(skip).limit(limit).all()
 
-        bundles = bundles.filter(Bundles.bundle_type == service_type).offset(skip).limit(limit).all()
         return {
-            'data': [ServiceBundleDTO.from_orm(bundle) for bundle in bundles],
-            'total': count
+            "data": [BundleDTO.from_orm(bundle) for bundle in bundles],
+            "total": total
         }
 
-    # Laboratory Bundle Repositories
     def add_lab_bundle(self, lab_bundle_item: LabBundleCollectionDTO):
-        bundle = LabBundleCollection(**lab_bundle_item.dict(exclude_unset=True))
+        bundle = LabBundleCollection(
+            bundles_id=lab_bundle_item.bundles_id,
+            lab_service_id=lab_bundle_item.lab_service_id
+        )
         self.session.add(bundle)
         self.session.commit()
         self.session.refresh(bundle)
@@ -74,48 +91,6 @@ class ServiceBundleRepository:
             return lab_services
 
         return None
-
-    def get_lab_bundles(self, limit: int = 20, skip: int = 0) -> List:
-        bundles = self.get_service_bundle(limit, skip, ServiceType.Laboratory)
-
-        lab_bundles = []
-        try:
-            for bundle in bundles['data']:
-
-                lab_bundle_collection = self.session.query(LabBundleCollection) \
-                    .filter(LabBundleCollection.bundles_id == bundle.id).all()
-
-                lbc = []
-                for bdl in lab_bundle_collection:
-                    print('We are looping details successfully')
-                    # lbc.append(
-                    #
-                    #     self.lab_repository.get_lab_service_details(bdl.lab_service_id).update({'col_id': 0})
-                    # )
-                    # Python
-                    lab_service_details = self.lab_repository.get_lab_service_details_by_service_id(bdl.lab_service_id)
-                    # lab_service_details.update({'col_id': bdl.id})
-                    lbc.append(lab_service_details)
-
-                # if len(lbc) > 0:
-                bundle = bundle.dict()
-                bundle["lab_collections"] = lbc
-                lab_bundles.append(
-                    bundle
-                )
-
-            response = {
-                'data': lab_bundles,
-                'total': bundles["total"]
-            }
-        except Exception as e:
-            print(f"Error retrieving lab bundles: {e}")
-            response = {
-                'data': [],
-                'total': 0
-            }
-
-        return response
 
     def delete_lab_bundle(self, lab_collection_id: int):
         bundle = self.session.query(LabBundleCollection).filter(LabBundleCollection.id == lab_collection_id).first()

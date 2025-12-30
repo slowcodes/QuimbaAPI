@@ -44,6 +44,7 @@ class User(Base):
     client_service_cart = relationship("ClientServiceCart", back_populates="user")
     consultant_specialist = relationship("Specialist", back_populates="user")
     person = relationship("Person", back_populates="user", uselist=False)
+    transactions = relationship("Transaction", back_populates="user")
     #
     # @property
     # def status(self):

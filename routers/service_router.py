@@ -10,8 +10,10 @@ from twilio.rest import Client
 from cache.redis import get_redis_client
 from db import get_db
 from dtos.auth import UserDTO
+from dtos.lab import LabServiceBundleDTO
+from dtos.service_dtos.bundles import BundleDTO
 from dtos.service_dtos.client_cart_service import ClientServiceCartDTO, ProcessedCartDTO
-from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, ServiceBundleDTO, LabServiceBundleDTO
+from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO
 from repos.consultation.consultation_repository import ConsultationsRepository
 from repos.lab.queue_repository import QueueRepository
 from repos.services.service_bundle_repository import ServiceBundleRepository
@@ -101,9 +103,9 @@ def track_service_booking(service_booking_id: int,
     return queue_repo.track_booking_from_queue(service_booking_id)
 
 
-@service_router.get("/service-booking-status/{sample_id}")
-def service_booking_status(sample_id: int, db: Session = Depends(get_db)):
-    return service_repository.update_transaction_booking_status_based_on_sample_update(db, sample_id)
+@service_router.get("/service-booking-status/{queue_id}")
+def service_booking_status(queue_id: int, repo: ServiceRepository = Depends(service_repository)):
+    return repo.update_transaction_booking_status_based_on_procesed_result(queue_id)
 
 
 def service_bundle_repository(db: Session = Depends(get_db)):
@@ -111,10 +113,10 @@ def service_bundle_repository(db: Session = Depends(get_db)):
 
 
 @service_router.post("/bundles/", tags=["Service", "Bundles"], status_code=status.HTTP_201_CREATED)
-def create_service_bundle(service_bundle: ServiceBundleDTO,
+def create_service_bundle(service_bundle: BundleDTO,
                           repo: ServiceBundleRepository = Depends(service_bundle_repository)):
     bundle = repo.add_service_bundle(service_bundle)
-    return ServiceBundleDTO(**bundle.__dict__)
+    return BundleDTO(**bundle.__dict__)
 
 
 @service_router.get(
@@ -127,7 +129,7 @@ def get_service_bundle(skip: int = 0, limit: int = 20,
                        repo: ServiceBundleRepository = Depends(service_bundle_repository)):
     try:
         # Fetch service bundles from repository
-        return repo.get_service_bundle(limit=limit, skip=skip)
+        return repo.get_all_bundles(limit=limit, skip=skip)
     except Exception as e:
         # Log the exception and return an HTTP error response
         raise HTTPException(status_code=500, detail="Failed to retrieve service bundles") from e
@@ -155,7 +157,7 @@ def delete_bundle(bundle_id: int, repo: ServiceBundleRepository = Depends(servic
 def get_lab_service_bundle(skip: int = 0, limit: int = 20,
                            repo: ServiceBundleRepository = Depends(service_bundle_repository)):
     try:
-        return repo.get_lab_bundles(limit, skip)
+        return repo.get_all_bundles(limit, skip)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="Failed to retrieve lab service bundles") from e
@@ -167,11 +169,11 @@ def get_lab_service_bundle(skip: int = 0, limit: int = 20,
     summary="Add laboratory service bundles",
     description="Retrieve paginated service bundles with optional skip and limit parameters."
 )
-def add_lab_service_bundle(lab_service_bundle: LabServiceBundleDTO,
+def add_lab_service_bundle(lab_service_bundle: BundleDTO,
                            repo: ServiceBundleRepository = Depends(service_bundle_repository)):
     try:
         bundle = repo.add_service_bundle(
-            ServiceBundleDTO(
+            BundleDTO(
                 bundles_name=lab_service_bundle.bundles_name,
                 bundles_desc=lab_service_bundle.bundles_desc,
                 discount=lab_service_bundle.discount,
@@ -181,9 +183,9 @@ def add_lab_service_bundle(lab_service_bundle: LabServiceBundleDTO,
         bundle_id = bundle.id
         collections = []
 
-        for bundle_collection in lab_service_bundle.collections:
+        for bundle_collection in lab_service_bundle.lab_service_bundle:
             bundle_collection.bundles_id = bundle_id
-            del bundle_collection.lab_service_name
+            # del bundle_collection.lab_service_name
             col = repo.add_lab_bundle(bundle_collection)
             collections.append(col)
 
@@ -194,6 +196,22 @@ def add_lab_service_bundle(lab_service_bundle: LabServiceBundleDTO,
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="Failed to retrieve lab service bundles") from e
+
+
+@service_router.put(
+    "/bundles/laboratory/",
+    tags=["Service", "Bundles", "Laboratory"],
+    summary="Add laboratory service bundles",
+    description="Retrieve paginated service bundles with optional skip and limit parameters."
+)
+def add_lab_service_bundle(lab_service_bundle: BundleDTO,
+                           repo: ServiceBundleRepository = Depends(service_bundle_repository)):
+    try:
+        return repo.update_bundle(service_bundle=lab_service_bundle)
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Failed to retrieve lab service bundles") from e
+
 
 
 @service_router.delete(
@@ -232,13 +250,11 @@ def get_client_cart_items(client_id: int = Query(..., description="ID of the cli
         cached_client_cart = redis.get(cache_key)
 
         if cached_client_cart and refresh == 0:
-            print("Returning cached client cart")
             cart = json.loads(cached_client_cart.decode("utf-8"))
             return JSONResponse(status_code=status.HTTP_200_OK, content=cart)
         data = repo.get_client_carts(client_id=client_id, skip=skip, limit=limit)
         safe_data = jsonable_encoder(data)
         redis.set(cache_key, json.dumps(safe_data), ex=300)  # Cache for 5 minutes
-        print("Returning fresh client cart")
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to retrieve client cart items") from e

@@ -1,7 +1,3 @@
-from http.client import HTTPException
-
-from faker import Faker
-from faker.generator import random
 from fastapi import APIRouter, Depends
 from starlette import status
 
@@ -70,7 +66,7 @@ def update_lab_service(lab_service: LaboratoryServiceDetailDTO,
 def update_lab_service(lab_service: LabServiceDTO,
                        lab_repository: LabRepository = Depends(get_lab_repository)):
     if lab_service.id:
-        lab_repository.update_lab_service(lab_service.id, lab_service.__dict__)
+        lab_repository.update_lab_service_detail(lab_service.id, lab_service)
         return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
                             content=dict(error=False, msg='Lab service updated  nbqz'))
     else:
@@ -91,21 +87,6 @@ def add_lab_services_detail(lab_service: LaboratoryServiceDetailDTO,
 @lab_router.get('/api/laboratories/services', tags=['Laboratories', 'Laboratory Service'])
 def get_all_lab_services(lab_repository: LabRepository = Depends(get_lab_repository), skip: int = 0, limit: int = 10,
                          lab_id: int = 1, search=''):
-    # faker = Faker()
-    # for i in range(300):
-    #     new_lab_service = CommandLaboratoryService(
-    #         groups=[1],
-    #         name=faker.unique.first_name(),
-    #         description='',
-    #         exps=[],
-    #         price=random.randint(1000, 10000),
-    #         discount=random.randint(1, 100),
-    #         visibility="Active",
-    #         lab_id=1,
-    #         est_turn_around_time=random.randint(1, 60)
-    #     )
-    #     repos.lab.lab_repository.add_lab_services(db, new_lab_service)
-    # lab_repository = get_lab_repository()
     return lab_repository.get_lab_services(skip, limit, lab_id, search)
 
 
@@ -115,14 +96,13 @@ def get_lab_service_groups(lab_id: int = 0, lab_repository: LabRepository = Depe
                         content=dict(error=False, msg=lab_repository.get_lab_group(lab_id)))
 
 
-@lab_router.get('/api/laboratories/services/lab_service_details/',
+@lab_router.get('/api/laboratories/services/lab_service_details/', response_model=LabServiceDTO,
                 tags=['Laboratories', 'Laboratory Service', 'Details'])
-def get_lab_service_details(lab_id: int = 0, repo: LabRepository = Depends(get_lab_repository)):
-    details = repo.get_lab_service_details(lab_id)
+def get_lab_service_details(lab_id: int, repo: LabRepository = Depends(get_lab_repository)):
+    return repo.get_lab_service_details(lab_id)
 
-    if details is None:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
-                            content=dict(error=False, msg='New lab with corresponding bussiness details and price '
-                                                          'code not fount'))
-    return JSONResponse(status_code=status.HTTP_200_OK,
-                        content=dict(error=False, msg=details))
+
+@lab_router.get('/api/laboratories/current-state/',
+                tags=['Laboratories', 'Laboratory Service', 'Details'])
+def get_current_state(lab_id: int, repo: LabRepository = Depends(get_lab_repository)):
+    return repo.get_current_state(lab_id)

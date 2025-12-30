@@ -1,0 +1,7 @@
+id,parameter,data_type,param_value,ui_control_type
+1,enrollment_service_id,Integer,12,TextField
+2,org_name,String,"NeoMed Laboratory",TextField
+3,address,String,"20/36 Chime Avenue, New Haven, Enugu State",TextArea
+4,phone,String,"0803 XXX, XXX XXXX",TextField
+5,email,String,"info@neomedgroup.org",TextField
+6,website,String,"http://www.neomedgroup.org.ng",TextField

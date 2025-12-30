@@ -89,7 +89,7 @@ class InHours(Base, SoftDeleteMixin):
     end_time = Column(DateTime, default=datetime.date.today())
     specialist_id = Column(Integer, ForeignKey("consultant_specialist.id"))
     frequency = Column(SqlEnum(InHourFrequency))
-    service_id = Column(Integer, ForeignKey("service_listing.service_id"))
+    service_id = Column(Integer, ForeignKey("service_listing.service_id"), nullable=False,)
 
     # consultation_queue = relationship("ConsultationQueue", backref="consultant_in_hours")
     consultant = relationship("Specialist", back_populates="in_hours", lazy='select')
@@ -99,6 +99,7 @@ class InHours(Base, SoftDeleteMixin):
         back_populates="schedule",
         lazy="select"
     )
+    consultation_queue = relationship("ConsultationQueue", back_populates="schedule", lazy='select')
 
 
 class SpecialistSpecialization(Base, SoftDeleteMixin):
@@ -130,10 +131,11 @@ class ConsultationQueue(Base, SoftDeleteMixin):
     consultation_time = Column(DateTime)
 
     # Relationship to Schedule
-    # in_hours = relationship("InHours", backref="consultation_queue", lazy='select')
+    schedule = relationship("InHours", lazy='select')
     consultations = relationship("Consultations", back_populates="queue", passive_deletes=True)
     booking_detail = relationship("ServiceBookingDetail", back_populates="consultation_queue", lazy='select')
-
+    # schedule = relationship("InHours", back_populates="consultation_queue", lazy='select')
+    specialization = relationship("Specialism", lazy='select')
     # Index for faster queries
     Index('ix_schedule_status', schedule_id, status)
 

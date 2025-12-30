@@ -1,12 +1,14 @@
 import json
 from http.client import HTTPException
+from typing import List
+
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
 from cache.redis import get_redis_client
 from db import get_db
-from dtos.lab import LabServicesQueueDTO, QueueListingDTO, QueueDTO
+from dtos.lab import LabServicesQueueDTO, QueueListingDTO, QueueDTO, LabServicesQueueCreateDTO
 from repos.lab.queue_repository import QueueRepository
 
 queue_router = APIRouter(prefix="/api/lab-services-queue", tags=["Lab Services Queue"])
@@ -17,21 +19,22 @@ def get_queue_repository(db: Session = Depends(get_db)):
 
 
 @queue_router.post("/", response_model=LabServicesQueueDTO)
-def create_lab_service_queue(queue: LabServicesQueueDTO,
+def create_lab_service_queue(queue: LabServicesQueueCreateDTO,
                              qr: QueueRepository = Depends(get_queue_repository)
                              ):
-    return qr.create_lab_service_queue(queue)
+    if queue.lab_service_id not in [None, 0]:
+        return qr.create_lab_service_queue(queue)
 
 
-@queue_router.get("/{queue_id}", response_model=QueueDTO)
+@queue_router.get("/{queue_id}", response_model=LabServicesQueueDTO)
 def read_lab_service_queue(queue_id: int,  qr: QueueRepository = Depends(get_queue_repository)):
-    db_lab_service_queue = qr.get_lab_service_queue(queue_id=queue_id)
+    db_lab_service_queue = qr.get_queue(queue_id=queue_id)
     if db_lab_service_queue is None:
         raise HTTPException(status_code=404, detail="Lab service queue not found")
     return db_lab_service_queue
 
 
-@queue_router.get("/", response_model=QueueDTO)
+@queue_router.get("/")
 def read_lab_service_queue(lab_id: int = 0, skip: int = 0, limit: int = 10, booking_id: int = 0,
                            search_text: str = '', last_date: str = None,
                            start_date: str = None, status: str = None, refresh: int = 0,  qr: QueueRepository = Depends(get_queue_repository)):
@@ -43,8 +46,7 @@ def read_lab_service_queue(lab_id: int = 0, skip: int = 0, limit: int = 10, book
         cache_key = f"lab_queue:{skip}:{limit}:{booking_id}:{last_date}:{start_date}:{status}"
         cached_queue = redis.get(cache_key)
         if cached_queue and refresh == 0:
-            queue = json.loads(cached_queue.decode("utf-8"))
-            return queue
+            return json.loads(cached_queue) if isinstance(cached_queue, str) else json.loads(cached_queue.decode("utf-8"))
 
         # Fetch from database if not in cache
 

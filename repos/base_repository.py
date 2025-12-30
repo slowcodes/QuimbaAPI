@@ -7,7 +7,7 @@ class BaseRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def add(self, obj):
+    def add(self, obj: object) -> object:
         self.db.add(obj)
         self.db.commit()
         self.db.refresh(obj)
@@ -23,5 +23,13 @@ class BaseRepository:
         self.db.delete(obj)
         self.db.commit()
 
-    def update(self):
-        self.db.commit()
+    def update(self, obj_id, model, updates: dict):
+        sbj = self.get(model, obj_id)
+
+        if sbj:
+            for key, value in updates.items():
+                setattr(sbj, key, value)
+            self.db.commit()
+            self.db.refresh(sbj)
+
+        return sbj

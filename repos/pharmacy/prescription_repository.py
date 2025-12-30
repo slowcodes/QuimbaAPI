@@ -1,5 +1,6 @@
 from dtos.auth import UserDTO
 from dtos.pharmacy.prescription import PrescriptionDTO, PrescriptionDetailDTO
+from dtos.all import StatusDTO
 from models.pharmacy import Prescription, PrescriptionStatus, PrescriptionDetail, Form
 from repos.auth_repository import UserRepository
 from repos.base_repository import BaseRepository
@@ -80,6 +81,7 @@ class PrescriptionRepository(BaseRepository):
         ps.prescriptions = self.get_prescription_details(prescription.id)
 
         return ps
+
     def get_prescription_details(self, prescription_id: int):
         dts = self.db.query(PrescriptionDetail).filter(PrescriptionDetail.prescription_id == prescription_id).all()
         details = []
@@ -100,57 +102,67 @@ class PrescriptionRepository(BaseRepository):
             )
         return details
 
+    def update_status(self, status: StatusDTO) -> bool:
+        prescription = self.db.query(Prescription).filter(Prescription.id == status.parent).first()
+        if not prescription:
+            return False
+
+        # get children
+        counter = 0;
+        for pres in prescription.prescriptions:
+            for child in status.children:
+                if pres.id == child:
+                    pres.status = status.status
+                    counter += 1
+
+        if counter == len(prescription.prescriptions):
+            prescription.status = 'Completely_Dispensed'
+
+        self.db.commit()
+        self.db.refresh(prescription)
+        return True
+
     def create(self, prescription_dto: PrescriptionDTO, user: UserDTO) -> PrescriptionDTO:
 
         prescription = prescription_dto.dict()
         consultant = self.consultation_repository.get_consultant_by_user_id(user.id)
 
-        psd = prescription.pop("prescriptions")
+        # psd = prescription.pop("prescriptions")
 
-        prescription = self.add(
-            Prescription(
+        prescription = Prescription(
                 consultant_id=consultant.id if consultant else 1,
                 pharmacy_id=prescription_dto.pharmacy_id,
                 client_id=prescription_dto.client.id if prescription_dto.client else None,
                 status=PrescriptionStatus.Pending,
                 instruction=prescription_dto.instruction,
                 note=prescription_dto.note,
-            ))
-
+            )
+        self.add(prescription)
         self.db.flush(prescription)
-        ps = PrescriptionDTO(
-            id=prescription.id,
-            status=prescription.status,
-            note=prescription.note,
-            instruction=prescription.instruction,
-            pharmacy_id=prescription.pharmacy_id,
-            created_at=(prescription.created_at).strftime("%Y-%m-%d %H:%M:%S"),
-            client=prescription_dto.client,
-            consultant=prescription_dto.consultant if prescription_dto.consultant else None,
-        )
+
+        ps = PrescriptionDTO.from_orm(prescription)
 
         pres = []
-        for item in psd:
-            dg = item["drug"]
-            dg = dg["drug_info"]
+        for item in prescription_dto.prescriptions or []:
+            dg = item.drug.drug_info
             prescription_item = self.add(
                 PrescriptionDetail(
-                    drug_id=dg["id"],
+                    drug_id=dg.id,
                     prescription_id=prescription.id,
-                    form=item["form"],
-                    frequency=item["frequency"],
-                    weight_volume=item["weight_volume"],
-                    dosage=item["dosage"],
-                    interval=item["interval"],
-                    duration=item["duration"],
-                    is_prn=item.get("is_prn"),
+                    form=item.form,
+                    frequency=item.frequency,
+                    weight_volume=item.weight_volume,
+                    dosage=item.dosage,
+                    interval=item.interval,
+                    duration=item.duration,
+                    is_prn=item.is_prn,
                     status=PrescriptionStatus.Pending
                 )
             )
 
-            pres.append(
-                PrescriptionDetailDTO.from_orm(prescription_item)
-            )
+            # pres.append(
+            #     PrescriptionDetailDTO.from_orm(prescription_item)
+            # )
 
         ps.prescriptions = pres
 

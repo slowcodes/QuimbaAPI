@@ -1,21 +1,20 @@
-import datetime
 
-from sqlalchemy import Column, Integer, ForeignKey, String, Enum as SqlEnum
+from sqlalchemy import Enum as SAEnum, Column, Integer, ForeignKey, String, Enum as SqlEnum, DateTime
 from db import Base
 from enum import Enum
 
 
 class Admission(Base):
-    _tablename__ = 'admission'
+    __tablename__ = 'admission'
     id = Column(Integer, primary_key=True, index=True)
     ward_id = Column(Integer)
     bed_id = Column(Integer)
     patient_id = Column(Integer, ForeignKey("client.id", ondelete="cascade"))
-    admission_date = Column(datetime.datetime, nullable=False)
+    admission_date = Column(DateTime, nullable=False)
     reason = Column(String(200), nullable=False)
 
 
-class WardType(Enum, str):
+class WardType(str, Enum):
     General = 'General'
     Private = 'Private'
     ICU = 'ICU'
@@ -28,10 +27,10 @@ class Ward(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     description = Column(String(200), nullable=True)
-    ward_type = Column(SqlEnum(WardType), default=WardType.GENERAL)
+    ward_type = Column(SqlEnum(WardType), default=WardType.General)
 
 
-class DischargeType(Enum, str):
+class DischargeType(str, Enum):
     Routine = 'Routine'
     Emergency = 'Emergency'
     Transfer = 'Transfer'
@@ -43,12 +42,12 @@ class AdmissionDischarge(Base):
     __tablename__ = 'admission_discharge'
     id = Column(Integer, primary_key=True, index=True)
     admission_id = Column(Integer, ForeignKey("admission.id", ondelete="cascade"))
-    discharge_date = Column(datetime.datetime, nullable=False)
-    discharge_type = Column(SqlEnum(DischargeType), default=DischargeType.ROUTINE)
+    discharge_date = Column(DateTime, nullable=False)
+    discharge_type = Column(SqlEnum(DischargeType), default=DischargeType.Routine)
     notes = Column(String(200), nullable=True)
 
 
 class Bed(Base):
-    __tablename__ = 'admission_ded'
+    __tablename__ = 'admission_bed'
     id = Column(Integer, primary_key=True, index=True)
-    ward_id = Column(Integer, ForeignKey("ward.id", ondelete="cascade"))
+    ward_id = Column(Integer, ForeignKey("admission_ward.id", ondelete="cascade"))

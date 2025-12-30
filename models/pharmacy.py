@@ -69,6 +69,7 @@ class Pharmacy(Base, SoftDeleteMixin):
     is_active = Column(Boolean, default=True)
     org_id = Column(Integer, ForeignKey("organization.id", ondelete="cascade"))
 
+    company = relationship("Organization", back_populates="pharmacy")
     children = relationship(
         "PharmacyHierarchy", foreign_keys="[PharmacyHierarchy.parent_id]", backref="parent_pharmacy"
     )
@@ -125,7 +126,7 @@ class Drug(Base, SoftDeleteMixin):
     group_tags = relationship("DrugGroupTag", back_populates="drug")
     prescription_details = relationship("PrescriptionDetail", back_populates="drug", cascade="all, delete-orphan")
     allergies = relationship("DrugAllergy", back_populates="drug", cascade="all, delete-orphan")
-
+    drug_forms = relationship("DrugForm", back_populates="drug", cascade="all, delete-orphan")
 
 
 class PharmacyDrugMovement(Base):
@@ -145,6 +146,10 @@ class DrugForm(Base, SoftDeleteMixin):
     drug_form = Column(SqlEnum(Form))
     drug_id = Column(Integer, ForeignKey("pharmacy_drug.id", ondelete="cascade"))
 
+    # relationships
+    drug = relationship("Drug", back_populates="drug_forms")
+    form_packages = relationship("PharmDrugFormPackage", back_populates="form", cascade="all, delete-orphan")
+
 
 class PharmDrugFormPackage(Base, SoftDeleteMixin):
     __tablename__ = "pharmacy_drug_form_package"
@@ -155,16 +160,19 @@ class PharmDrugFormPackage(Base, SoftDeleteMixin):
     sales_price_code_id = Column(Integer, ForeignKey("sales_price_code.id", ondelete="cascade"))
     # parent_package_id: Mapped[Optional[int]] = mapped_column(ForeignKey('pharm_drug_form_package.id'))
 
+    # relationships
+    form = relationship("DrugForm", back_populates="form_packages")
     product_barcode = relationship("Barcode", back_populates="pharmacy_drug_form_package")
-    # sales_price_code = relationship("SalesPriceCode", back_populates="pharmacy_drug_form_package")
-    # sales = relationship("BusinessSales", back_populates="pharmacy_drug_form_package")
+    sales_price_code = relationship("SalesPriceCode", back_populates="pharmacy_drug_form_package")
+    sales = relationship("BusinessSales", back_populates="package")
 
 
 class PrescriptionStatus(str, Enum):
     Pending = 'Pending'
     Dispensed = 'Dispensed'
     All = 'All'
-    PatiallyDispensed = 'Partially Dispensed'
+    Completely_Dispensed = 'Completely_Dispensed'
+    Partially_Dispensed = 'Partially_Dispensed'
 
 
 class Prescription(Base, SoftDeleteMixin):
@@ -183,9 +191,8 @@ class Prescription(Base, SoftDeleteMixin):
     client = relationship("Client", back_populates="prescriptions")
     consultant = relationship("Specialist", back_populates="prescriptions")
     pharmacy = relationship("Pharmacy", back_populates="prescriptions")
-    consultation_prescriptions = relationship("ConsultationPrescription", back_populates="pharmacy_prescription", uselist=False)
-
-
+    consultation_prescriptions = relationship("ConsultationPrescription", back_populates="pharmacy_prescription",
+                                              uselist=False)
 
 
 class PrescriptionDetail(Base, SoftDeleteMixin):
@@ -205,3 +212,15 @@ class PrescriptionDetail(Base, SoftDeleteMixin):
     # relationships
     prescription = relationship("Prescription", back_populates="prescriptions")
     drug = relationship("Drug", back_populates="prescription_details")
+    dispensed_prescription_detail = relationship("DispensedPrescriptionDetail", back_populates="prescription_detail")
+
+
+class DispensedPrescriptionDetail(Base):
+    __tablename__ = "pharmacy_dispensed_prescription_detail"
+    id = Column(Integer, primary_key=True, index=True)
+    prescription_detail_id = Column(Integer, ForeignKey("pharmacy_prescription_detail.id", ondelete="cascade"))
+    sales_id = Column(Integer, ForeignKey("sales.id", ondelete="cascade"))
+
+    # relationships
+    prescription_detail = relationship("PrescriptionDetail", back_populates="dispensed_prescription_detail")
+    sale = relationship("BusinessSales", back_populates="dispensed_prescriptions")

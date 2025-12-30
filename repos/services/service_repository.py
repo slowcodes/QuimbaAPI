@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, BusinessServiceDTO
 from models.client import Client, Person
-from models.lab.lab import CollectedSamples, LabBundleCollection, LabServicesQueue, QueueStatus
+from models.lab.lab import CollectedSamples, LabBundleCollection, LabServicesQueue, QueueStatus, LabType
 from models.services.services import Bundles, ServiceBooking, ServiceBookingDetail, BookingStatus, \
     ServiceClinicalExamination, BusinessServices
 from models.transaction import Transaction
@@ -16,7 +16,6 @@ class ServiceRepository:
     def __init__(self, session: Session):
         self.session = session
         self.price_repository = PriceRepository(session)
-
 
     def get_discounted_packages(self, service_id):
         cols = [
@@ -145,6 +144,10 @@ class ServiceRepository:
 
         return response
 
+    def get_booking_details_by_booking_id(self, booking_id: int) -> List[ServiceBookingDetailDTO]:
+        booking_detail = self.session.query(ServiceBookingDetail).filter(ServiceBookingDetail.booking_id == booking_id).all()
+        return [ServiceBookingDetailDTO.from_orm(detail) for detail in booking_detail]
+
     def update_service_booking(self, service_booking: ServiceBookingDTO,
                                new_service_booking: ServiceBooking) -> ServiceBookingDTO:
         for var, value in vars(new_service_booking).items():
@@ -173,7 +176,6 @@ class ServiceRepository:
             if delete_booking['delete']:
                 self.session.delete(service_booking)
 
-                print('service booking deleted', service_booking.id, service_booking)
                 # Delete transaction if it has no service booking
                 self.session.query(ServiceClinicalExamination).filter(ServiceClinicalExamination.booking_id == service_booking.id).delete()
                 self.session.commit()
@@ -232,24 +234,14 @@ class ServiceRepository:
                 'delete': False
             }
 
-    def update_transaction_booking_status_based_on_sample_update(
-            self, sample_id: int) -> int:
-        cols = [
-            ServiceBooking.transaction_id,
-            Transaction.transaction_date,
-            Transaction.discount,
-            CollectedSamples.id,
-            ServiceBooking.id.label("booking_id")
-        ]
+    def update_transaction_booking_status_based_on_procesed_result(
+            self, queue_id: int) -> int:
 
-        rs = self.session.query(*cols).select_from(CollectedSamples). \
-            join(LabServicesQueue, LabServicesQueue.id == CollectedSamples.queue_id). \
-            join(ServiceBookingDetail, LabServicesQueue.booking_id == ServiceBookingDetail.id). \
-            join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id). \
-            join(Transaction, Transaction.id == ServiceBooking.transaction_id). \
-            where(CollectedSamples.id == sample_id).first()
+        queue = self.session.query(LabServicesQueue).filter(LabServicesQueue.id == queue_id).first()
 
-        booking_id = rs.booking_id
+        if not queue:
+            return 0
+        booking_id = queue.booking.booking.id
         percentage_complete = self.get_booking_completion_status(booking_id)
         if percentage_complete == 100:
             # update service booking to complete
@@ -271,20 +263,21 @@ class ServiceRepository:
         # print('booking details id', booking_id)
         complete = 0
         for serv in all_services:
-
             # queue = self.queue_repo.get_queue_by_booking_id(serv['id'])
-            queue = self.session.query(LabServicesQueue).filter(LabServicesQueue.booking_id == serv['id']).first()
+            queue = self.session.query(LabServicesQueue).filter(LabServicesQueue.booking_id == serv.id).first()
 
             if queue is not None:
-                if queue.status == QueueStatus.Processing or queue.status == QueueStatus.Processed:
+                # check observation result is ready
+                if queue.lab_service.lab_type == LabType.Observation and queue.lab_result is not None:
+                    complete = complete + 1
+                    continue
 
-                    # find it in collected samples
-                    sample = self.session.query(CollectedSamples).filter(CollectedSamples.queue_id == queue.id).first()
-
-                    if sample:
-                        # the sample is completely processed
-                        if sample.status == QueueStatus.Processed:
-                            complete = complete + 1
+                # check experiment result is ready
+                sample = self.session.query(CollectedSamples).filter(CollectedSamples.queue_id == queue.id).first()
+                if sample:
+                    # the sample is completely processed
+                    if sample.status == QueueStatus.Processed:
+                        complete = complete + 1
 
         no_of_booked_services = len(all_services)
 
@@ -308,11 +301,5 @@ class ServiceRepository:
     def get_business_service_by_id(self, id: int) -> BusinessServiceDTO:
         business_service = self.session.query(BusinessServices).filter(BusinessServices.service_id == id).one_or_none()
         if business_service:
-            return BusinessServiceDTO(
-                service_id=business_service.service_id,
-                price_code=self.price_repository.get_price_code_by_id(business_service.price_code),
-                ext_turn_around_time=business_service.ext_turn_around_time,
-                visibility=business_service.visibility,
-                serviceType=business_service.serviceType
-            )
+            return BusinessServiceDTO.from_orm(business_service)
         return None

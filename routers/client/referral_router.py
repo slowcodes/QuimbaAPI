@@ -33,7 +33,6 @@ def get_organization_repository(db: Session = Depends(get_db)) -> OrganizationRe
 def create_referral(referral: ReferralDTO,
                     repo: ReferralRepository = Depends(get_referral_repository),
                     people_repo: PersonRepository = Depends(get_people_repository),
-                    org_people_repo: OrganizationPeopleRepository = Depends(get_organization_people_repository),
                     org_repo: OrganizationRepository = Depends(get_organization_repository)):
     """Creates a referral by checking if person and organization exist."""
 
@@ -48,20 +47,9 @@ def create_referral(referral: ReferralDTO,
 
     # Create person if they don't exist
     new_person = people_repo.create(referral.person)
-
+    repo.create(new_person.id)
     # Check if the person is already linked to the organization (via OrganizationPeople)
     org_person_exists = False
-    if referral.org.id:
-        org_person_exists = org_people_repo.get_by_person_and_org(new_person.id, referral.org.id)
-
-    # If the link doesn't exist, create a new org_people entry
-    if not org_person_exists:
-        org_people = org_people_repo.add_person_to_organization(new_person.id, referral.org.id)
-    else:
-        org_people = org_person_exists  # Use the existing link if it exists
-
-    # Now org_people is always defined, so we can safely pass it to Referral.create
-    referral = repo.create(org_people.id)
 
     return referral
 

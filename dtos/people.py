@@ -13,9 +13,30 @@ class LocalityDTO(BaseModel):
     lga: Optional[str] = None
 
 
+class StateDTO(BaseModel):
+    id: Optional[int] = None
+    state: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class LgaDTO(BaseModel):
+    id: Optional[int] = None
+    lga: Optional[str] = None
+
+    state: Optional[StateDTO] = None
+
+    class Config:
+        from_attributes = True
+
+
 class OccupationDTO(BaseModel):
     id: Optional[int] = None
     occupation: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 class OrgType(str, Enum):
@@ -35,12 +56,26 @@ class OrganisationDTO(BaseModel):
     supplier_id: Optional[int] = None  # conditional based on org type
     pharmacy_id: Optional[int] = None  # conditional based on org type
 
+    class Config:
+        from_attributes = True
+
 
 class BasicPersonDTO(BaseModel):
     id: int
+    title: Optional[ProfTitle] = ProfTitle.Mr
     first_name: str
     last_name: str
-    sex: Sex
+    sex: Optional[Sex] = None
+
+    class Config:
+        from_attributes = True
+
+
+class OrganizationPeopleDTO(BaseModel):
+    id: int
+    organization_id: int
+    person_id: int
+    organization: OrganisationDTO
 
     class Config:
         from_attributes = True
@@ -48,6 +83,7 @@ class BasicPersonDTO(BaseModel):
 
 class PersonDTO(BaseModel):
     id: Optional[int] = None
+    title: Optional[ProfTitle] = ProfTitle.Mr
     first_name: str = Field(..., min_length=1, max_length=30)
     middle_name: Optional[str] = Field(None, max_length=30)
     last_name: str = Field(..., min_length=1, max_length=30)
@@ -56,6 +92,8 @@ class PersonDTO(BaseModel):
     email: Optional[EmailStr]
     phone: str = Field(..., min_length=11, max_length=11, pattern=r"^\d{11}$")
 
+    organization_people: Optional[List[OrganizationPeopleDTO]] = []
+
     class Config:
         from_attributes = True
 
@@ -63,42 +101,50 @@ class PersonDTO(BaseModel):
 class BasicClientDTO(BaseModel):
     id: int
     person_id: Optional[int] = None
-    person: Optional[BasicPersonDTO] = None
+    occupation: Optional[OccupationDTO] = None
+    person: Optional[PersonDTO] = None
+    lga: Optional[LgaDTO] = None
+    marital_status: Optional[str] = None
+    date_of_birth: Optional[date] = None
 
     class Config:
         from_attributes = True
 
 
 class ClientDTO(BaseModel):
+    id: Optional[int] = None
     marital_status: MaritalStatus
     date_of_birth: date
     blood_group: Optional[str] = Field(..., max_length=3)
     address: Optional[str] = Field(..., max_length=100)
     locality: Optional[LocalityDTO] = None
+    lga: Optional[LgaDTO] = None
     occupation: Optional[OccupationDTO] = None
     photo: Optional[bytes] = None
-    # user_account: Optional[any] = None
     person: Optional[PersonDTO] = None
     organization: Optional[OrganisationDTO] = None
 
-    @validator("locality", pre=True, always=True)
-    def validate_locality(cls, v):
-        if v:
-            if not v.get("lga") or not v.get("state"):
-                raise ValueError("Locality must have both 'lga' and 'state' if provided.")
-        return v
-
-    @validator("occupation", pre=True, always=True)
-    def validate_occupation(cls, value):
-        if value and not value.get("id"):  # getattr(value, 'occupation', None):
-            raise ValueError("Occupation must have 'occupation' if provided.")
-        return value
+    # @validator("locality", pre=True, always=True)
+    # def validate_locality(cls, v):
+    #     if v:
+    #         if not v.get("lga") or not v.get("state"):
+    #             raise ValueError("Locality must have both 'lga' and 'state' if provided.")
+    #     return v
+    #
+    # @validator("occupation", pre=True, always=True)
+    # def validate_occupation(cls, value):
+    #     if value and not value.get("id"):  # getattr(value, 'occupation', None):
+    #         raise ValueError("Occupation must have 'occupation' if provided.")
+    #     return value
 
     # @validator("organization")
     # def validate_organization(cls, value):
     #     if value and not getattr(value, 'name', None):
     #         raise ValueError("Organization must have 'name' if provided.")
     #     return value
+
+    class Config:
+        from_attributes = True
 
 
 # class ClientLifestyleDTO(BaseModel):
@@ -108,7 +154,7 @@ class ClientDTO(BaseModel):
 
 class ReferralDTO(BaseModel):
     id: Optional[int] = None
-    person: Optional[PersonDTO]
+    person: Optional[PersonDTO]  # Do not use BasicPersonDTO
     person_id: Optional[int] = None
 
     class Config:

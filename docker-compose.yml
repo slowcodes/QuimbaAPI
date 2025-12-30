@@ -11,15 +11,21 @@ services:
     restart: unless-stopped
     networks:
       - quimba_network
-
   cache:
-    image: redis:6
+    image: redis:7-alpine  # Updated to newer version
+    command: redis-server --appendonly yes  # Enable persistence
     ports:
       - "6379:6379"
     restart: unless-stopped
     networks:
       - quimba_network
-
+    volumes:
+      - redis_data:/data  # Add volume for persistence
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
   app:
     image: ezennacharles/quimba
     ports:
@@ -28,10 +34,16 @@ services:
       - DATABASE_URL=postgresql://quimba:secretofthesand@db:5432/postgres
     depends_on:
       - db
+      - cache
     restart: unless-stopped
     networks:
       - quimba_network
-
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import redis; r=redis.Redis(host='cache', port=6379) ; print(r.ping())"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
   db:
     image: postgres:13
     environment:
@@ -47,6 +59,6 @@ services:
       - quimba_network
 volumes:
   postgres_data:
-
+  redis_data:
 networks:
   quimba_network:  # Shared network for all containers

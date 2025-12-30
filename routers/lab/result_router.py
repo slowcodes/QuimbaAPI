@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -6,7 +6,7 @@ from datetime import datetime
 
 from dtos.auth import UserDTO
 from dtos.lab import ExperimentResultReadingDTO, SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, \
-    ApprovedLabBookingResultDTO
+    ApprovedLabBookingResultDTO, LabResultByQueueDTO
 from dtos.services import ServiceBookingDTO
 from db import get_db
 from models.services.services import BookingStatus
@@ -22,6 +22,10 @@ result_router = APIRouter(prefix="/api/lab-results", tags=["Lab Results"])
 
 def experiment_result_repo(db: Session = Depends(get_db)) -> ExperimentRepository:
     return ExperimentRepository(db)
+
+
+def get_sample_repository(db: Session = Depends(get_db)) -> CollectedSamplesRepository:
+    return CollectedSamplesRepository(db)
 
 
 def transaction_repo(db: Session = Depends(get_db)) -> TransactionRepository:
@@ -59,9 +63,6 @@ def create_sample_result(result: SampleResultDTO,
         raise HTTPException(status_code=409, detail="Sample result already exist")
     response = repo.create_result(result)
 
-    # update sample status to processed
-    collected_sample_repo = CollectedSamplesRepository(db)
-    collected_sample_repo.update_processed_sample(result.sample_id)
     return response
 
 
@@ -120,6 +121,35 @@ def read_sample_result(result_id: int, repo: ResultRepository = Depends(sample_r
     if db_result is None:
         raise HTTPException(status_code=404, detail="Result not found")
     return db_result
+
+
+@result_router.get("/sample-results/collate-result-by-queue/")
+def collate_result_by_queue(limit: int = 15, skip: int = 0, booking_status: BookingStatus = BookingStatus.Processing,
+                            lab_id: int = 0, search_text: str = '', client_id: int = 0,
+                            start_date: datetime = None, last_date: datetime = None, date_filter_status: str = '',
+                            repo: ResultRepository = Depends(sample_result_repo)):
+    date_filter: DateFilterDTO = {
+        "start_date": start_date,
+        "last_date": last_date,
+        "status": date_filter_status
+    }
+
+    results = repo.get_collated_result_by_queue(limit, skip, lab_id,
+                                                booking_status, search_text,
+                                                client_id, date_filter)
+    if results is None:
+        raise HTTPException(status_code=404, detail="No results found")
+    return results
+
+
+@result_router.get("/sample-results/collated-results/")
+def get_result_by_transaction_id(trx_id: str,
+                                 repo: ResultRepository = Depends(sample_result_repo)):
+    single_result = repo.get_result_by_transaction_id(trx_id)
+
+    if single_result is None:
+        raise HTTPException(status_code=404, detail="No results found")
+    return single_result
 
 
 @result_router.get("/sample-results/collated-results/")

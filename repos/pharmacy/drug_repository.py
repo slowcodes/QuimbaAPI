@@ -12,13 +12,14 @@ from repos.product_repository import ProductRepository
 from repos.sale_repository import SaleRepository
 
 
-class DrugRepository:
+class DrugRepository(BaseRepository):
 
     def __init__(self, session: Session):
         self.session = session
-        self.product_repository = ProductRepository(session)
+        super().__init__(session)
         self.base_repository = BaseRepository(session)
         self.sales_repository = SaleRepository(session)
+        self.product_repository = ProductRepository(session)
 
     def get(self, drug_id: int, include_deleted: bool = False) -> Optional[Drug]:
         query = self.session.query(Drug).filter(Drug.id == drug_id)
@@ -88,86 +89,98 @@ class DrugRepository:
                     product=product
                 )
 
-    def create(self, drug_data: DrugDTO) -> Drug:
-        product = drug_data.product.__dict__
+    def create(self, drug_data: DrugDTO) :
+        try:
+            product = drug_data.product.__dict__
 
-        product.pop('product_package')
-        product.pop('id')
-        product = self.product_repository.add(Product(**product))
+            product.pop('product_package')
+            product.pop('id')
+            new_product = Product(**product)
+            self.db.add(new_product)
+            self.db.flush()
 
-        drug = drug_data.drug_info.__dict__
-        drug['product_id'] = product.id
+            drug = drug_data.drug_info.__dict__
+            drug['product_id'] = new_product.id
 
-        groups = drug.pop('drug_group')
-        drug_form = drug.pop('drug_form')
-        drug = self.base_repository.add(Drug(**drug))
+            groups = drug.pop('drug_group')
 
-        for dg_form in drug_form:
-            child = []
-            parent = []
+            drug_form = drug.pop('drug_form')
+            new_drug = Drug(**drug)
+            self.db.add(new_drug)
+            self.db.flush()
 
-            form = self.base_repository.add(
-                DrugForm(
-                    drug_form=dg_form.drug_form,
-                    drug_id=drug.id
-                )
-            )
+            for dg_form in drug_form:
+                child = []
+                parent = []
 
-            for pack in dg_form.form_packages:
-                pc = pack.sales_price_code
-                pc = pc.__dict__
-                sales_price_code = self.base_repository.add(SalesPriceCode(**pc))
-
-                drug_package = self.base_repository.add(
-                    PharmDrugFormPackage(
-                        form_id=form.id,
-                        package_container=pack.package_container,
-                        sales_price_code_id=sales_price_code.id,
-                        # parent_package_id=form_package.parent_package_id
+                dg_fm = DrugForm(
+                        drug_form=dg_form.drug_form,
+                        drug_id=new_drug.id
                     )
-                )
+                self.db.add(dg_fm)
+                self.db.flush()
 
-                barcodes = pack.product_barcode
+                for fm_pkg in dg_form.form_packages:
+                    # if fm_pkg.parent_package_id = 0, then it's a parent package else child
+                    sales_price_code_data = fm_pkg.sales_price_code.__dict__
+                    sales_price_code = SalesPriceCode(**sales_price_code_data)
+                    self.add(sales_price_code)
+                    self.db.flush()
 
-                # # if pack is child
-                if pack.parent_package_id:
-                    child.append({
-                        'parent_package_id': pack.parent_package_id,  # temp parent_package_id
-                        'package_id': drug_package.id,
-                        'child_quantity_per_parent': pack.quantity_per_parent
-                    })
-                else:
-                    # pack is likely a parent
-                    parent.append({
-                        'tmp_parent_package_id': pack.id,
-                        'package_id': drug_package.id,
-                    })
-                #
-                # insert barcodes
-                for barcode in barcodes:
-                    product_barcode = {
-                        'barcode': barcode,
-                        'product_packaging_id': drug_package.id
+                    drug_package = PharmDrugFormPackage(
+                            form_id=dg_fm.id,
+                            package_container=fm_pkg.package_container,
+                            sales_price_code_id=sales_price_code.id,
+                            # parent_package_id=form_package.parent_package_id
+                        )
+                    self.add(drug_package)
+                    self.db.flush()
+
+                    # if pack is child
+                    if fm_pkg.parent_package_id != 0:
+                        child.append({
+                            'parent_package_id': fm_pkg.parent_package_id,  # temp parent_package_id
+                            'package_id': drug_package.id,
+                            'child_quantity_per_parent': fm_pkg.quantity_per_parent
+                        })
+                    else:
+                        # pack is likely a parent
+                        parent.append({
+                            'tmp_parent_package_id': fm_pkg.id,
+                            'package_id': drug_package.id,
+                        })
+
+                    barcodes = fm_pkg.product_barcode
+                    for barcode in barcodes:
+                        product_barcode = {
+                            'barcode': barcode,
+                            'product_packaging_id': drug_package.id
+                        }
+                        self.db.add(Barcode(**product_barcode))
+
+                for child_pack in child:
+                    # find the parent package id
+                    parent_pack = next(
+                        (p for p in parent if p['tmp_parent_package_id'] == child_pack['parent_package_id']),
+                        None)
+                    if parent_pack:
+                        child_pack['parent_package_id'] = parent_pack['package_id']
+                        # del child_pack['tmp_parent_package_id']
+                        self.db.add(PackageHierarchy(**child_pack))
+
+                for group in groups:
+                    group_tag = {
+                        'group_id': group.id,
+                        'drug_id': new_drug.id
                     }
-                    self.base_repository.add(Barcode(**product_barcode))
+                    grp = DrugGroupTag(**group_tag)
+                    self.db.add(grp)
 
-        # create package hierarchy
-        for child_pack in child:
-            # find the parent package id
-            parent_pack = next((p for p in parent if p['tmp_parent_package_id'] == child_pack['parent_package_id']),
-                               None)
-            if parent_pack:
-                child_pack['parent_package_id'] = parent_pack['package_id']
-                # del child_pack['tmp_parent_package_id']
-                self.base_repository.add(PackageHierarchy(**child_pack))
-
-        for group in groups:
-            group_tag = {
-                'group_id': group.id,
-                'drug_id': drug.id
-            }
-            self.base_repository.add(DrugGroupTag(**group_tag))
-        return self.base_repository.get(Drug, drug.id)
+            self.db.commit()
+            return self.base_repository.get(Drug, new_drug.id)
+        except Exception as e:
+            self.session.rollback()
+            raise e
 
     def update(self, drug_id: int, drug_data: DrugDTO) -> Optional[Drug]:
         db_drug = self.get(drug_id)

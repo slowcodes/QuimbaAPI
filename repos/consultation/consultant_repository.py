@@ -2,11 +2,11 @@ from datetime import timedelta, datetime
 from typing import List, Optional
 
 from sqlalchemy import and_, cast, DateTime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
-from dtos.consultant import BaseCaseDTO, ConsultationAppointmentDTO, ConsultationQueueDTO
+from dtos.consultant import BaseCaseDTO, ConsultationQueueDTO
 from dtos.consultation import SymptomDTO, ClinicalExaminationDTO, PresentingSymptomDTO, ConsultantDTO, \
-    InHoursDTO, SpecialismDTO
+    InHoursDTO, SpecialismDTO, ConsultantCreateDTO
 from dtos.services import PriceCodeDTO
 from models.consultation import Symptom, ClinicalExamination, PresentingSymptom, Specialist, Specialism, \
     SpecialistSpecialization, InHours, InHourFrequency, ConsultationQueue, InternalSystems, Consultations
@@ -69,8 +69,8 @@ class ConsultantRepository:
     def addInHours(self, in_hours: InHoursDTO) -> InHoursDTO:
         price = self.price_repository.create(
             PriceCodeDTO(
-                service_price=in_hours.business_service.price_code.service_price,
-                discount=in_hours.business_service.price_code.discount
+                service_price=in_hours.business_service.pc.service_price,
+                discount=in_hours.business_service.pc.discount
             )
         )
 
@@ -79,7 +79,7 @@ class ConsultantRepository:
             price_code=price.id,
             ext_turn_around_time=in_hours.business_service.ext_turn_around_time,
             visibility=StoreVisibility.Active,
-            serviceType=ServiceType.Consultation
+            service_type=ServiceType.Consultation
         )
         self.db.add(business_service)
         self.db.flush()
@@ -97,8 +97,8 @@ class ConsultantRepository:
         return self.in_hours_dto(hours)
 
     def get_expanded_in_hours(self, start_date: str, end_date: str, consultant_id: int) -> List[InHoursDTO]:
-        days: List[InHoursDTO] = []
-
+        # days: List[InHoursDTO] = []
+        days = []
         current = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
         end = current + timedelta(days=6)
 
@@ -113,8 +113,12 @@ class ConsultantRepository:
                 and_(
                     InHours.start_time <= current,
                     InHours.end_time <= end
-                )).all()
+                ))
 
+            if consultant_id:
+                in_hour_schedule = in_hour_schedule.filter(InHours.specialist_id == consultant_id)
+
+            in_hour_schedule = in_hour_schedule.all()
             for ih in in_hour_schedule:
                 st_time = ih.start_time.time()
                 ed_time = ih.end_time.time()
@@ -132,14 +136,21 @@ class ConsultantRepository:
                     add = weekday < 5
 
                 if add:
-                    slot = InHoursDTO(
-                        id=ih.id,
-                        specialist_id=ih.specialist_id,
-                        business_service=self.service_repository.get_business_service_by_id(ih.service_id),
-                        frequency=ih.frequency.value,
-                        start_time=current.strftime("%Y-%m-%d") + " " + str(st_time),
-                        end_time=current.strftime("%Y-%m-%d") + " " + str(ed_time),
-                    )
+                    # slot = InHoursDTO(
+                    #     id=ih.id,
+                    #     specialist_id=ih.specialist_id,
+                    #     business_service=self.service_repository.get_business_service_by_id(ih.service_id),
+                    #     frequency=ih.frequency.value,
+                    #     start_time=current.strftime("%Y-%m-%d") + " " + str(st_time),
+                    #     end_time=current.strftime("%Y-%m-%d") + " " + str(ed_time),
+                    # )
+
+                    slot = {
+                        'start_time': current.strftime("%Y-%m-%d") + " " + str(st_time),
+                        'end_time': current.strftime("%Y-%m-%d") + " " + str(ed_time),
+                        'schedule': InHoursDTO.from_orm(ih)
+                    }
+
                     days.append(slot)
 
             current += timedelta(days=1)
@@ -176,6 +187,85 @@ class ConsultantRepository:
             self.db.rollback()
             print(f"Error adding consultant queue: {e}")
 
+    # def get_consultant_queue(
+    #         self,
+    #         consultant_id: int = 0,
+    #         client_id: int = 0,
+    #         start_date: Optional[str] = None,
+    #         last_date: Optional[str] = None,
+    #         in_hour_id: int = 0,
+    #         status: Optional[str] = None
+    # ) -> List[ConsultationAppointmentDTO]:
+    #     query = self.queue
+    #
+    #     # Apply consultant filter
+    #     if consultant_id:
+    #         query = query.filter(Specialist.id == consultant_id)
+    #
+    #     # Apply in-hour filter
+    #     if in_hour_id:
+    #         query = query.filter(InHours.id == in_hour_id)
+    #
+    #     # Apply client filter
+    #     if client_id:
+    #         query = query.filter(ServiceBooking.client_id == client_id)
+    #
+    #     # Apply status filter
+    #     if status:
+    #         query = query.filter(ConsultationQueue.status == status)
+    #
+    #     # Helper to safely convert to datetime
+    #     def to_datetime(value):
+    #         if isinstance(value, datetime):
+    #             return value
+    #         if isinstance(value, str) and value.strip():
+    #             try:
+    #                 # Handles ISO formats like "2025-09-28" or "2025-09-28T12:30:00"
+    #                 return datetime.fromisoformat(value)
+    #             except ValueError:
+    #                 try:
+    #                     # Fallback to simple date
+    #                     return datetime.strptime(value, "%Y-%m-%d")
+    #                 except ValueError:
+    #                     raise ValueError(f"Invalid date format: {value}")
+    #         return None
+    #
+    #     # Apply date range filter
+    #     start_dt = to_datetime(start_date + " 00:00:00") if start_date else None
+    #     last_dt = to_datetime(last_date + " 23:59:59") if last_date else None
+    #
+    #     if start_dt and last_dt:
+    #         query = query.filter(and_(
+    #             ConsultationQueue.scheduled_at >= start_dt,
+    #             ConsultationQueue.scheduled_at <= last_dt
+    #         ))
+    #
+    #     # Execute the query
+    #     res = query.all()
+    #
+    #     # Process results
+    #     bookings = []
+    #     for booking in res:
+    #         bookings.append(
+    #             ConsultationAppointmentDTO(
+    #                 specialist=self.get_consultant(booking.specialist_id),
+    #                 client=self.client_repository.get_client(booking.client_id),
+    #                 time_of_appointment=booking.consultation_time.strftime("%Y-%m-%d %H:%M:%S"),
+    #                 date_of_appointment=booking.start_time.strftime("%Y-%m-%d"),
+    #                 booking_id=booking.booking_id,
+    #                 transaction_id=booking.transaction_id,
+    #                 scheduled_at=booking.scheduled_at.strftime("%Y-%m-%d %H:%M:%S"),
+    #                 status=booking.status,
+    #                 id=booking.id
+    #             )
+    #         )
+    #
+    #     return bookings
+    # from sqlalchemy.orm import Session
+    # from sqlalchemy import and_, or_
+    # from datetime import datetime
+    # from typing import Optional, List
+
     def get_consultant_queue(
             self,
             consultant_id: int = 0,
@@ -184,72 +274,63 @@ class ConsultantRepository:
             last_date: Optional[str] = None,
             in_hour_id: int = 0,
             status: Optional[str] = None
-    ) -> List[ConsultationAppointmentDTO]:
-        query = self.queue
+    ) -> List[ConsultationQueueDTO]:
+        """
+        Retrieve consultation queue entries filtered by consultant, client, date range, schedule, and status.
+        """
 
-        # Apply consultant filter
+        # Base query
+        query = self.db.query(ConsultationQueue).join(InHours).join(Specialist)
+
+        # Filters
+        filters = []
+
         if consultant_id:
-            query = query.filter(Specialist.id == consultant_id)
+            filters.append(InHours.specialist_id == consultant_id)
 
-        # Apply in-hour filter
-        if in_hour_id:
-            query = query.filter(InHours.id == in_hour_id)
-
-        # Apply client filter
         if client_id:
-            query = query.filter(ServiceBooking.client_id == client_id)
+            # Assuming ConsultationQueue links to ServiceBookingDetail -> ServiceBooking -> Client
+            query = query.join(ServiceBookingDetail).join(ServiceBooking)
+            filters.append(ServiceBooking.client_id == client_id)
 
-        # Apply status filter
+        if in_hour_id:
+            filters.append(ConsultationQueue.schedule_id == in_hour_id)
+
         if status:
-            query = query.filter(ConsultationQueue.status == status)
+            try:
+                status_enum = QueueStatus(status)
+                filters.append(ConsultationQueue.status == status_enum)
+            except ValueError:
+                raise ValueError(f"Invalid status: {status}")
 
-        # Helper to safely convert to datetime
-        def to_datetime(value):
-            if isinstance(value, datetime):
-                return value
-            if isinstance(value, str) and value.strip():
-                try:
-                    # Handles ISO formats like "2025-09-28" or "2025-09-28T12:30:00"
-                    return datetime.fromisoformat(value)
-                except ValueError:
-                    try:
-                        # Fallback to simple date
-                        return datetime.strptime(value, "%Y-%m-%d")
-                    except ValueError:
-                        raise ValueError(f"Invalid date format: {value}")
-            return None
+        # # Handle date range
+        if start_date:
+            try:
+                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                filters.append(ConsultationQueue.consultation_time >= start_dt)
+            except ValueError:
+                raise ValueError("Invalid start_date format. Use YYYY-MM-DD.")
 
-        # Apply date range filter
-        start_dt = to_datetime(start_date + " 00:00:00") if start_date else None
-        last_dt = to_datetime(last_date + " 23:59:59") if last_date else None
+        if last_date:
+            try:
+                end_dt = datetime.strptime(last_date, "%Y-%m-%d")
+                filters.append(ConsultationQueue.consultation_time <= end_dt)
+            except ValueError:
+                raise ValueError("Invalid last_date format. Use YYYY-MM-DD.")
 
-        if start_dt and last_dt:
-            query = query.filter(and_(
-                ConsultationQueue.scheduled_at >= start_dt,
-                ConsultationQueue.scheduled_at <= last_dt
-            ))
+        # # Apply filters
+        if filters:
+            query = query.filter(and_(*filters))
 
-        # Execute the query
-        res = query.all()
+        # # Optional: eager load relationships
+        query = query.options(
+            selectinload(ConsultationQueue.schedule).selectinload(InHours.consultant),
+            selectinload(ConsultationQueue.booking_detail)
+        )
 
-        # Process results
-        bookings = []
-        for booking in res:
-            bookings.append(
-                ConsultationAppointmentDTO(
-                    specialist=self.get_consultant(booking.specialist_id),
-                    client=self.client_repository.get_client(booking.client_id),
-                    time_of_appointment=booking.consultation_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    date_of_appointment=booking.start_time.strftime("%Y-%m-%d"),
-                    booking_id=booking.booking_id,
-                    transaction_id=booking.transaction_id,
-                    scheduled_at=booking.scheduled_at.strftime("%Y-%m-%d %H:%M:%S"),
-                    status=booking.status,
-                    id=booking.id
-                )
-            )
-
-        return bookings
+        # Execute and return
+        results = query.order_by(ConsultationQueue.scheduled_at.desc()).all()
+        return [ConsultationQueueDTO.from_orm(res) for res in results]
 
     def get_consultation_service_booking(self, transaction_id: int):
         cols = [
@@ -416,9 +497,9 @@ class ConsultantRepository:
             return spec
         return None
 
-    def add_consultant(self, consultant_dto: ConsultantDTO):
+    def add_consultant(self, consultant_dto: ConsultantCreateDTO):
         consultant = Specialist(
-            user_id=consultant_dto.user.id,
+            user_id=consultant_dto.user_id,
             title=consultant_dto.title
         )
 
@@ -428,14 +509,9 @@ class ConsultantRepository:
             self.db.refresh(consultant)
 
             for specialization in consultant_dto.specializations:
-                self.add_consultant_specialization(consultant.id, specialization.id)
+                self.add_consultant_specialization(consultant.id, specialization)
 
-            return ConsultantDTO(
-                id=consultant.id,
-                user=consultant_dto.user,
-                title=consultant.title,
-                specializations=consultant_dto.specializations
-            )
+            return ConsultantDTO.from_orm(consultant)
         except Exception as e:
             self.db.rollback()
             raise e
@@ -451,7 +527,7 @@ class ConsultantRepository:
             existing_specializations = self.db.query(SpecialistSpecialization).filter(
                 SpecialistSpecialization.specialist_id == consultant.id).all()
             existing_spec_ids = {spec.specialism_id for spec in existing_specializations}
-            new_spec_ids = {spec.id for spec in consultant_dto.specializations}
+            new_spec_ids = {spec for spec in consultant_dto.specializations}
 
             # Add new specializations
             for spec_id in new_spec_ids - existing_spec_ids:
@@ -463,34 +539,12 @@ class ConsultantRepository:
                     self.db.delete(spec)
             self.db.commit()
 
-            return ConsultantDTO(
-                id=consultant.id,
-                user=consultant_dto.user,
-                title=consultant.title,
-                specializations=consultant_dto.specializations
-            )
+            return ConsultantDTO.from_orm(consultant)
         return None
 
     def get_consultants(self, skip: int = 0, limit: int = 100) -> List[ConsultantDTO]:
-
         query = self.db.query(Specialist).offset(skip).limit(limit).all()
-        consultants = []
-        for consultant in query:
-            specializations = self.db.query(Specialism).join(SpecialistSpecialization,
-                                                             Specialism.id == SpecialistSpecialization.specialism_id).filter(
-                SpecialistSpecialization.specialist_id == consultant.id).all()
-
-            consultants.append(
-                ConsultantDTO(
-                    id=consultant.id,
-                    user=self.user_repository.get_usr_by_id(consultant.user_id),
-                    title=consultant.title,
-                    specializations=[
-                        SpecialismDTO(id=spec.id, department=spec.department, specialist_title=spec.specialist_title)
-                        for spec in specializations]
-                )
-            )
-        return consultants
+        return [ConsultantDTO.from_orm(consultant) for consultant in query]
 
     def get_consultation_queue_by_id(self, queue_id: int):
         qu = self.queue.filter(ConsultationQueue.id == queue_id).first()

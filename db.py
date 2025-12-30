@@ -1,38 +1,36 @@
 import logging
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
-
-# Configure SQLAlchemy logger
-# logging.basicConfig()
-# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-
-# SQLALCHEMY_DATABASE_URL = "sqlite:///./Quimba.db"
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL") + "?options=-csearch_path=public"
-# SQLALCHEMY_DATABASE_URL = 'mysql+pymysql://root:password123@db:3306/Quimba'
-# print('API database url', SQLALCHEMY_DATABASE_URL)
-# SQLite Specific
+# SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL") + "?options=-csearch_path=public"
 # engine = create_engine(
-#     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+#     SQLALCHEMY_DATABASE_URL, echo=False
 # )
+#
+# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Base = declarative_base()
+# session = SessionLocal()
+#
+#
 
-# Docker MySQL User: Quimba, Password:password123
+DATABASE_URL = os.environ["DATABASE_URL"] + "?options=-csearch_path=public"
 
-# MySQL and Postgress
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, echo=False
+# ONE metadata
+metadata = MetaData()
+
+# ONE base
+Base = declarative_base(metadata=metadata)
+
+engine = create_engine(DATABASE_URL, echo=False)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
-
-session = SessionLocal()
-
-
-# Dependency
 def get_db():
     db = SessionLocal()
     try:

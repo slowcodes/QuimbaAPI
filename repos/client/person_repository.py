@@ -49,6 +49,7 @@ class PersonRepository:
         """Create a new person from a PersonDTO."""
         # Create a new Person model instance from the DTO data
         person = Person(
+            title=person_dto.title,
             first_name=person_dto.first_name,
             last_name=person_dto.last_name,
             middle_name=person_dto.middle_name,

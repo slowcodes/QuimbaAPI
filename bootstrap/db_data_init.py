@@ -6,11 +6,13 @@ from pathlib import Path
 from bootstrap.migration.migrate_lab_service import insert_lab_service
 from bootstrap.migration.migrate_lab_service_params import insert_params
 from bootstrap.migration.migrate_patients import insert_patients
-from db import engine, session
+from db import engine, SessionLocal
 import os
 from sqlalchemy import text, MetaData
 
-from sqlalchemy import text
+
+# Shared session for bootstrap scripts; explicitly closed at the end of load_pg_data.
+session = SessionLocal()
 
 
 def update_id_sequence(table_name, pk_column='id'):

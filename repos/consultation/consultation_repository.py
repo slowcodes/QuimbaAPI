@@ -78,7 +78,7 @@ class ConsultationsRepository:
                         if item.service_type == BookingType.Laboratory:
                             # get lab details by service_id
                             lab_details = self.lab_repository.get_lab_service_details_by_service_id(item.service_id)
-                            item.service_desc = lab_details["name"]
+                            item.service_desc = lab_details.lab_service_name
                             cart.append(item)
                         if item.service_type == BookingType.Appointment:
                             # get consultation booking details by service_id
@@ -200,6 +200,13 @@ class ConsultationsRepository:
         try:
             consultation_data = cdd.consultation
 
+            # grab prescription early to avoid mutilation inside create_client_service_cart
+            prescription_dto = (
+                cdd.client_service_cart.prescription.model_copy(deep=True)
+                if cdd.client_service_cart.prescription
+                else None
+            )
+
             # get consultant id by user id
             consultant = self.consultant_repository.get_consultant_by_user_id(created_by.id)
             if not consultant:
@@ -232,35 +239,35 @@ class ConsultationsRepository:
 
             # create clinical examination if provided. use repository later
             clinical_examination_data = cdd.clinical_examination
-            clinical_examination_data.transaction_id = transaction.id
-            ced = clinical_examination_data.dict()
 
-            # exclude symptoms to avoid issues with serialization
-            keys_to_exclude = ['symptoms', ]
-            cedr = {k: v for k, v in ced.items() if k not in keys_to_exclude}
-            cedr = ClinicalExamination(**cedr)
-            cedr.conducted_by = created_by.id
-            self.db.add(cedr)
-            self.db.flush()
+            if clinical_examination_data:
+                clinical_examination_dict = clinical_examination_data.dict()
+                clinical_examination_dict["transaction_id"] = transaction.id
 
-            # link clinical examination to consultation
-            self.db.add(ConsultationClinicalExamination(
-                consultation_id=consultation.id,
-                clinical_examination_id=cedr.id
-            ))
+                clinical_examination_dict.pop("symptoms", None)
 
-            # add symptoms if any
-            for symptom in clinical_examination_data.symptoms or []:
-                symptom.clinical_examination_id = cedr.id
+                cedr = ClinicalExamination(**clinical_examination_dict)
+                cedr.conducted_by = created_by.id
+                self.db.add(cedr)
+                self.db.flush()
+
                 self.db.add(
-                    PresentingSymptom(
-                        symptom_id=symptom.symptom_id,
-                        clinical_examination_id=cedr.id,
-                        severity=symptom.severity,
-                        frequency=symptom.frequency,
-                        agreviating_factors=symptom.agreviating_factors
+                    ConsultationClinicalExamination(
+                        consultation_id=consultation.id,
+                        clinical_examination_id=cedr.id
                     )
                 )
+
+                for symptom in clinical_examination_data.symptoms or []:
+                    self.db.add(
+                        PresentingSymptom(
+                            symptom_id=symptom.symptom_id,
+                            clinical_examination_id=cedr.id,
+                            severity=symptom.severity,
+                            frequency=symptom.frequency,
+                            agreviating_factors=symptom.agreviating_factors
+                        )
+                    )
 
             review_of_systems = cdd.review_of_systems or []
             for ros in review_of_systems:
@@ -271,20 +278,19 @@ class ConsultationsRepository:
 
             cdd.client_service_cart.transaction_id = transaction.id
             cdd.client_service_cart.created_by = created_by.id
-            self.service_cart_repository.create_client_service_cart(
+            cart = self.service_cart_repository.create_client_service_cart(
                 cdd.client_service_cart
             )
 
             # process prescription if any
-            prescription = cdd.client_service_cart.prescription
-            if prescription:
+            if prescription_dto:
                 prescription_repository = PrescriptionRepository(self.db)
-                prescription_id = prescription_repository.create(prescription, created_by)
+                prescription_id = prescription_repository.create(prescription_dto, created_by)
                 if prescription_id:
                     # link prescription to consultation
                     self.db.add(
                         ConsultationPrescription(
-                            consultation_id=consultation.id,
+                            consultation_cart_id=cart.id,
                             prescription_id=prescription_id.id
                         )
                     )

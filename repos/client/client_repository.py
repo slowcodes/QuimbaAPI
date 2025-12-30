@@ -56,13 +56,13 @@ class ClientRepository:
         try:
             # Create Person instance
             person = Person(
-                title=client.title,
-                first_name=client.first_name,
-                last_name=client.last_name,
-                middle_name=client.middle_name,
-                sex=client.sex,
-                email=client.email,
-                phone=client.phone,
+                title=client.person.title,
+                first_name=client.person.first_name,
+                last_name=client.person.last_name,
+                middle_name=client.person.middle_name,
+                sex=client.person.sex,
+                email=client.person.email,
+                phone=client.person.phone,
             )
             self.session.add(person)
             self.session.flush()  # Flush to get person.id without committing
@@ -72,20 +72,20 @@ class ClientRepository:
                 raise ValueError("LGA ID is required.")
             if not client.occupation or not client.occupation.id:
                 raise ValueError("Occupation ID is required.")
+            #
+            # if client.user_account is not None \
+            #         and client.user_account.username \
+            #         and client.user_account.password:
+            #     # client.user_account.status = AccountStatus.Active
+            #     # client.user_account.person_id = person.id
+            #     user = {
+            #         "username": client.user_account.username,
+            #         "password": client.user_account.password,
+            #         "status": AccountStatus.Active,
+            #         "person_id": person.id,
+            #     }
 
-            if client.user_account is not None \
-                    and client.user_account.username \
-                    and client.user_account.password:
-                # client.user_account.status = AccountStatus.Active
-                # client.user_account.person_id = person.id
-                user = {
-                    "username": client.user_account.username,
-                    "password": client.user_account.password,
-                    "status": AccountStatus.Active,
-                    "person_id": person.id,
-                }
-
-                self.user_repository.create_user(User(**user))
+                # self.user_repository.create_user(User(**user))
             else:
                 # Create Client instance
                 new_client = Client(
@@ -104,7 +104,7 @@ class ClientRepository:
                 self.session.commit()
                 self.session.refresh(new_client)
 
-            return person.id
+            return ClientDTO.from_orm(new_client)
 
         except (SQLAlchemyError, ValueError) as e:
             self.session.rollback()  # Rollback transaction in case of failure

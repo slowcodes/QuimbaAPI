@@ -67,11 +67,10 @@ class UserRepository:
             self.session.commit()
             self.session.refresh(user)
 
-            signUp = AccountDTO(**user.__dict__)
-            signUp.person = person
-            return signUp
+            return AccountDTO.from_orm(user)
         except Exception as e:
             self.session.rollback()
+            print(e)
             return SignUpResponseDTO(error=True, msg=f"Error registering user: {str(e)}")
 
     def updateSignUp(self, account_dto: AccountDTO):
