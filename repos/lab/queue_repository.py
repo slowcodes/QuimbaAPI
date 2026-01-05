@@ -279,13 +279,12 @@ class QueueRepository:
 
     def delete_lab_service_queue(self, queue_id: int):
         # Get  queuing details
-        lab_service_queue = self.get_queue(queue_id)
+        lab_service_queue = self.db_session.query(LabServicesQueue).filter(LabServicesQueue.id == queue_id).first()
 
         # check if queue element doesn't have a collected sample
-        if len(self.get_collected_sample_by_queue_id(queue_id)) == 0:
+        if self.sample_repository.get_collected_sample_by_queue_id(queue_id) is None:
 
             # Delete booking information
-
             booking_id = lab_service_queue.booking_id
             self.db_session.query(ServiceBookingDetail).filter(ServiceBookingDetail.id == booking_id).delete()
 

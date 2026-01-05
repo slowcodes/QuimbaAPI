@@ -1,1 +1,5 @@
 .idea
+Quimba.db
+migration.sql
+patients.json
+parameters.json

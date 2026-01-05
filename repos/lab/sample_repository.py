@@ -166,8 +166,11 @@ class CollectedSamplesRepository(BaseRepository):
         )
 
     def get_collected_sample_by_queue_id(self, queue_id: int):
+        sample = self.db.query(CollectedSamples).filter(CollectedSamples.queue_id == queue_id).first()
+        if not sample:
+            return None
         return CollectedSamplesDTO.from_orm(
-            self.db.query(CollectedSamples).filter(CollectedSamples.queue_id == queue_id).first()
+            sample
         )
 
     def delete_collected_sample(self, sample_id: int) -> None:
