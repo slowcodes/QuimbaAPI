@@ -279,13 +279,11 @@ class TransactionRepository:
                         })
 
         tx = TransactionDTO.from_orm(model)  # serialize to get necessary fields
-        print("Transaction", tx.id)
 
         if tx.sales_services:
             tx.sales_services.lab_booking_completion = self.service_repository.get_booking_completion_status(
                 tx.sales_services.id)
         tx = tx.dict()
-
 
         if not tx.get('sales_services'):
             tx['sales_services'] = {}

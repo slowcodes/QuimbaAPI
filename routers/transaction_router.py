@@ -12,7 +12,7 @@ from dtos.transaction import TransactionDTO, PaymentDTO, ReferredTransactionDTO,
     TransactionCreateDTO, ReferredTransactionSettlementResponseDTO, ReferredTransactionSettlementCreateDTO
 from db import get_db
 from models.services.services import BookingStatus
-from models.transaction import TransactionType, ReferredTransactionSettlementDetail
+from models.transaction import TransactionType, ReferredTransactionSettlementDetail, PaymentMethod
 from repos import transaction_repository
 from repos.client.referral_repository import ReferralRepository
 from repos.consultation.consultant_repository import ConsultantRepository
@@ -219,7 +219,7 @@ def delete_payment(payment_id: int,
 
 @transaction_router.get("/payments/", tags=["Payment"])
 def get_payments(limit: int = 15, skip: int = 0,
-                 transaction_type: TransactionType = TransactionType.All,
+                 transaction_type: str = None,
                  client_id: int = 0, start_date: str = '', last_date: str = '', date_filter_status: str = '',
                  repo: PaymentRepository = Depends(payment_repo)):
     return repo.get_payments(limit, skip, transaction_type, client_id,
