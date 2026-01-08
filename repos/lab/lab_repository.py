@@ -42,6 +42,28 @@ class LabRepository:
             return dict(data=self.session.query(LabServiceGroup).offset(skip).limit(limit).all(),
                         total=self.get_group_count())
 
+    def soft_delete_lab_service_detail(self, lab_service_id: int) -> bool:
+        # implement soft
+        try:
+            lab_service = (
+                self.session.query(LabService)
+                .filter(
+                    LabService.id == lab_service_id,
+                    LabService.deleted_at.is_(None)
+                )
+                .one_or_none()
+            )
+
+            if lab_service is None:
+                return False
+
+            lab_service.soft_delete()
+            self.session.commit()
+            return True
+        except SQLAlchemyError:
+            self.session.rollback()
+            return False
+
     def get_group_count(self, keyword: str = ''):
         return self.session.query(LabServiceGroup) \
             .filter(LabServiceGroup.group_name.ilike(f"%{keyword}%")).count() if (
@@ -49,7 +71,7 @@ class LabRepository:
             LabServiceGroup).count()
 
     def get_lab_services(self, skip, limit, lab_id: int, keyword):
-        query = self.session.query(LabService)
+        query = self.session.query(LabService).filter(LabService.deleted_at.is_(None))
 
         # Add conditions based on lab_id
         if lab_id != 0:

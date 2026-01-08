@@ -62,6 +62,16 @@ def update_lab_service(lab_service: LaboratoryServiceDetailDTO,
                             content=dict(error=True, msg='Lab service subject not found'))
 
 
+@lab_router.delete('/api/laboratories/lab_service', tags=['Laboratories' 'Laboratory Service'])
+def delete_lab_service(lab_service_id: int, lab_repository: LabRepository = Depends(get_lab_repository)):
+    if lab_repository.soft_delete_lab_service_detail(lab_service_id):
+        return JSONResponse(status_code=status.HTTP_202_ACCEPTED,
+                            content=dict(error=False, msg='Lab service deleted'))
+    else:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
+                            content=dict(error=True, msg='Lab service subject not found'))
+
+
 @lab_router.put('/api/laboratories/lab_service_detail', tags=['Laboratories' 'Laboratory Service'])
 def update_lab_service(lab_service: LabServiceDTO,
                        lab_repository: LabRepository = Depends(get_lab_repository)):

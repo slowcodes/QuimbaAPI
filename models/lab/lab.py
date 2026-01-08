@@ -8,6 +8,8 @@ from db import Base
 from enum import Enum
 from sqlalchemy.orm import relationship
 
+from models.mixins import SoftDelMixin
+
 
 class Laboratory(Base):
     __tablename__ = "laboratory"
@@ -33,7 +35,7 @@ class LabType(str, Enum):
     Observation = 'Observation'
 
 
-class LabService(Base):
+class LabService(Base, SoftDelMixin):
     __tablename__ = "lab_service"
 
     id = Column(Integer, primary_key=True, index=True)
