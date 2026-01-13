@@ -21,12 +21,103 @@ class PaymentRepository:
 
         self.user_id = 1  # usr.id
 
+    def computeTransactionTotal(self, transaction_id: int):
+        from repos.transaction_repository import TransactionRepository
+
+        def _as_list(value):
+            return value if isinstance(value, list) else []
+
+        def _get_price(value):
+            return value if isinstance(value, (int, float)) else 0
+
+        def _get_bundle_price(package):
+            collections = package.get("lab_service_bundle") or package.get("lab_collections") or []
+            original_total = 0
+            for collection in _as_list(collections):
+                lab_service = collection.get("lab_service") or {}
+                business_service = lab_service.get("business_service") or {}
+                price_code = business_service.get("pc") or {}
+                original_total += _get_price(price_code.get("service_price"))
+
+            discount = _get_price(package.get("discount"))
+            if discount <= 0:
+                return original_total, original_total
+            if discount <= 1:
+                discounted_total = original_total * (1 - discount)
+            elif discount <= 100:
+                discounted_total = original_total * (1 - (discount / 100))
+            else:
+                discounted_total = max(0, original_total - discount)
+            return original_total, discounted_total
+
+        def _compute_lab_service_total_price(labs):
+            total = 0
+            for lab in _as_list(labs):
+                booking = lab.get("booking") or {}
+                price_code = (booking.get("price_code_rel") or {})
+                total += _get_price(price_code.get("service_price"))
+            return total
+
+        transaction = TransactionRepository(self.db_session).get_by_id(transaction_id)
+        if not transaction:
+            return None
+
+        services = transaction.get("sales_services") or {}
+
+        consultations = _as_list(services.get("consultation_services"))
+        labs = _as_list(services.get("lab_services"))
+        dispensary = _as_list(services.get("dispensary_services"))
+        enrollment = _as_list(services.get("enrollment"))
+
+        consultation_total = sum(_get_price(s.get("price")) for s in consultations)
+        enrollment_total = sum(_get_price(s.get("price")) for s in enrollment)
+        lab_total = _compute_lab_service_total_price(labs)
+        dispensary_total = sum(
+            _get_price(d.get("selling_price")) * (d.get("quantity") or 1)
+            for d in dispensary
+        )
+
+        lab_promo = 0
+        for promo in _as_list(transaction.get("package_transactions")):
+            original, discounted = _get_bundle_price(promo.get("package") or {})
+            lab_promo += (original - discounted)
+
+        subtotal = enrollment_total + consultation_total + lab_total + dispensary_total
+
+        discount = transaction.get("discount")
+        discount_value = _get_price(discount)
+        total = subtotal - discount_value - lab_promo
+
+        payments = _as_list(transaction.get("payment"))
+        total_paid = sum(_get_price(p.get("amount")) for p in payments)
+
+        balance = total - total_paid
+
+        return {
+            "consultationTotal": consultation_total,
+            "labTotal": lab_total,
+            "dispensaryTotal": dispensary_total,
+            "subtotal": subtotal,
+            "discount": discount,
+            "total": total,
+            "totalPaid": total_paid,
+            "balance": balance,
+        }
+
     def create_payment(self, payment: PaymentDTO) -> PaymentDTO:
         payment.user_id = self.user_id
         db_payment = Payments(**payment.dict())
         self.db_session.add(db_payment)
         self.db_session.commit()
         self.db_session.refresh(db_payment)
+
+        # update transaction status to closed if full payment
+        transaction = self.db_session.query(Transaction).filter(Transaction.id == db_payment.transaction_id).first()
+        if transaction:
+            total_paid = sum(p.amount for p in transaction.payments)
+            if total_paid >= transaction.total_amount:
+                transaction.status = 'Closed'
+                self.db_session.commit()
 
         return PaymentDTO(
             id=db_payment.id,
@@ -62,28 +153,6 @@ class PaymentRepository:
     def get_payments_by_transaction_id(db: Session, transaction_id: int) -> List[Payments]:
         return db.query(Payments).filter(Payments.transaction_id == transaction_id).all()
 
-    def get_receipt_details(self, db: Session, transaction_id: int):
-        # Lab transaction details
-
-        transaction = self.get_transaction_by_id(transaction_id)
-        user = UserRepository(db).get_user_by_id(transaction.user_id)
-        cli_repo = ClientRepository(db)
-        usr_info = cli_repo.get_client(user.person_id)
-        user = {
-            'name': usr_info.first_name + ' ' + usr_info.last_name,
-            'username': user.username
-        }
-
-        # sales
-
-        # services
-
-        # lab services
-
-        return {
-
-        }
-
     def get_payments(self, limit=20, skip=0, transaction_type: str = None, client_id=0,
                      start_date: str = '', last_date: str = ''):
 
@@ -113,20 +182,6 @@ class PaymentRepository:
         # get total amount before pagination
         total_amount_query = sum(t.amount for t in rs if t.amount is not None)
 
-        # Apply GROUP BY to avoid errors
-        # rs = rs.group_by(
-        #     Payments.id,
-        #     Payments.payment_date,
-        #     Payments.payment_method,
-        #     Payments.payment_time,
-        #     Payments.user_id,
-        #     Payments.amount,
-        #     Payments.transaction_id,
-        #     ServiceBooking.client_id,
-        #     Person.last_name,
-        #     Person.first_name
-        # )
-        # Apply pagination
         response = rs.offset(skip).limit(limit).all()
 
         # Format response

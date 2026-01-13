@@ -18,6 +18,7 @@ class PaymentDTO(BaseModel):
     transaction_id: Optional[int] = None
     payment_method: PaymentMethod
     id: Optional[int] = None
+
     user: Optional[BasicUserDTO] = None
 
     class Config:
