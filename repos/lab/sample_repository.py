@@ -108,9 +108,8 @@ class CollectedSamplesRepository(BaseRepository):
 
         # --- Filter: Client ID ---
         if client_id:
-            # Join through ServiceBookingDetail → ServiceBooking → Client (via Person)
-            query = query.join(Client, Client.person_id == Person.id)
-            query = query.filter(Client.id == client_id)
+            # ServiceBooking is already joined via ServiceBookingDetail.booking
+            query = query.filter(ServiceBooking.client_id == client_id)
 
         # --- Filter: Date Range ---
         if date_filter and isinstance(date_filter, dict):

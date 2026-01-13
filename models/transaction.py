@@ -67,6 +67,7 @@ class Payments(Base, SoftDeleteMixin):
     payment_method = Column(SqlEnum(PaymentMethod), default=PaymentMethod.Cash)
 
     transaction = relationship("Transaction", back_populates="payment")
+    user = relationship("User")
 
 
 class PackageTransaction(Base, SoftDeleteMixin):

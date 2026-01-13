@@ -20,8 +20,11 @@ class PrescriptionRepository(BaseRepository):
         self.drug_repository = DrugRepository(db)
 
     def get_all(self, skip: int = 0, limit: int = 0, status: PrescriptionStatus = PrescriptionStatus.All,
-                start_date: str = None, end_date: str = None):
+                start_date: str = None, end_date: str = None, client_id: int = None):
         query = self.db.query(Prescription)
+
+        if client_id:
+            query = query.filter(Prescription.client_id == client_id)
 
         if status != PrescriptionStatus.All:
             query = query.filter(Prescription.status == status)

@@ -36,11 +36,12 @@ def get_prescription(skip: int = Query(0), limit: int = Query(100),
                      status: str = Query("All"),
                      start_date: str = Query(None),
                      end_date: str = Query(None),
+                     client_id: int = Query(None),
                      repo: PrescriptionRepository = Depends(get_prescription_repository)):
     """
     Get all prescriptions with optional filters and pagination.
     """
-    return repo.get_all(skip=skip, limit=limit, status=status, start_date=start_date, end_date=end_date)
+    return repo.get_all(skip=skip, limit=limit, status=status, start_date=start_date, end_date=end_date, client_id=client_id)
 
 
 @prescription_router.put("/update-status/", status_code=status.HTTP_200_OK)

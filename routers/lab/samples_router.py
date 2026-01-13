@@ -76,7 +76,7 @@ def create_collected_sample(
 @sample_collection_router.get("/")  # response_model=List[CollectedSamplesDTO]
 def get_collected_samples(skip: int = 0, limit: int = 10, lab_id: int = 0, booking_id: int = 0,
                           start_date: str = None, last_date: str = None, status: QueueStatus = QueueStatus.Processing,
-                          search_keyword: str = None, refresh: int = 0,
+                          search_keyword: str = None, refresh: int = 0, client_id: int = 0,
                           repo: CollectedSamplesRepository = Depends(get_repository)):
     date_filter = {
         'start_date': start_date,
@@ -84,7 +84,7 @@ def get_collected_samples(skip: int = 0, limit: int = 10, lab_id: int = 0, booki
         'status': status
     }
     redis = get_redis_client()
-    cache_key = f"clients:{skip}:{limit}:{lab_id}:{booking_id}:{start_date}:{last_date}:{status}:{search_keyword}"
+    cache_key = f"clients:{skip}:{limit}:{lab_id}:{booking_id}:{start_date}:{last_date}:{status}:{search_keyword}:{client_id}"
     cached_samples = redis.get(cache_key)
 
     if cached_samples and refresh == 0:
@@ -94,7 +94,7 @@ def get_collected_samples(skip: int = 0, limit: int = 10, lab_id: int = 0, booki
         )
         return JSONResponse(status_code=HTTP_200_OK, content=samples)
 
-    data = repo.get_collected_samples(skip, limit, lab_id, booking_id, date_filter, search_keyword)
+    data = repo.get_collected_samples(skip, limit, lab_id, booking_id, date_filter, search_keyword, client_id)
     safe_data = jsonable_encoder(data)
     redis.set(cache_key, json.dumps(safe_data), ex=300)
     return data

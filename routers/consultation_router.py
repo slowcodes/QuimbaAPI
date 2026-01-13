@@ -24,9 +24,12 @@ from security.dependencies import require_access_privilege, get_current_active_u
 consultation_router = APIRouter(prefix="/api/clinicals", tags=["Clinicals"])
 
 
-def get_consultation_repository(db: Session = Depends(get_db)) -> ConsultantRepository:
+def get_consultant_repository(db: Session = Depends(get_db)) -> ConsultantRepository:
     return ConsultantRepository(db)
 
+
+def get_consultation_repository(db: Session = Depends(get_db)) -> ConsultationsRepository:
+    return ConsultationsRepository(db)
 
 def get_icd10_repository(db: Session = Depends(get_db)) -> Icd10Repository:
     return Icd10Repository(db)
@@ -54,7 +57,7 @@ def add_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository =
 
 
 @consultation_router.put("/consultation/consultants", response_model=ConsultantDTO, tags=["Consultants"])
-def update_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository = Depends(get_consultation_repository)):
+def update_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository = Depends(get_consultant_repository)):
     """
     Update a consultant in the system.
     """
@@ -66,7 +69,7 @@ def update_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepositor
 
 @consultation_router.get("/consultation/consultants", response_model=List[ConsultantDTO], tags=["Consultants"])
 def get_consultants(skip: int = 0, limit: int = 100,
-                    repo: ConsultantRepository = Depends(get_consultation_repository)):
+                    repo: ConsultantRepository = Depends(get_consultant_repository)):
     """
     Get a list of consultants with optional pagination.
     """
@@ -76,7 +79,7 @@ def get_consultants(skip: int = 0, limit: int = 100,
 @consultation_router.get("/consultation/consultant/", response_model=ConsultantDTO | None, tags=["Consultants"])
 def get_consultant(
         current_user: Annotated[UserDTO, Depends(get_current_active_user)],
-        repo: ConsultantRepository = Depends(get_consultation_repository),
+        repo: ConsultantRepository = Depends(get_consultant_repository),
         id: int = 0):
     """
     Get a consultant.
@@ -84,9 +87,22 @@ def get_consultant(
     return repo.get_consultant(id) if id != 0 else repo.get_consultant_by_user_id(current_user.id)
 
 
+@consultation_router.get("/consultation/consultant/by-user/{user_id}", response_model=ConsultantDTO, tags=["Consultants"])
+def get_consultant_by_user_id(
+        user_id: int,
+        repo: ConsultantRepository = Depends(get_consultant_repository)):
+    """
+    Get a consultant by user id.
+    """
+    consultant = repo.get_consultant_by_user_id(user_id)
+    if consultant is None:
+        raise HTTPException(status_code=404, detail="Consultant not found")
+    return consultant
+
+
 @consultation_router.post("/consultation/consultants/inhours", response_model=InHoursDTO)
 def add_consulting_hours(in_hours: InHoursDTO,
-                         repo: ConsultantRepository = Depends(get_consultation_repository)):
+                         repo: ConsultantRepository = Depends(get_consultant_repository)):
     """
     Add a new consulting hours.
     """
@@ -96,7 +112,7 @@ def add_consulting_hours(in_hours: InHoursDTO,
 @consultation_router.get("/consultation/consultants/inhours")
 def get_all_consulting_hours(start_time: str, end_time: str,
                              current_user: Annotated[UserDTO, Depends(get_current_active_user)],
-                             repo: ConsultantRepository = Depends(get_consultation_repository),
+                             repo: ConsultantRepository = Depends(get_consultant_repository),
                              consultant_id: int = 0,
                              ):
     if consultant_id == 0:  # Get consultations of current use
@@ -108,8 +124,18 @@ def get_all_consulting_hours(start_time: str, end_time: str,
 
 @consultation_router.post("/consultation/consultant/queue/", response_model=ConsultationQueueDTO)
 def add_consultation_queue(consultant_queue: ConsultationQueueDTO,
-                           repo: ConsultantRepository = Depends(get_consultation_repository)):
+                           repo: ConsultantRepository = Depends(get_consultant_repository)):
     queue = repo.add_consultant_queue(consultant_queue)
+    if queue is None:
+        raise HTTPException(status_code=422, detail="Problem persisting consultation queue")
+    return queue
+
+
+@consultation_router.post("/consultation/consultant/queue/quick", response_model=ConsultationQueueDTO)
+def add_quick_consultation_queue(
+        quick_consult: QuickConsultDTO,
+        repo: ConsultationsRepository = Depends(get_consultation_repository)):
+    queue = repo.create_quick_consultation_queue(quick_consult)
     if queue is None:
         raise HTTPException(status_code=422, detail="Problem persisting consultation queue")
     return queue
@@ -135,7 +161,7 @@ def search_icd10(keyword: str, skip: int = 0, limit: int = 100,
 
 @consultation_router.get("/consultation/consultant/queue/detail/", response_model=ConsultationQueueDTO)
 def get_consultation_booking(queue_id: int, refresh: int = 0,
-                             repo: ConsultantRepository = Depends(get_consultation_repository)):
+                             repo: ConsultantRepository = Depends(get_consultant_repository)):
     redis = get_redis_client()
     cache_key = f"consultation:{queue_id}"
     cached_consultation = redis.get(cache_key)
@@ -157,7 +183,7 @@ def get_consultation_booking(queue_id: int, refresh: int = 0,
 @consultation_router.get("/consultation/consultant/queue/", response_model=List[ConsultationQueueDTO])
 def get_consultation_booking(consultant_id: int = 0, client_id=0, start_date='',
                              last_date='', status: str = QueueStatus.Processed, in_hour_id: int = 0,
-                             repo: ConsultantRepository = Depends(get_consultation_repository)):
+                             repo: ConsultantRepository = Depends(get_consultant_repository)):
     return repo.get_consultant_queue(
         consultant_id,
         client_id,

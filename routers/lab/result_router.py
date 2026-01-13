@@ -72,13 +72,14 @@ def read_sample_results(limit: int = 15, skip: int = 0,
                         start_date: Optional[str] = None,
                         last_date: Optional[datetime] = None,
                         date_filter_status: Optional[str] = None,
+                        client_id: int = 0,
                         repo: ResultRepository = Depends(sample_result_repo)):
     date_filter: DateFilterDTO = {
         "start_date": start_date,
         "last_date": last_date,
         "status": date_filter_status
     }
-    sample_results = repo.get_all_sample_results(limit, skip, lab_id, search_text, date_filter)
+    sample_results = repo.get_all_sample_results(limit, skip, lab_id, search_text, date_filter, client_id)
 
     if sample_results is None:
         raise HTTPException(status_code=404, detail="No results found")

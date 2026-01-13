@@ -74,7 +74,8 @@ class TransactionRepository:
             skip: int = 0,
             limit: int = 100,
             referred: bool = False,
-            referral_id: Optional[int] = None
+            referral_id: Optional[int] = None,
+            client_id: int = 0
     ):
         query = self.db_session.query(Transaction)
 
@@ -92,6 +93,10 @@ class TransactionRepository:
             query = query.filter(
                 Transaction.transaction_date.between(date_filter.start_date, last_date)
             )
+
+        if client_id != 0:
+            query = query.join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id) \
+                         .filter(ServiceBooking.client_id == client_id)
 
         if getattr(date_filter, "status", None):
             status_value = date_filter.status

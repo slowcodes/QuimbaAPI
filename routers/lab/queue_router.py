@@ -37,7 +37,7 @@ def read_lab_service_queue(queue_id: int,  qr: QueueRepository = Depends(get_que
 @queue_router.get("/")
 def read_lab_service_queue(lab_id: int = 0, skip: int = 0, limit: int = 10, booking_id: int = 0,
                            search_text: str = '', last_date: str = None,
-                           start_date: str = None, status: str = None, refresh: int = 0,  qr: QueueRepository = Depends(get_queue_repository)):
+                           start_date: str = None, status: str = None, refresh: int = 0, client_id: int = 0,  qr: QueueRepository = Depends(get_queue_repository)):
 
     if search_text != '':
         return qr.search_lab_service_queue(keyword=search_text, skip=skip, limit=limit, lab_id=lab_id)
@@ -53,7 +53,8 @@ def read_lab_service_queue(lab_id: int = 0, skip: int = 0, limit: int = 10, book
         db_lab_service_queue = qr.get_lab_service_queue(lab_id=lab_id, skip=skip,
                                                         limit=limit, booking_id=booking_id,
                                                         last_date=last_date, start_date=start_date,
-                                                        status=status)
+                                                        status=status,
+                                                        client_id=client_id)
 
         safe_data = jsonable_encoder(db_lab_service_queue)
         redis.set(cache_key, json.dumps(safe_data), ex=300)

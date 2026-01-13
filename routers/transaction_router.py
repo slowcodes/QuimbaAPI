@@ -114,7 +114,7 @@ def read_transactions(path: str, limit: int = 15, skip: int = 0,
     elif path == 'enrollments':
         results = repo.get_all_enrollment()
     elif path == 'all':
-        results = repo.get_all(date_filter)
+        results = repo.get_all(date_filter=date_filter, client_id=client_id)
     elif path == 'referred':
         ref_id = None if only_referred_transactions == 0 else only_referred_transactions
         results = repo.get_all(date_filter, skip, limit, True, ref_id)

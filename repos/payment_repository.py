@@ -92,14 +92,13 @@ class PaymentRepository:
         if transaction_type:
             try:
                 method = PaymentMethod(transaction_type)
-                print("we applied filter")
                 rs = rs.filter(Payments.payment_method == method)
             except ValueError:
                 pass
 
         if client_id != 0:
             rs = rs.join(Transaction, Payments.transaction_id == Transaction.id) \
-                .join(ServiceBooking.transaction_id == Transaction.id) \
+                .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id) \
                 .filter(ServiceBooking.client_id == client_id)
 
         # Apply date filters if valid dates are provided

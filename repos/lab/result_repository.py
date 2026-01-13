@@ -111,27 +111,40 @@ class ResultRepository:
         return None
 
     def get_all_sample_results(self, limit: int, skip: int, lab_id=0, search_keyword: str = '',
-                               dateFilter: DateFilterDTO = None) -> dict:
+                               dateFilter: DateFilterDTO = None, client_id: int = 0) -> dict:
 
         base_query = self.db_session.query(SampleResult)
+        joined_queue = False
+        joined_lab_service = False
 
         if lab_id != 0:
             base_query = base_query.join(LabServicesQueue, LabServicesQueue.id == SampleResult.queue_id) \
                 .join(LabService, LabService.id == LabServicesQueue.lab_service_id).filter(LabService.lab_id == lab_id)
+            joined_queue = True
+            joined_lab_service = True
 
         if dateFilter['status'] in ResultStatus.__members__:
             base_query = base_query.filter(LabVerifiedResult.status == dateFilter['status'])
 
-        if search_keyword:
-            base_query = base_query.join(LabServicesQueue, LabServicesQueue.id == SampleResult.queue_id) \
-                .join(LabService, LabService.id == LabServicesQueue.lab_service_id) \
-                .join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
+        if search_keyword or client_id:
+            if not joined_queue:
+                base_query = base_query.join(LabServicesQueue, LabServicesQueue.id == SampleResult.queue_id)
+                joined_queue = True
+            if not joined_lab_service:
+                base_query = base_query.join(LabService, LabService.id == LabServicesQueue.lab_service_id)
+                joined_lab_service = True
+            base_query = base_query.join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
                 .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id) \
-                .join(Client, Client.id == ServiceBooking.client_id) \
-                .join(Person, Person.id == Client.person_id) \
-                .filter(Person.first_name.ilike(f'%{search_keyword}%') |
-                        Person.last_name.ilike(f'%{search_keyword}%') |
-                        LabService.lab_service_name.ilike(f'%{search_keyword}%'))
+                .join(Client, Client.id == ServiceBooking.client_id)
+
+            if client_id:
+                base_query = base_query.filter(ServiceBooking.client_id == client_id)
+
+            if search_keyword:
+                base_query = base_query.join(Person, Person.id == Client.person_id) \
+                    .filter(Person.first_name.ilike(f'%{search_keyword}%') |
+                            Person.last_name.ilike(f'%{search_keyword}%') |
+                            LabService.lab_service_name.ilike(f'%{search_keyword}%'))
 
         if dateFilter:
             if dateFilter['start_date']:

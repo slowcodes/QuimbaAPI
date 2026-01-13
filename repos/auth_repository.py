@@ -131,6 +131,7 @@ class UserRepository:
                 username=user.email,
                 first_name=user.first_name,
                 last_name=user.last_name,
+
                 status=AccountStatus.Active,
                 person_id=user.person_id,
                 password=user.password,

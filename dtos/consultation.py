@@ -16,6 +16,18 @@ class SymptomDTO(BaseModel):
         from_attributes = True
 
 
+class QuickConsultDTO(BaseModel):
+    id: Optional[int] = None
+    client_id: int
+    consultant_id: int
+    specialization_id: int
+    notes: Optional[str] = None
+    price: float
+
+    class Config:
+        from_attributes = True
+
+
 class PresentingSymptomDTO(BaseModel):
     clinical_examination_id: Optional[int] = None
     symptom_id: int
@@ -100,7 +112,6 @@ class ConsultantBaseDTO(BaseModel):
 
 
 class ConsultantDTO(ConsultantBaseDTO):
-
     user: BasicUserDTO
     specializations: List[SpecialistSpecializationDTO] = []
     in_hours: List[InHoursDTO] = []

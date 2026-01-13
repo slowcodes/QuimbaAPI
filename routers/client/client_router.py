@@ -28,8 +28,11 @@ async def get_all_clients(skip: int = 0,
     # cached_clients = decode_bytes(cached_clients)
 
     if cached_clients and refresh == 0:
-        clients = json.loads(cached_clients.decode("utf-8"))
-        return JSONResponse(status_code=status.HTTP_200_OK, content=clients)
+        if isinstance(cached_clients, bytes):
+            cached_clients = cached_clients.decode("utf-8")
+
+        cached_clients = json.loads(cached_clients)
+        return JSONResponse(status_code=status.HTTP_200_OK, content=cached_clients)
 
     data = repo.get_all_client(skip, limit, keyword)
     safe_data = jsonable_encoder(data)

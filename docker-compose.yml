@@ -29,7 +29,7 @@ services:
   app:
     image: ezennacharles/quimba
     ports:
-      - "8000:8000"
+       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://quimba:secretofthesand@db:5432/postgres
     depends_on:
@@ -38,12 +38,6 @@ services:
     restart: unless-stopped
     networks:
       - quimba_network
-    healthcheck:
-      test: [ "CMD", "python", "-c", "import redis; r=redis.Redis(host='cache', port=6379) ; print(r.ping())"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
   db:
     image: postgres:13
     environment:

@@ -76,12 +76,18 @@ class QueueRepository:
 
     def get_lab_service_queue(self, lab_id: int = 0, skip: int = 0,
                               limit: int = 10, booking_id: int = 0,
-                              last_date: str = None, start_date: str = None, status: str = QueueStatus.Processing):
+                              last_date: str = None, start_date: str = None, status: str = QueueStatus.Processing, client_id: int = 0):
 
         base_query = self.db_session.query(LabServicesQueue)
         if lab_id != 0:
             base_query = base_query.join(LabService, LabServicesQueue.lab_service_id == LabService.id)\
                 .join(Laboratory, Laboratory.id == LabService.lab_id).filter(Laboratory.id == lab_id)
+
+        if client_id != 0:
+            base_query = base_query.join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
+                .join(ServiceBooking, ServiceBookingDetail.booking_id == ServiceBooking.id) \
+                .join(Client, Client.id == ServiceBooking.client_id) \
+                .filter(Client.id == client_id)
 
         if booking_id != 0:
             base_query = base_query.join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id).filter(ServiceBookingDetail.booking_id == booking_id)
