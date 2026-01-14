@@ -40,8 +40,16 @@ class ServiceBundleRepository:
         self.session.refresh(bdl)
         return bdl
 
-    def get_all_bundles(self, limit: int = 20, skip: int = 0, service_type: ServiceType = None):
+    def get_all_bundles(
+        self,
+        limit: int = 20,
+        skip: int = 0,
+        service_type: ServiceType = None,
+        keyword: str = None,
+    ):
         bundles = self.session.query(Bundles)
+        if keyword:
+            bundles = bundles.filter(Bundles.bundles_name.ilike(f"%{keyword}%"))
         total = bundles.count()
         bundles = bundles.offset(skip).limit(limit).all()
 

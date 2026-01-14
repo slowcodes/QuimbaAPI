@@ -18,7 +18,15 @@ class ServiceCartRepository:
         self.db = db
         self.lab_repository = LabRepository(db)
 
-    def get_client_carts(self, client_id: int = 0, limit: int = 20, skip: int = 0) -> list[ClientServiceCartDTO]:
+    def get_client_carts(
+        self,
+        client_id: int = 0,
+        limit: int = 20,
+        skip: int = 0,
+        start_date: Optional[str] = None,
+        last_date: Optional[str] = None,
+        cart_status: Optional[str] = None,
+    ) -> list[ClientServiceCartDTO]:
         """
         Fetches a list of service carts for a specific client with pagination.
         """
@@ -26,6 +34,18 @@ class ServiceCartRepository:
             query = self.db.query(ClientServiceCart)  # Ensure the model is registered
             if client_id:
                 query = query.filter(ClientServiceCart.client_id == client_id)
+            if start_date and last_date and len(start_date) >= 8 and len(last_date) >= 8:
+                query = query.filter(ClientServiceCart.created_at.between(start_date, last_date))
+            elif start_date and len(start_date) >= 8:
+                query = query.filter(ClientServiceCart.created_at >= start_date)
+            elif last_date and len(last_date) >= 8:
+                query = query.filter(ClientServiceCart.created_at <= last_date)
+            if cart_status:
+                try:
+                    status_value = BookingStatus(cart_status)
+                    query = query.filter(ClientServiceCart.cart_status == status_value)
+                except ValueError:
+                    pass
             carts = query.offset(skip).limit(limit).all()
             client_cart = [ClientServiceCartDTO.from_orm(cart) for cart in carts]
 

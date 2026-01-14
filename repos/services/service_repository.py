@@ -3,11 +3,11 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, BusinessServiceDTO
+from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, BusinessServiceDTO, ServiceBookingWithTrxDTO
 from models.client import Client, Person
 from models.lab.lab import CollectedSamples, LabBundleCollection, LabServicesQueue, QueueStatus, LabType
 from models.services.services import Bundles, ServiceBooking, ServiceBookingDetail, BookingStatus, \
-    ServiceClinicalExamination, BusinessServices
+    ServiceClinicalExamination, BusinessServices, BookingType
 from models.transaction import Transaction
 from repos.services.price_repository import PriceRepository
 
@@ -87,46 +87,44 @@ class ServiceRepository:
     def get_service_booking(self, booking_id: int) -> ServiceBookingDTO:
         return self.session.query(ServiceBooking).filter(ServiceBooking.id == booking_id).first()
 
-    def get_service_booking_transaction_id(self, transaction_id: int) -> ServiceBookingDTO:
-        return self.session.query(ServiceBooking).filter(ServiceBooking.transaction_id == transaction_id).first()
+    def get_all_service_bookings(
+        self,
+        limit: int,
+        skip: int,
+        client_id: int = 0,
+        start_date: Optional[str] = None,
+        last_date: Optional[str] = None,
+        status: Optional[str] = None,
+        booking_type: Optional[str] = None,
+        lab_id: Optional[int] = None
+    ) -> dict:
 
-    def get_all_service_bookings(self, limit: int, skip: int, client_id: int = 0) -> dict:
-        cols = [
-            Person.first_name,
-            Person.last_name,
-            ServiceBooking.transaction_id,
-            ServiceBooking.client_id,
-            ServiceBooking.booking_status,
-            Transaction.transaction_time,
-            ServiceBooking.id.label("booking_id")
-        ]
-
-        query = self.session.query(*cols).select_from(ServiceBooking) \
-            .join(Client, Client.id == ServiceBooking.client_id) \
-            .join(Person, Client.person_id == Person.id) \
-            .join(Transaction, ServiceBooking.transaction_id == Transaction.id)\
+        query = self.session.query(ServiceBooking)
 
         if client_id != 0:
             query = query.filter(ServiceBooking.client_id == client_id)
-        total = query.count()
-        selected_booking = query.order_by(Transaction.transaction_time.desc()).offset(skip).limit(limit).all()
 
-        data = []
-        for booking in selected_booking:
-            data.append(
-
-                 {
-                    'id': booking.booking_id,
-                    'client_id': booking.client_id,
-                    'transaction_id': booking.transaction_id,
-                    'transaction_time': booking.transaction_time,
-                    'client_first_name': booking.first_name,
-                    'client_last_name': booking.last_name,
-                    'booking_type': 'Laboratory',
-                    'booking_status': booking.booking_status,
-                }
-
+        if start_date and last_date:
+            query = query.join(Transaction).filter(
+                Transaction.transaction_time.between(start_date, last_date)
             )
+        if booking_type == BookingType.Laboratory:
+            # get transactions that have laboratory service bookings
+            query = query.join(ServiceBookingDetail).filter(
+                ServiceBookingDetail.booking_type == BookingType.Laboratory
+            )
+
+
+        if status:
+            try:
+                booking_status = BookingStatus(status)
+                query = query.filter(ServiceBooking.booking_status == booking_status)
+            except ValueError:
+                pass
+        total = query.count()
+        selected_booking = query.order_by(ServiceBooking.id.desc()).offset(skip).limit(limit).all()
+
+        data = [ServiceBookingWithTrxDTO.from_orm(booking) for booking in selected_booking]
 
         return {
             'data': data,

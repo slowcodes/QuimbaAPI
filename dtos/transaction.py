@@ -46,6 +46,7 @@ class ReferredTransactionDTO(BaseModel):
 class TransactionBaseDTO(BaseModel):
     id: Optional[int] = None
     transaction_date: Optional[datetime] = None
+    transaction_time: Optional[datetime] = None
     discount: float
     referral_id: Optional[int] = None
     transaction_status: Optional[TransactionType] = None

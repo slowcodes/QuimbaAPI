@@ -52,10 +52,10 @@ def create_service_booking_detail(service_booking_detail: ServiceBookingDetailDT
 @service_router.get("/all-booking/", status_code=status.HTTP_200_OK)
 def get_service_booking_detail(
         # current_user: Annotated[UserDTO, Depends(get_current_active_user)],
-        skip: int = 0, limit: int = 20, client_id: int = 0, lab_id=0,
+        skip: int = 0, limit: int = 20, client_id: int = 0, lab_id=0, start_date: str = None, last_date: str = None, status: str = None, booking_type: str = None,
         repo: ServiceRepository = Depends(service_repository)):
     booking = repo.get_all_service_bookings(limit,
-                                            skip, client_id)
+                                            skip, client_id, start_date, last_date, status, booking_type, lab_id)
     return booking
 
 
@@ -155,9 +155,10 @@ def delete_bundle(bundle_id: int, repo: ServiceBundleRepository = Depends(servic
     description="Retrieve paginated service bundles with optional skip and limit parameters."
 )
 def get_lab_service_bundle(skip: int = 0, limit: int = 20,
+                           keyword: str = Query(None, description="Search keyword for bundle name"),
                            repo: ServiceBundleRepository = Depends(service_bundle_repository)):
     try:
-        return repo.get_all_bundles(limit, skip)
+        return repo.get_all_bundles(limit, skip, keyword=keyword)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="Failed to retrieve lab service bundles") from e
@@ -242,21 +243,38 @@ def get_service_cart_repository(db: Session = Depends(get_db)):
 def get_client_cart_items(client_id: int = Query(..., description="ID of the client"),
                           skip: int = Query(0, ge=0, description="Number of items to skip"),
                           limit: int = Query(20, ge=1, le=100, description="Maximum number of items to return"),
+                          start_date: str = Query(None, description="Start date for filtering carts"),
+                          last_date: str = Query(None, description="End date for filtering carts"),
+                          cart_status: str = Query(None, description="Status filter for carts"),
                           refresh: int = Query(0, ge=0, description="Set to 1 to bypass cache"),
-                          repo: ServiceCartRepository = Depends(get_service_cart_repository)):
+                          repo: ServiceCartRepository = Depends(get_service_cart_repository)
+):
     try:
         redis = get_redis_client()
-        cache_key = f"clients-cart:{skip}:{limit}:{client_id}"
+        cache_key = f"clients-cart:{skip}:{limit}:{client_id}:{start_date or ''}:{last_date or ''}:{cart_status or ''}"
         cached_client_cart = redis.get(cache_key)
 
         if cached_client_cart and refresh == 0:
-            cart = json.loads(cached_client_cart.decode("utf-8"))
+            if isinstance(cached_client_cart, bytes):
+                cached_client_cart = cached_client_cart.decode("utf-8")
+            try:
+                cart = json.loads(cached_client_cart)
+            except (TypeError, ValueError):
+                cart = cached_client_cart
             return JSONResponse(status_code=status.HTTP_200_OK, content=cart)
-        data = repo.get_client_carts(client_id=client_id, skip=skip, limit=limit)
+        data = repo.get_client_carts(
+            client_id=client_id,
+            skip=skip,
+            limit=limit,
+            start_date=start_date,
+            last_date=last_date,
+            cart_status=cart_status,
+        )
         safe_data = jsonable_encoder(data)
         redis.set(cache_key, json.dumps(safe_data), ex=300)  # Cache for 5 minutes
         return data
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail="Failed to retrieve client cart items") from e
 
 

@@ -4,6 +4,7 @@ from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
 
 from dtos.auth import BasicUserDTO
+from dtos.basic import BasicTransactionDTO
 from dtos.people import ClientDTO, BasicClientDTO, ReferralDTO
 from models.services.services import ServiceType, StoreVisibility
 
@@ -28,6 +29,18 @@ class CopyApprovedLabBookingResultDTO(BaseModel):
     class Config:
         from_attributes = True
 
+
+class ServiceBookingWithTrxDTO(BaseModel):
+    id: Optional[int] = None
+    client_id: int
+    transaction_id: int
+    booking_status: Optional[str] = None
+
+    client: Optional[BasicClientDTO] = None
+    transaction: Optional[BasicTransactionDTO] = None
+
+    class Config:
+        from_attributes = True
 
 class ServiceBookingDTO(BaseModel):
     id: Optional[int] = None
