@@ -345,7 +345,8 @@ class ResultRepository:
             date_filter=date_filter,
             limit=limit,
             skip=skip,
-            booking_status=date_filter["status"] if date_filter and "status" in date_filter else None
+            booking_status=date_filter["status"] if date_filter and "status" in date_filter else None,
+            search_text=search_text
         )
         return trx
 

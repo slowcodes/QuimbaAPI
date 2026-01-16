@@ -3,3 +3,7 @@ Quimba.db
 migration.sql
 patients.json
 parameters.json
+/.idea
+__pycache__/
+.env
+app.log

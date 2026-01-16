@@ -135,9 +135,11 @@ def collate_result_by_queue(limit: int = 15, skip: int = 0,
         "status": date_filter_status
     }
 
-    results = repo.get_collated_result_by_queue(limit, skip, lab_id,
+    results = repo.get_collated_result_by_queue(limit, skip,
+                                                lab_id,
                                                 search_text,
-                                                client_id, date_filter)
+                                                client_id,
+                                                date_filter)
     if results is None:
         raise HTTPException(status_code=404, detail="No results found")
     return results

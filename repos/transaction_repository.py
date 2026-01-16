@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Optional, Type, TypeVar
 from datetime import datetime
 
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, func, String
 from sqlalchemy.orm import Session, joinedload
 
 from db import Base
@@ -151,6 +151,7 @@ class TransactionRepository:
         lab_id: int = 0,
         client_id: int = 0,
         booking_status: Optional[str] = None,
+        search_text: str = ''
     ):
         query = (
             self.db_session.query(Transaction)
@@ -168,6 +169,7 @@ class TransactionRepository:
                 .joinedload(LabServicesQueue.lab_service)
             )
         )
+        search_text = (search_text or "").strip()
 
         if lab_id != 0:
             query = query.filter(LabService.lab_id == lab_id)
@@ -175,7 +177,23 @@ class TransactionRepository:
         if client_id != 0:
             query = query.filter(ServiceBooking.client_id == client_id)
 
-        if booking_status:
+        if search_text:
+            query = (
+                query.join(Client, Client.id == ServiceBooking.client_id)
+                .join(Person, Person.id == Client.person_id)
+                .filter(
+                    or_(
+                        Person.first_name.ilike(f"%{search_text}%"),
+                        Person.last_name.ilike(f"%{search_text}%"),
+                        Person.middle_name.ilike(f"%{search_text}%"),
+                        func.concat(Person.first_name, " ", Person.last_name).ilike(f"%{search_text}%"),
+                        Person.phone.ilike(f"%{search_text}%"),
+                        func.cast(Client.date_of_birth, String).ilike(f"%{search_text}%"),
+                    )
+                )
+            )
+
+        if booking_status and booking_status in BookingStatus._value2member_map_:
             try:
                 status_value = BookingStatus(booking_status)
             except ValueError:
