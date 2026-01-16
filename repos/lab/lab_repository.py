@@ -26,8 +26,11 @@ class LabRepository:
         self.service_repo = ServiceRepository(session)
         self.experiment_repository = ExperimentRepository(session)
 
-    def get_all_labs(self, skip, limit):
-        return self.session.query(Laboratory).offset(skip).limit(limit).all()
+    def get_all_labs(self, skip, limit, keyword: Optional[str] = None):
+        query = self.session.query(Laboratory)
+        if keyword:
+            query = query.filter(Laboratory.lab_name.ilike(f"%{keyword}%"))
+        return query.offset(skip).limit(limit).all()
 
     def get_laboratory_by_id(self, lab_id: int):
         return self.db.query(Laboratory).filter(Laboratory.id == lab_id).first()

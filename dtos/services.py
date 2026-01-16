@@ -48,7 +48,7 @@ class ServiceBookingDTO(BaseModel):
     transaction_id: int
     referral_id: Optional[int] = None
     client: Optional[BasicClientDTO] = None
-    lab_booking_completion: int = 0
+    lab_booking_completion: float = 0
     booking_status: Optional[str] = None
     result_approval: Optional[CopyApprovedLabBookingResultDTO] = None  # Placeholder for ApprovedLabBookingResultDTO
 

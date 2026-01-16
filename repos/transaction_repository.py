@@ -75,7 +75,8 @@ class TransactionRepository:
             limit: int = 100,
             referred: bool = False,
             referral_id: Optional[int] = None,
-            client_id: int = 0
+            client_id: int = 0,
+            booking_status: Optional[str] = None,
     ):
         query = self.db_session.query(Transaction)
 
@@ -88,15 +89,32 @@ class TransactionRepository:
                 query = query.filter(ReferredTransaction.referral_id == referral_id)
 
         # --- Date filtering ---
-        if date_filter and date_filter.start_date:
-            last_date = date_filter.last_date or datetime.utcnow()
+        if date_filter:
+            start_date = getattr(date_filter, "start_date", None)
+            last_date = getattr(date_filter, "last_date", None)
+            if isinstance(date_filter, dict):
+                start_date = date_filter.get("start_date")
+                last_date = date_filter.get("last_date")
+        if date_filter and start_date:
+            last_date = last_date or datetime.utcnow()
             query = query.filter(
-                Transaction.transaction_date.between(date_filter.start_date, last_date)
+                Transaction.transaction_date.between(start_date, last_date)
             )
 
+        joined_service_booking = False
         if client_id != 0:
             query = query.join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id) \
                          .filter(ServiceBooking.client_id == client_id)
+            joined_service_booking = True
+
+        if booking_status:
+            try:
+                status_value = BookingStatus(booking_status)
+            except ValueError:
+                status_value = booking_status
+            if not joined_service_booking:
+                query = query.join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id)
+            query = query.filter(ServiceBooking.booking_status == status_value)
 
         if getattr(date_filter, "status", None):
             status_value = date_filter.status
@@ -125,7 +143,15 @@ class TransactionRepository:
             "total": total
         }
 
-    def get_all_lab(self, skip: int = 0, limit: int = 0, lab_id: int = 0, client_id: int = 0):
+    def get_all_lab(
+        self,
+        date_filter: Optional[DateFilterDTO] = None,
+        skip: int = 0,
+        limit: int = 0,
+        lab_id: int = 0,
+        client_id: int = 0,
+        booking_status: Optional[str] = None,
+    ):
         query = (
             self.db_session.query(Transaction)
             .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id)
@@ -148,6 +174,25 @@ class TransactionRepository:
 
         if client_id != 0:
             query = query.filter(ServiceBooking.client_id == client_id)
+
+        if booking_status:
+            try:
+                status_value = BookingStatus(booking_status)
+            except ValueError:
+                status_value = booking_status
+            query = query.filter(ServiceBooking.booking_status == status_value)
+
+        if date_filter:
+            start_date = getattr(date_filter, "start_date", None)
+            last_date = getattr(date_filter, "last_date", None)
+            if isinstance(date_filter, dict):
+                start_date = date_filter.get("start_date")
+                last_date = date_filter.get("last_date")
+            if start_date:
+                last_date = last_date or datetime.utcnow()
+                query = query.filter(
+                    Transaction.transaction_date.between(start_date, last_date)
+                )
 
         # --- Pagination ---
         total = query.count()

@@ -164,9 +164,13 @@ class LabServicesQueue(Base):
 
     lab_service = relationship("LabService", back_populates="lab_service_queue")
     booking = relationship("ServiceBookingDetail", back_populates="lab_service_queue")
-    sample = relationship("CollectedSamples", back_populates="queue", uselist=False)
+    samples = relationship("CollectedSamples", back_populates="queue", uselist=True)
     lab_result = relationship("SampleResult", back_populates="queue",
                               uselist=False)  # observation based results may not have samples
+
+    @property
+    def sample(self):
+        return self.samples[0] if self.samples else None
 
 
 class SampleType(str, Enum):
@@ -213,7 +217,7 @@ class CollectedSamples(Base):
     status = Column(SqlEnum(QueueStatus), default=QueueStatus.Processing)
 
     user = relationship("User")
-    queue = relationship("LabServicesQueue", back_populates="sample", uselist=False)
+    queue = relationship("LabServicesQueue", back_populates="samples", uselist=False)
 
 
 class ExperimentResultReading(Base):

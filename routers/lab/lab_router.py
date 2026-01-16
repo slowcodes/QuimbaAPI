@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from starlette import status
 
 from dtos.lab import LaboratoryDTO, LaboratoryGroupDTO, LaboratoryServiceDetailDTO, LabServicesQueueDTO, LabServiceDTO
@@ -16,8 +16,13 @@ def get_lab_repository(db: Session = Depends(get_db)):
 
 
 @lab_router.get('/api/laboratories/labs', tags=['Laboratories'])
-def get_all_labs(skip: int, limit: int, lab_repository: LabRepository = Depends(get_lab_repository)):
-    return lab_repository.get_all_labs(skip, limit)
+def get_all_labs(
+    skip: int,
+    limit: int,
+    keyword: str = Query(None, description="Search keyword for lab name"),
+    lab_repository: LabRepository = Depends(get_lab_repository),
+):
+    return lab_repository.get_all_labs(skip, limit, keyword=keyword)
 
 
 @lab_router.get('/api/laboratories/groups', tags=['Laboratories', 'Laboratory Groups'])

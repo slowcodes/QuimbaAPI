@@ -1,5 +1,6 @@
 from typing import List
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from dtos.lab import LabServicesQueueDTO, QueueDTO, VerifiedResultEntryDTO, SampleResultDTO, LabServicesQueueCreateDTO
@@ -74,23 +75,50 @@ class QueueRepository:
             'total': count
         }
 
-    def get_lab_service_queue(self, lab_id: int = 0, skip: int = 0,
-                              limit: int = 10, booking_id: int = 0,
-                              last_date: str = None, start_date: str = None, status: str = QueueStatus.Processing, client_id: int = 0):
+    def get_lab_service_queue(
+        self,
+        lab_id: int = 0,
+        skip: int = 0,
+        limit: int = 10,
+        booking_id: int = 0,
+        last_date: str = None,
+        start_date: str = None,
+        status: str = QueueStatus.Processing,
+        client_id: int = 0,
+        search_text: str = "",
+    ):
 
         base_query = self.db_session.query(LabServicesQueue)
-        if lab_id != 0:
-            base_query = base_query.join(LabService, LabServicesQueue.lab_service_id == LabService.id)\
-                .join(Laboratory, Laboratory.id == LabService.lab_id).filter(Laboratory.id == lab_id)
+        needs_lab_service = lab_id != 0 or bool(search_text)
+        needs_booking = client_id != 0 or booking_id != 0 or bool(search_text)
 
-        if client_id != 0:
-            base_query = base_query.join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
-                .join(ServiceBooking, ServiceBookingDetail.booking_id == ServiceBooking.id) \
-                .join(Client, Client.id == ServiceBooking.client_id) \
-                .filter(Client.id == client_id)
+        if needs_lab_service:
+            base_query = base_query.join(LabService, LabServicesQueue.lab_service_id == LabService.id)
+            if lab_id != 0:
+                base_query = base_query.join(Laboratory, Laboratory.id == LabService.lab_id).filter(Laboratory.id == lab_id)
+
+        if needs_booking:
+            base_query = base_query.join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id)
+            if client_id != 0 or search_text:
+                base_query = base_query.join(ServiceBooking, ServiceBookingDetail.booking_id == ServiceBooking.id) \
+                    .join(Client, Client.id == ServiceBooking.client_id)
+            if search_text:
+                base_query = base_query.join(Person, Person.id == Client.person_id)
+            if client_id != 0:
+                base_query = base_query.filter(Client.id == client_id)
 
         if booking_id != 0:
-            base_query = base_query.join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id).filter(ServiceBookingDetail.booking_id == booking_id)
+            base_query = base_query.filter(ServiceBookingDetail.booking_id == booking_id)
+
+        if search_text:
+            search_value = f"%{search_text}%"
+            base_query = base_query.filter(
+                (Person.first_name.ilike(search_value)) |
+                (Person.last_name.ilike(search_value)) |
+                (func.concat(Person.first_name, " ", Person.last_name).ilike(search_value)) |
+                (Person.phone.ilike(search_value)) |
+                (LabService.lab_service_name.ilike(search_value))
+            )
 
         if last_date is not None and start_date is not None:
             last_date = last_date + " 23:59:59.000001"

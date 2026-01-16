@@ -39,26 +39,29 @@ def read_lab_service_queue(lab_id: int = 0, skip: int = 0, limit: int = 10, book
                            search_text: str = '', last_date: str = None,
                            start_date: str = None, status: str = None, refresh: int = 0, client_id: int = 0,  qr: QueueRepository = Depends(get_queue_repository)):
 
-    if search_text != '':
-        return qr.search_lab_service_queue(keyword=search_text, skip=skip, limit=limit, lab_id=lab_id)
-    else:
-        redis = get_redis_client()
-        cache_key = f"lab_queue:{skip}:{limit}:{booking_id}:{last_date}:{start_date}:{status}"
-        cached_queue = redis.get(cache_key)
-        if cached_queue and refresh == 0:
-            return json.loads(cached_queue) if isinstance(cached_queue, str) else json.loads(cached_queue.decode("utf-8"))
+    redis = get_redis_client()
+    cache_key = f"lab_queue:{skip}:{limit}:{booking_id}:{last_date}:{start_date}:{status}:{client_id}:{lab_id}:{search_text}"
+    cached_queue = redis.get(cache_key)
+    if cached_queue and refresh == 0:
+        return json.loads(cached_queue) if isinstance(cached_queue, str) else json.loads(cached_queue.decode("utf-8"))
 
-        # Fetch from database if not in cache
+    # Fetch from database if not in cache
 
-        db_lab_service_queue = qr.get_lab_service_queue(lab_id=lab_id, skip=skip,
-                                                        limit=limit, booking_id=booking_id,
-                                                        last_date=last_date, start_date=start_date,
-                                                        status=status,
-                                                        client_id=client_id)
+    db_lab_service_queue = qr.get_lab_service_queue(
+        lab_id=lab_id,
+        skip=skip,
+        limit=limit,
+        booking_id=booking_id,
+        last_date=last_date,
+        start_date=start_date,
+        status=status,
+        client_id=client_id,
+        search_text=search_text,
+    )
 
-        safe_data = jsonable_encoder(db_lab_service_queue)
-        redis.set(cache_key, json.dumps(safe_data), ex=300)
-        return db_lab_service_queue
+    safe_data = jsonable_encoder(db_lab_service_queue)
+    redis.set(cache_key, json.dumps(safe_data), ex=300)
+    return db_lab_service_queue
 
 
 @queue_router.put("/{queue_id}", response_model=LabServicesQueueDTO)

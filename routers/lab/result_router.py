@@ -125,7 +125,7 @@ def read_sample_result(result_id: int, repo: ResultRepository = Depends(sample_r
 
 
 @result_router.get("/sample-results/collate-result-by-queue/")
-def collate_result_by_queue(limit: int = 15, skip: int = 0, booking_status: BookingStatus = BookingStatus.Processing,
+def collate_result_by_queue(limit: int = 15, skip: int = 0,
                             lab_id: int = 0, search_text: str = '', client_id: int = 0,
                             start_date: datetime = None, last_date: datetime = None, date_filter_status: str = '',
                             repo: ResultRepository = Depends(sample_result_repo)):
@@ -136,7 +136,7 @@ def collate_result_by_queue(limit: int = 15, skip: int = 0, booking_status: Book
     }
 
     results = repo.get_collated_result_by_queue(limit, skip, lab_id,
-                                                booking_status, search_text,
+                                                search_text,
                                                 client_id, date_filter)
     if results is None:
         raise HTTPException(status_code=404, detail="No results found")

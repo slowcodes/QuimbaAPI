@@ -30,7 +30,7 @@ class ResultRepository:
         self.user_repository = UserRepository(self.db_session)
         self.experiment_repository = ExperimentRepository(self.db_session)
         self.service_repository = ServiceRepository(self.db_session)
-        self.queue_repository = QueueRepository(self.db_session)
+        # self.queue_repository = QueueRepository(self.db_session)
         self.referral_repository = ReferralRepository(self.db_session)
         self.collected_sample_repository = CollectedSamplesRepository(self.db_session)
         self.transaction_repository = TransactionRepository(self.db_session)
@@ -116,6 +116,17 @@ class ResultRepository:
         base_query = self.db_session.query(SampleResult)
         joined_queue = False
         joined_lab_service = False
+        status_value = None
+        start_date = None
+        last_date = None
+        if dateFilter:
+            status_value = getattr(dateFilter, "status", None)
+            start_date = getattr(dateFilter, "start_date", None)
+            last_date = getattr(dateFilter, "last_date", None)
+            if isinstance(dateFilter, dict):
+                status_value = dateFilter.get("status")
+                start_date = dateFilter.get("start_date")
+                last_date = dateFilter.get("last_date")
 
         if lab_id != 0:
             base_query = base_query.join(LabServicesQueue, LabServicesQueue.id == SampleResult.queue_id) \
@@ -123,8 +134,8 @@ class ResultRepository:
             joined_queue = True
             joined_lab_service = True
 
-        if dateFilter['status'] in ResultStatus.__members__:
-            base_query = base_query.filter(LabVerifiedResult.status == dateFilter['status'])
+        if status_value in ResultStatus.__members__:
+            base_query = base_query.filter(LabVerifiedResult.status == status_value)
 
         if search_keyword or client_id:
             if not joined_queue:
@@ -146,11 +157,10 @@ class ResultRepository:
                             Person.last_name.ilike(f'%{search_keyword}%') |
                             LabService.lab_service_name.ilike(f'%{search_keyword}%'))
 
-        if dateFilter:
-            if dateFilter['start_date']:
-                base_query = base_query.filter(SampleResult.created_at >= dateFilter['start_date'])
-            if dateFilter['last_date']:
-                base_query = base_query.filter(SampleResult.created_at <= dateFilter['last_date'])
+        if start_date:
+            base_query = base_query.filter(SampleResult.created_at >= start_date)
+        if last_date:
+            base_query = base_query.filter(SampleResult.created_at <= last_date)
 
         total = base_query.count()
         res = base_query.limit(limit).offset(skip).all()
@@ -327,15 +337,15 @@ class ResultRepository:
         return {record.lab_service_name: record.total_bookings for record in rs}
 
     def get_collated_result_by_queue(self, limit, skip, lab_id,
-                                     booking_status: BookingStatus, search_text: str,
-                                     client_id: int, date_filter: DateFilterDTO):
+                                    search_text: str, client_id: int, date_filter: DateFilterDTO):
 
         trx = self.transaction_repository.get_all_lab(
             client_id=client_id,
             lab_id=lab_id,
-            # date_filter=date_filter,
+            date_filter=date_filter,
             limit=limit,
-            skip=skip
+            skip=skip,
+            booking_status=date_filter["status"] if date_filter and "status" in date_filter else None
         )
         return trx
 
@@ -343,8 +353,16 @@ class ResultRepository:
                             booking_status: BookingStatus, search_text: str,
                             client_id: int, date_filter: DateFilterDTO, booking_id: int = 0):
 
+        print("Fetching collated results with parameters:", booking_status)
         trp = TransactionRepository(self.db_session)
-        rs = trp.get_all_lab(skip, limit, lab_id, client_id)
+        rs = trp.get_all_lab(
+            date_filter=date_filter,
+            skip=skip,
+            limit=limit,
+            lab_id=lab_id,
+            client_id=client_id,
+            booking_status=booking_status
+        )
         response = []
         for lab_booking in rs['transactions']:
             # get queue elements
