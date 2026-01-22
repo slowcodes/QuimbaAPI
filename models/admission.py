@@ -1,5 +1,6 @@
-
 from sqlalchemy import Enum as SAEnum, Column, Integer, ForeignKey, String, Enum as SqlEnum, DateTime
+from sqlalchemy.orm import relationship
+
 from db import Base
 from enum import Enum
 
@@ -12,6 +13,33 @@ class Admission(Base):
     patient_id = Column(Integer, ForeignKey("client.id", ondelete="cascade"))
     admission_date = Column(DateTime, nullable=False)
     reason = Column(String(200), nullable=False)
+
+
+class AdmissionLabServices(Base):
+    __tablename__ = 'admission_lab_services'
+    id = Column(Integer, primary_key=True, index=True)
+    admission_id = Column(Integer, ForeignKey("admission.id", ondelete="cascade"))
+    lab_service_queue_id = Column(Integer, ForeignKey("lab_service_queue.id", ondelete="cascade"))
+
+    lab_service_queue = relationship("LabServicesQueue", back_populates="admission_lab_services", uselist=True)
+
+
+class AdmissionConsultationBookings(Base):
+    __tablename__ = 'admission_consultation_bookings'
+    id = Column(Integer, primary_key=True, index=True)
+    admission_id = Column(Integer, ForeignKey("admission.id", ondelete="cascade"))
+    consultation_booking_id = Column(Integer, ForeignKey("consultation_queue.id", ondelete="cascade"))
+
+    consultation = relationship("ConsultationQueue", back_populates="admission_consultation_bookings", uselist=True)
+
+
+class AdmissionPrescriptions(Base):
+    __tablename__ = 'admission_prescription'
+    id = Column(Integer, primary_key=True, index=True)
+    admission_id = Column(Integer, ForeignKey("admission.id", ondelete="cascade"))
+    prescription_id = Column(Integer, ForeignKey("prescription.id", ondelete="cascade"))
+
+    prescription = relationship("Prescription", back_populates="admission_prescriptions", uselist=True)
 
 
 class WardType(str, Enum):

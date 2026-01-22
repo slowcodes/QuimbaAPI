@@ -167,6 +167,7 @@ class LabServicesQueue(Base):
     samples = relationship("CollectedSamples", back_populates="queue", uselist=True)
     lab_result = relationship("SampleResult", back_populates="queue",
                               uselist=False)  # observation based results may not have samples
+    admission_lab_services = relationship("AdmissionLabServices", back_populates="lab_service_queue", uselist=False)
 
     @property
     def sample(self):
