@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from fastapi import FastAPI, Request
 import uvicorn
@@ -14,7 +15,7 @@ from fastapi.responses import ORJSONResponse
 from routers.pharmacy.all_pharm_router import pharm_routers
 from routers.all_base_router import base_routers
 from routers.sales.all import sales_router
-
+import os
 
 import redis
 
@@ -72,21 +73,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.include_router(client_router.client_router)
-# app.include_router(organisation_router.org_router)
-# app.include_router(lab_router.lab_router)
-# app.include_router(supply_router.supply_router)
-# app.include_router(result_router.result_router)
-# app.include_router(samples_router.sample_collection_router)
-# app.include_router(queue_router.queue_router)
-# app.include_router(service_router.service_router)
-# app.include_router(business_service_router)
-# app.include_router(transaction_router.transaction_router)
-# app.include_router(consultation_router.consultation_router)
-# app.include_router(security_router.security_router)
-# app.include_router(vital_router.vital_router)
-# app.include_router(notification_router.notification_router)
-# app.include_router(referral_router.referral_router)
 
 for route in pharm_routers:
     app.include_router(route, prefix='')
@@ -98,24 +84,17 @@ for route in base_routers:
     app.include_router(route, prefix='')
 
 
-# @app.on_event("startup")
-# async def on_startup():
-#     run_migrations()
-
-
-# create tables
-def create_table():
+if os.getenv("AUTO_CREATE_TABLES", "false").lower() == "true":
     Base.metadata.create_all(bind=engine)
+    bootstrap.db_data_init.load_pg_data()
 
-
-create_table()
-bootstrap.db_data_init.load_pg_data()
 logging.basicConfig(
     filename='app.log',  # File where logs will be written
     level=logging.ERROR,  # Log level threshold
     format='%(asctime)s - %(levelname)s - %(message)s'  # Log format
 )
-logging.error("This is an error message test")
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+logging.error("App has re-started. Startup time: "+current_time)
 
 if __name__ == '__main__':
     # Set up logging

@@ -8,6 +8,9 @@ from alembic import context
 
 from db import Base
 
+import importlib
+import pkgutil
+
 import models
 
 # this is the Alembic Config object, which provides
@@ -32,6 +35,13 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
+def import_submodules(package):
+    for _, name, _ in pkgutil.walk_packages(package.__path__, package.__name__ + "."):
+        importlib.import_module(name)
+
+
+import_submodules(models)
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -79,7 +89,10 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+            compare_server_default=True,
         )
 
         with context.begin_transaction():

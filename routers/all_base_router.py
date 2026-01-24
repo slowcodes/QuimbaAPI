@@ -5,6 +5,10 @@ from routers.client.organisation_router import org_router
 from routers.client.referral_router import referral_router
 from routers.client.vital_router import vital_router
 from routers.consultation_router import consultation_router
+from routers.admission.bed_router import bed_router
+from routers.admission.admission_router import admission_router
+from routers.admission.room_router import room_router
+from routers.admission.ward_router import ward_router
 from routers.lab.lab_router import lab_router
 from routers.lab.queue_router import queue_router
 from routers.lab.result_router import result_router
@@ -23,6 +27,10 @@ base_routers = [
     security_router,
     consultation_router,
     business_service_router,
+    ward_router,
+    bed_router,
+    room_router,
+    admission_router,
 
     # client
     client_router,

@@ -2,8 +2,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from dtos.admission.bed import BedDTO
-from dtos.admission.room import RoomDTO
+from dtos.admission.bed import BedCreateDTO, BedDTO
+from dtos.admission.room import RoomCreateDTO, RoomDTO
 from models.admission import WardType
 
 
@@ -17,7 +17,8 @@ class WardBaseDTO(BaseModel):
 
 
 class WardCreateDTO(WardBaseDTO):
-    pass
+    beds: Optional[List[BedCreateDTO]] = None
+    rooms: Optional[List[RoomCreateDTO]] = None
 
 
 class WardUpdateDTO(BaseModel):

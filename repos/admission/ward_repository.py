@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from dtos.admission import WardCreateDTO, WardDTO, WardUpdateDTO
-from models.admission import Ward
+from models.admission import Bed, Rooms, Ward
 
 
 class WardRepository:
@@ -11,8 +11,21 @@ class WardRepository:
         self.session = session
 
     def create_ward(self, ward: WardCreateDTO) -> WardDTO:
-        db_ward = Ward(**ward.dict())
+        ward_data = ward.dict(exclude={"beds", "rooms"})
+        db_ward = Ward(**ward_data)
         self.session.add(db_ward)
+        self.session.flush()
+
+        for bed in ward.beds or []:
+            bed_data = bed.dict()
+            bed_data["ward_id"] = db_ward.id
+            self.session.add(Bed(**bed_data))
+
+        for room in ward.rooms or []:
+            room_data = room.dict()
+            room_data["ward_id"] = db_ward.id
+            self.session.add(Rooms(**room_data))
+
         self.session.commit()
         self.session.refresh(db_ward)
         return WardDTO.from_orm(db_ward)

@@ -8,11 +8,17 @@ from enum import Enum
 class Admission(Base):
     __tablename__ = 'admission'
     id = Column(Integer, primary_key=True, index=True)
-    ward_id = Column(Integer)
-    bed_id = Column(Integer)
+    bed_id = Column(Integer, ForeignKey("admission_bed.id", ondelete="cascade"))
     patient_id = Column(Integer, ForeignKey("client.id", ondelete="cascade"))
     admission_date = Column(DateTime, nullable=False)
     reason = Column(String(200), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
+
+    lab_services = relationship("AdmissionLabServices", back_populates="admission", uselist=True)
+    consultation_bookings = relationship("AdmissionConsultationBookings", back_populates="admission", uselist=True)
+    prescriptions = relationship("AdmissionPrescriptions", back_populates="admission", uselist=True)
+    user = relationship("User")
+    bed = relationship("Bed")
 
 
 class AdmissionLabServices(Base):
@@ -37,7 +43,7 @@ class AdmissionPrescriptions(Base):
     __tablename__ = 'admission_prescription'
     id = Column(Integer, primary_key=True, index=True)
     admission_id = Column(Integer, ForeignKey("admission.id", ondelete="cascade"))
-    prescription_id = Column(Integer, ForeignKey("prescription.id", ondelete="cascade"))
+    prescription_id = Column(Integer, ForeignKey("pharmacy_prescription.id", ondelete="cascade"))
 
     prescription = relationship("Prescription", back_populates="admission_prescriptions", uselist=True)
 
@@ -57,6 +63,9 @@ class Ward(Base):
     description = Column(String(200), nullable=True)
     ward_type = Column(SqlEnum(WardType), default=WardType.General)
 
+    rooms = relationship("Rooms", back_populates="ward", uselist=True)
+    beds = relationship("Bed", back_populates="ward", uselist=True)
+
 
 class DischargeType(str, Enum):
     Routine = 'Routine'
@@ -75,7 +84,39 @@ class AdmissionDischarge(Base):
     notes = Column(String(200), nullable=True)
 
 
+class BedRoomStatus(str, Enum):
+    Occupied = 'Occupied'
+    Free = 'Free'
+    Maintenance = 'Maintenance'
+
+
 class Bed(Base):
     __tablename__ = 'admission_bed'
     id = Column(Integer, primary_key=True, index=True)
     ward_id = Column(Integer, ForeignKey("admission_ward.id", ondelete="cascade"))
+    bed_number = Column(String(50), nullable=False)
+    status = Column(SqlEnum(BedRoomStatus), default=BedRoomStatus.Free)
+
+    ward = relationship("Ward", back_populates="beds")
+
+
+class Rooms(Base):
+    __tablename__ = 'admission_ward_room'
+    id = Column(Integer, primary_key=True, index=True)
+    ward_id = Column(Integer, ForeignKey("admission_ward.id", ondelete="cascade"))
+    room_number = Column(String(50), nullable=False)
+    capacity = Column(Integer, nullable=False)
+    description = Column(String(200), nullable=True)
+    status = Column(SqlEnum(BedRoomStatus), default=BedRoomStatus.Free)
+
+    ward = relationship("Ward", back_populates="rooms")
+
+
+class BedInRooms(Base):
+    __tablename__ = 'admission_bed_in_rooms'
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(Integer, ForeignKey("admission_ward_room.id", ondelete="cascade"))
+    bed_id = Column(Integer, ForeignKey("admission_bed.id", ondelete="cascade"))
+
+    room = relationship("Rooms", back_populates="beds_in_room", uselist=True)
+    bed = relationship("Bed", back_populates="rooms_containing_bed", uselist=True)

@@ -136,6 +136,7 @@ class ConsultationQueue(Base, SoftDeleteMixin):
     booking_detail = relationship("ServiceBookingDetail", back_populates="consultation_queue", lazy='select')
     # schedule = relationship("InHours", back_populates="consultation_queue", lazy='select')
     specialization = relationship("Specialism", lazy='select')
+    admission_consultation_bookings = relationship("AdmissionConsultationBookings", back_populates="consultation", uselist=True)
     # Index for faster queries
     Index('ix_schedule_status', schedule_id, status)
 

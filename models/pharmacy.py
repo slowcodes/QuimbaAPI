@@ -193,6 +193,7 @@ class Prescription(Base, SoftDeleteMixin):
     pharmacy = relationship("Pharmacy", back_populates="prescriptions")
     consultation_prescriptions = relationship("ConsultationPrescription", back_populates="pharmacy_prescription",
                                               uselist=False)
+    admission_prescriptions = relationship("AdmissionPrescriptions", back_populates="prescription", uselist=False)
 
 
 class PrescriptionDetail(Base, SoftDeleteMixin):
