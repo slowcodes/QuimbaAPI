@@ -31,11 +31,15 @@ class WardRepository:
         return WardDTO.from_orm(db_ward)
 
     def get_ward(self, ward_id: int) -> Optional[WardDTO]:
-        ward = self.session.query(Ward).filter(Ward.id == ward_id).first()
+        ward = (
+            self.session.query(Ward)
+            .filter(Ward.id == ward_id, Ward.is_deleted.is_(False))
+            .first()
+        )
         return WardDTO.from_orm(ward) if ward else None
 
     def get_wards(self, skip: int = 0, limit: int = 100) -> dict:
-        query = self.session.query(Ward)
+        query = self.session.query(Ward).filter(Ward.is_deleted.is_(False))
         total = query.count()
         wards = query.offset(skip).limit(limit).all()
         return {
@@ -44,7 +48,11 @@ class WardRepository:
         }
 
     def update_ward(self, ward_id: int, ward_update: WardUpdateDTO) -> Optional[WardDTO]:
-        ward = self.session.query(Ward).filter(Ward.id == ward_id).first()
+        ward = (
+            self.session.query(Ward)
+            .filter(Ward.id == ward_id, Ward.is_deleted.is_(False))
+            .first()
+        )
         if not ward:
             return None
         for key, value in ward_update.dict(exclude_unset=True).items():
@@ -54,9 +62,13 @@ class WardRepository:
         return WardDTO.from_orm(ward)
 
     def delete_ward(self, ward_id: int) -> bool:
-        ward = self.session.query(Ward).filter(Ward.id == ward_id).first()
+        ward = (
+            self.session.query(Ward)
+            .filter(Ward.id == ward_id, Ward.is_deleted.is_(False))
+            .first()
+        )
         if not ward:
             return False
-        self.session.delete(ward)
+        ward.is_deleted = True
         self.session.commit()
         return True

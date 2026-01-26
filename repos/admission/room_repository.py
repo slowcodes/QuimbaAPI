@@ -18,11 +18,15 @@ class RoomRepository:
         return RoomDTO.from_orm(db_room)
 
     def get_room(self, room_id: int) -> Optional[RoomDTO]:
-        room = self.session.query(Rooms).filter(Rooms.id == room_id).first()
+        room = (
+            self.session.query(Rooms)
+            .filter(Rooms.id == room_id, Rooms.is_deleted.is_(False))
+            .first()
+        )
         return RoomDTO.from_orm(room) if room else None
 
     def get_rooms(self, skip: int = 0, limit: int = 100, ward_id: int = 0) -> dict:
-        query = self.session.query(Rooms)
+        query = self.session.query(Rooms).filter(Rooms.is_deleted.is_(False))
         if ward_id:
             query = query.filter(Rooms.ward_id == ward_id)
         total = query.count()
@@ -33,7 +37,11 @@ class RoomRepository:
         }
 
     def update_room(self, room_id: int, room_update: RoomUpdateDTO) -> Optional[RoomDTO]:
-        room = self.session.query(Rooms).filter(Rooms.id == room_id).first()
+        room = (
+            self.session.query(Rooms)
+            .filter(Rooms.id == room_id, Rooms.is_deleted.is_(False))
+            .first()
+        )
         if not room:
             return None
         for key, value in room_update.dict(exclude_unset=True).items():
@@ -43,9 +51,13 @@ class RoomRepository:
         return RoomDTO.from_orm(room)
 
     def delete_room(self, room_id: int) -> bool:
-        room = self.session.query(Rooms).filter(Rooms.id == room_id).first()
+        room = (
+            self.session.query(Rooms)
+            .filter(Rooms.id == room_id, Rooms.is_deleted.is_(False))
+            .first()
+        )
         if not room:
             return False
-        self.session.delete(room)
+        room.is_deleted = True
         self.session.commit()
         return True

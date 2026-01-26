@@ -89,7 +89,7 @@ class PersonDTO(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=30)
     sex: Sex
     title: Optional[ProfTitle] = ProfTitle.Mr
-    email: Optional[EmailStr]
+    email: Optional[str] = None
     phone: str = Field(..., min_length=11, max_length=11, pattern=r"^\d{11}$")
 
     organization_people: Optional[List[OrganizationPeopleDTO]] = []

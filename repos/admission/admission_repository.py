@@ -21,7 +21,7 @@ class AdmissionRepository:
         admission = (
             self.session.query(Admission)
             .options(joinedload(Admission.bed), joinedload(Admission.user))
-            .filter(Admission.id == admission_id)
+            .filter(Admission.id == admission_id, Admission.is_deleted.is_(False))
             .first()
         )
         return AdmissionDTO.from_orm(admission) if admission else None
@@ -31,6 +31,7 @@ class AdmissionRepository:
             joinedload(Admission.bed),
             joinedload(Admission.user),
         )
+        query = query.filter(Admission.is_deleted.is_(False))
         if patient_id:
             query = query.filter(Admission.patient_id == patient_id)
         total = query.count()
@@ -41,7 +42,11 @@ class AdmissionRepository:
         }
 
     def update_admission(self, admission_id: int, admission_update: AdmissionUpdateDTO) -> Optional[AdmissionDTO]:
-        admission = self.session.query(Admission).filter(Admission.id == admission_id).first()
+        admission = (
+            self.session.query(Admission)
+            .filter(Admission.id == admission_id, Admission.is_deleted.is_(False))
+            .first()
+        )
         if not admission:
             return None
         for key, value in admission_update.dict(exclude_unset=True).items():
@@ -51,9 +56,13 @@ class AdmissionRepository:
         return AdmissionDTO.from_orm(admission)
 
     def delete_admission(self, admission_id: int) -> bool:
-        admission = self.session.query(Admission).filter(Admission.id == admission_id).first()
+        admission = (
+            self.session.query(Admission)
+            .filter(Admission.id == admission_id, Admission.is_deleted.is_(False))
+            .first()
+        )
         if not admission:
             return False
-        self.session.delete(admission)
+        admission.is_deleted = True
         self.session.commit()
         return True

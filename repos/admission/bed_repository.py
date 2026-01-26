@@ -18,11 +18,15 @@ class BedRepository:
         return BedDTO.from_orm(db_bed)
 
     def get_bed(self, bed_id: int) -> Optional[BedDTO]:
-        bed = self.session.query(Bed).filter(Bed.id == bed_id).first()
+        bed = (
+            self.session.query(Bed)
+            .filter(Bed.id == bed_id, Bed.is_deleted.is_(False))
+            .first()
+        )
         return BedDTO.from_orm(bed) if bed else None
 
     def get_beds(self, skip: int = 0, limit: int = 100, ward_id: int = 0) -> dict:
-        query = self.session.query(Bed)
+        query = self.session.query(Bed).filter(Bed.is_deleted.is_(False))
         if ward_id:
             query = query.filter(Bed.ward_id == ward_id)
         total = query.count()
@@ -33,7 +37,11 @@ class BedRepository:
         }
 
     def update_bed(self, bed_id: int, bed_update: BedUpdateDTO) -> Optional[BedDTO]:
-        bed = self.session.query(Bed).filter(Bed.id == bed_id).first()
+        bed = (
+            self.session.query(Bed)
+            .filter(Bed.id == bed_id, Bed.is_deleted.is_(False))
+            .first()
+        )
         if not bed:
             return None
         for key, value in bed_update.dict(exclude_unset=True).items():
@@ -43,9 +51,13 @@ class BedRepository:
         return BedDTO.from_orm(bed)
 
     def delete_bed(self, bed_id: int) -> bool:
-        bed = self.session.query(Bed).filter(Bed.id == bed_id).first()
+        bed = (
+            self.session.query(Bed)
+            .filter(Bed.id == bed_id, Bed.is_deleted.is_(False))
+            .first()
+        )
         if not bed:
             return False
-        self.session.delete(bed)
+        bed.is_deleted = True
         self.session.commit()
         return True

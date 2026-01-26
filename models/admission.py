@@ -2,10 +2,11 @@ from sqlalchemy import Enum as SAEnum, Column, Integer, ForeignKey, String, Enum
 from sqlalchemy.orm import relationship
 
 from db import Base
+from models.mixins import SoftDeleteMixin
 from enum import Enum
 
 
-class Admission(Base):
+class Admission(Base, SoftDeleteMixin):
     __tablename__ = 'admission'
     id = Column(Integer, primary_key=True, index=True)
     bed_id = Column(Integer, ForeignKey("admission_bed.id", ondelete="cascade"))
@@ -14,9 +15,9 @@ class Admission(Base):
     reason = Column(String(200), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
 
-    lab_services = relationship("AdmissionLabServices", back_populates="admission", uselist=True)
-    consultation_bookings = relationship("AdmissionConsultationBookings", back_populates="admission", uselist=True)
-    prescriptions = relationship("AdmissionPrescriptions", back_populates="admission", uselist=True)
+    lab_services = relationship("AdmissionLabServices", uselist=True)
+    consultation_bookings = relationship("AdmissionConsultationBookings", uselist=True)
+    prescriptions = relationship("AdmissionPrescriptions", uselist=True)
     user = relationship("User")
     bed = relationship("Bed")
 
@@ -28,6 +29,7 @@ class AdmissionLabServices(Base):
     lab_service_queue_id = Column(Integer, ForeignKey("lab_service_queue.id", ondelete="cascade"))
 
     lab_service_queue = relationship("LabServicesQueue", back_populates="admission_lab_services", uselist=True)
+
 
 
 class AdmissionConsultationBookings(Base):
@@ -56,7 +58,7 @@ class WardType(str, Enum):
     Maternity = 'Maternity'
 
 
-class Ward(Base):
+class Ward(Base, SoftDeleteMixin):
     __tablename__ = 'admission_ward'
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
@@ -90,7 +92,7 @@ class BedRoomStatus(str, Enum):
     Maintenance = 'Maintenance'
 
 
-class Bed(Base):
+class Bed(Base, SoftDeleteMixin):
     __tablename__ = 'admission_bed'
     id = Column(Integer, primary_key=True, index=True)
     ward_id = Column(Integer, ForeignKey("admission_ward.id", ondelete="cascade"))
@@ -98,9 +100,9 @@ class Bed(Base):
     status = Column(SqlEnum(BedRoomStatus), default=BedRoomStatus.Free)
 
     ward = relationship("Ward", back_populates="beds")
+    rooms_containing_bed = relationship("BedInRooms", back_populates="bed", uselist=False)
 
-
-class Rooms(Base):
+class Rooms(Base, SoftDeleteMixin):
     __tablename__ = 'admission_ward_room'
     id = Column(Integer, primary_key=True, index=True)
     ward_id = Column(Integer, ForeignKey("admission_ward.id", ondelete="cascade"))
@@ -110,6 +112,7 @@ class Rooms(Base):
     status = Column(SqlEnum(BedRoomStatus), default=BedRoomStatus.Free)
 
     ward = relationship("Ward", back_populates="rooms")
+    beds_in_room = relationship("BedInRooms", back_populates="room", uselist=True)
 
 
 class BedInRooms(Base):
