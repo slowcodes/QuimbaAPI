@@ -46,8 +46,11 @@ class ResultRepository:
             result.queue_id
         )
 
-        # update queue status as processed
-        self.queue_repository.update_lab_queue(result.queue_id, {'status': QueueStatus.Processed})
+        # get queue and update status
+        queue = self.db_session.query(LabServicesQueue).filter(LabServicesQueue.id == result.queue_id).first()
+        if queue:
+            queue.status = QueueStatus.Processed
+            # self.db_session.add(queue)
 
         self.db_session.commit()
         return {
