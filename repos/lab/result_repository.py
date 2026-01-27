@@ -11,12 +11,8 @@ from models.client import Person, Client
 from models.lab.lab import SampleResult, LabVerifiedResult, QueueStatus, ResultStatus, LabResultLog, CollectedSamples, \
     LabServicesQueue, LabService, LabType
 from models.services.services import ServiceBooking, BookingStatus, ServiceBookingDetail, BusinessServices
-from models.transaction import Transaction, TransactionType
+from models.transaction import Transaction
 from repos.auth_repository import UserRepository
-from repos.client.client_repository import ClientRepository
-from repos.client.referral_repository import ReferralRepository
-from repos.lab.experiment_repository import ExperimentRepository
-from repos.lab.queue_repository import QueueRepository
 from repos.lab.result.approved_lab_booking_result import ApprovedLabBookingResultRepository
 from repos.lab.result.lab_result_log_repository import LabResultLogRepository
 from repos.lab.sample_repository import CollectedSamplesRepository
@@ -27,11 +23,7 @@ from repos.transaction_repository import TransactionRepository
 class ResultRepository:
     def __init__(self, db_session: Session):
         self.db_session = db_session
-        self.user_repository = UserRepository(self.db_session)
-        self.experiment_repository = ExperimentRepository(self.db_session)
         self.service_repository = ServiceRepository(self.db_session)
-        # self.queue_repository = QueueRepository(self.db_session)
-        self.referral_repository = ReferralRepository(self.db_session)
         self.collected_sample_repository = CollectedSamplesRepository(self.db_session)
         self.transaction_repository = TransactionRepository(self.db_session)
 
@@ -50,16 +42,9 @@ class ResultRepository:
         queue = self.db_session.query(LabServicesQueue).filter(LabServicesQueue.id == result.queue_id).first()
         if queue:
             queue.status = QueueStatus.Processed
-            # self.db_session.add(queue)
 
         self.db_session.commit()
-        return {
-            'id': result.id,
-            'queue_id': result.queue_id,
-            'comment': result.comment,
-            'created_at': result.created_at,
-            'created_by': result.created_by
-        }
+        return SampleResultDTO.from_orm(result)
 
     def delete_result(self, sample_result_id: int) -> bool:
         try:

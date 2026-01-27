@@ -43,7 +43,7 @@ def read_symptoms(repo: ConsultantRepository = Depends(get_consultation_reposito
 
 @consultation_router.get("/consultation/specializations", tags=["Symptoms"])
 def read_specializations(skip: int = 0, limit: int = 100,
-                         repo: ConsultantRepository = Depends(get_consultation_repository)):
+                         repo: ConsultantRepository = Depends(get_consultant_repository)):
     symptoms = repo.get_specializations(skip=skip, limit=limit)
     return symptoms
 
