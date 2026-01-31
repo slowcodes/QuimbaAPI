@@ -69,7 +69,7 @@ def create_sample_result(result: SampleResultDTO,
 @result_router.get("/sample-results/")
 def read_sample_results(limit: int = 15, skip: int = 0,
                         lab_id: int = 0, search_text: Optional[str] = None,
-                        start_date: Optional[str] = None,
+                        start_date: Optional[datetime] = None,
                         last_date: Optional[datetime] = None,
                         date_filter_status: Optional[str] = None,
                         client_id: int = 0,

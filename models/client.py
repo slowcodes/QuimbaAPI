@@ -34,6 +34,13 @@ class ProfTitle(str, Enum):
     Prof = 'Prof'
     Scientist = 'Scientist'
     Barr = 'Barr'
+    HRH = 'HRH'
+    Rev = 'Rev'
+    Sis = 'Sis'
+    Bishop = 'Bishop'
+    Arc = 'Arc'
+    V_Rev = 'V.Rev'
+    Rev_Fr = 'Rev Fr'
 
 
 class Person(Base, SoftDeleteMixin):

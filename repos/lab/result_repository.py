@@ -1,3 +1,4 @@
+import logging
 import traceback
 from collections import defaultdict
 from datetime import datetime
@@ -13,11 +14,15 @@ from models.lab.lab import SampleResult, LabVerifiedResult, QueueStatus, ResultS
 from models.services.services import ServiceBooking, BookingStatus, ServiceBookingDetail, BusinessServices
 from models.transaction import Transaction
 from repos.auth_repository import UserRepository
+from repos.lab.experiment_repository import ExperimentRepository
 from repos.lab.result.approved_lab_booking_result import ApprovedLabBookingResultRepository
 from repos.lab.result.lab_result_log_repository import LabResultLogRepository
 from repos.lab.sample_repository import CollectedSamplesRepository
 from repos.services.service_repository import ServiceRepository
 from repos.transaction_repository import TransactionRepository
+from messaging.mailgun import send_lab_result_ready_email
+
+logger = logging.getLogger(__name__)
 
 
 class ResultRepository:
@@ -122,8 +127,25 @@ class ResultRepository:
             joined_queue = True
             joined_lab_service = True
 
-        if status_value in ResultStatus.__members__:
-            base_query = base_query.filter(LabVerifiedResult.status == status_value)
+        if status_value:
+            if isinstance(status_value, ResultStatus):
+                normalized_status = status_value.value.lower()
+            else:
+                normalized_status = str(status_value).strip().lower()
+            if normalized_status in {"not verified", "not_verified", "not-verified", "unverified"}:
+                base_query = base_query.outerjoin(
+                    LabVerifiedResult, LabVerifiedResult.result_id == SampleResult.id
+                ).filter(LabVerifiedResult.id.is_(None))
+            else:
+                status_member = None
+                for member in ResultStatus:
+                    if normalized_status in {member.name.lower(), member.value.lower()}:
+                        status_member = member
+                        break
+                if status_member is not None:
+                    base_query = base_query.join(
+                        LabVerifiedResult, LabVerifiedResult.result_id == SampleResult.id
+                    ).filter(LabVerifiedResult.status == status_member)
 
         if search_keyword or client_id:
             if not joined_queue:
@@ -390,6 +412,35 @@ class ResultRepository:
 
         return [SampleResultDTO.from_orm(record) for record in res]
 
+    def _notify_client_result_ready(self, booking_detail_id: int) -> None:
+        try:
+            result = (
+                self.db_session.query(
+                    Person.email,
+                    Person.first_name,
+                    Person.last_name,
+                    ServiceBooking.id.label("booking_id"),
+                )
+                .select_from(ServiceBookingDetail)
+                .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id)
+                .join(Client, Client.id == ServiceBooking.client_id)
+                .join(Person, Person.id == Client.person_id)
+                .filter(ServiceBookingDetail.id == booking_detail_id)
+                .one_or_none()
+            )
+        except Exception:
+            logger.exception("Failed to load client details for booking detail %s", booking_detail_id)
+            return
+
+        if not result or not result.email:
+            return
+
+        client_name = " ".join(part for part in [result.first_name, result.last_name] if part).strip()
+        try:
+            send_lab_result_ready_email(result.email, client_name, result.booking_id)
+        except Exception:
+            logger.exception("Failed to send lab result ready email for booking %s", result.booking_id)
+
     def verify_result(self, verified_result_entry: VerifiedResultEntryDTO,
                       loggedInUser: UserDTO) -> VerifiedResultEntryDTO:
         verified = LabVerifiedResult(
@@ -414,6 +465,7 @@ class ResultRepository:
         if all_verified:
             # update booking status to All  Verified
             self.service_repository.update_booking_status(res.queue.booking_id, BookingStatus.Verified)
+            self._notify_client_result_ready(res.queue.booking_id)
 
         return verified
 
