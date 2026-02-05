@@ -307,5 +307,3 @@ class ApprovedLabBookingResult(Base):
     booking = relationship("ServiceBooking", back_populates="result_approval", uselist=False)
     user = relationship("User")
 
-    class Config:
-        orm_mode = True

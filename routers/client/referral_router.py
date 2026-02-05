@@ -1,6 +1,4 @@
-from http.client import HTTPException
-
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 
 from dtos.people import ReferralDTO, PersonDTO, OrganisationDTO, ReferralResponseDTO
 from db import get_db
@@ -69,3 +67,17 @@ def get_all_referrals(skip: int = Query(0, alias="page"), limit: int = Query(10)
                       searchtext: str = Query('', alias="searchtext"),
                       repo: ReferralRepository = Depends(get_referral_repository)):
     return repo.get_all_referrals(skip=skip, limit=limit, search_text=searchtext)
+
+
+@referral_router.put("/{referral_id}")
+def update_referral(
+        referral_id: int,
+        referral: ReferralDTO,
+        repo: ReferralRepository = Depends(get_referral_repository)):
+    try:
+        updated = repo.update_referral(referral_id, referral)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Referral not found")
+    return updated

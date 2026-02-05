@@ -36,7 +36,7 @@ def get_icd10_repository(db: Session = Depends(get_db)) -> Icd10Repository:
 
 
 @consultation_router.get("/symptoms", response_model=List[SymptomDTO], tags=["Symptoms"])
-def read_symptoms(repo: ConsultantRepository = Depends(get_consultation_repository)):
+def read_symptoms(repo: ConsultantRepository = Depends(get_consultant_repository)):
     symptoms = repo.get_symptom()
     return symptoms
 
@@ -167,7 +167,12 @@ def get_consultation_booking(queue_id: int, refresh: int = 0,
     cached_consultation = redis.get(cache_key)
 
     if cached_consultation and refresh == 0:
-        consultation = json.loads(cached_consultation.decode("utf-8"))
+        cached_text = (
+            cached_consultation.decode("utf-8")
+            if isinstance(cached_consultation, (bytes, bytearray))
+            else cached_consultation
+        )
+        consultation = json.loads(cached_text)
 
         return JSONResponse(status_code=status.HTTP_200_OK, content=consultation)
 
@@ -238,7 +243,7 @@ def delete_clinical_examination(clinical_examination_id: int,
 
 
 @consultation_router.get("/internal-systems/", response_model=List[str])
-def read_internal_systems(repo: ConsultantRepository = Depends(get_consultation_repository)):
+def read_internal_systems(repo: ConsultantRepository = Depends(get_consultant_repository)):
     internal_systems = repo.get_internal_systems()
     if internal_systems is None:
         raise HTTPException(status_code=404, detail="Internal not found")

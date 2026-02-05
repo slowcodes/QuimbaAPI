@@ -318,8 +318,6 @@ class ClientNotification(Base):
     created_at = Column(DateTime, default=func.now(), doc="Timestamp of when the record was created")
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), doc="Timestamp of the last update")
 
-    # class Config:
-    #     orm_mode = True
 
     def to_dict(self):
         """

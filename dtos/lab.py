@@ -335,5 +335,4 @@ class LabResultLogResponse(LabResultLogBase):
     logged_at: datetime
 
     class Config:
-        orm_mode = True  # Enables ORM compatibility with SQLAlchemy
         from_attributes = True

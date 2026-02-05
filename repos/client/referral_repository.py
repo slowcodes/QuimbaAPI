@@ -35,20 +35,39 @@ class ReferralRepository:
             .all()
         )
 
-    def update(self, referral_id: int, person_id: Optional[int] = None, organization_id: Optional[int] = None) -> \
-            Optional[Referral]:
-        """Update an existing referral."""
-        referral = self.get(referral_id)
+    def update_referral(self, referral_id: int, referral_data: ReferralDTO) -> Optional[ReferralDTO]:
+        """Update an existing referral and its person record."""
+        referral = self.get_referral_by_id(referral_id)
         if not referral:
             return None
-        if person_id is not None:
-            referral.person_id = person_id
-        if organization_id is not None:
-            referral.organization_id = organization_id
+
+        if referral_data.person_id is not None and referral_data.person_id != referral.person_id:
+            person = (
+                self.db.query(Person)
+                .filter(Person.id == referral_data.person_id, Person.deleted_at.is_(None))
+                .first()
+            )
+            if not person:
+                raise ValueError("Person not found")
+            referral.person_id = referral_data.person_id
+
+        if referral_data.person is not None:
+            person = (
+                self.db.query(Person)
+                .filter(Person.id == referral.person_id, Person.deleted_at.is_(None))
+                .first()
+            )
+            if not person:
+                raise ValueError("Person not found")
+            payload = referral_data.person.dict(exclude_unset=True)
+            for field in ("title", "first_name", "middle_name", "last_name", "sex", "email", "phone"):
+                if field in payload and payload[field] is not None:
+                    setattr(person, field, payload[field])
+
         referral.updated_at = datetime.utcnow()
         self.db.commit()
         self.db.refresh(referral)
-        return referral
+        return ReferralDTO.from_orm(referral)
 
     def soft_delete(self, referral_id: int) -> bool:
         """Soft delete a referral (mark as deleted)."""
@@ -95,8 +114,8 @@ class ReferralRepository:
             .all()
         )
 
-    def get(self, transaction_id: int):
-        return self.db.query(ReferredTransaction).filter(ReferredTransaction.id == transaction_id).first()
+    def get(self, referral_id: int):
+        return self.get_referral_by_id(referral_id)
 
     def get_all(self, skip: int = 0, limit: int = 100):
         return self.db.query(ReferredTransaction).offset(skip).limit(limit).all()

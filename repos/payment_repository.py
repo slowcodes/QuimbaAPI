@@ -114,7 +114,7 @@ class PaymentRepository:
         # update transaction status to closed if full payment
         transaction = self.db_session.query(Transaction).filter(Transaction.id == db_payment.transaction_id).first()
         if transaction:
-            total_paid = sum(p.amount for p in transaction.payments)
+            total_paid = sum(p.amount for p in transaction.payment)
             if total_paid >= self.computeTransactionTotal(transaction.id)["total"]:
                 transaction.status = 'Closed'
                 self.db_session.commit()
