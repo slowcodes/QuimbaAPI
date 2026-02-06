@@ -127,12 +127,13 @@ class PrescriptionRepository(BaseRepository):
 
     def create(self, prescription_dto: PrescriptionDTO, user: UserDTO) -> PrescriptionDTO:
 
-        prescription = prescription_dto.dict()
-        consultant = self.consultation_repository.get_consultant_by_user_id(user.id)
 
-        # psd = prescription.pop("prescriptions")
+        if len(prescription_dto.prescriptions) > 0:
+            consultant = self.consultation_repository.get_consultant_by_user_id(user.id)
 
-        prescription = Prescription(
+            # psd = prescription.pop("prescriptions")
+
+            prescription = Prescription(
                 consultant_id=consultant.id if consultant else 1,
                 pharmacy_id=prescription_dto.pharmacy_id,
                 client_id=prescription_dto.client.id if prescription_dto.client else None,
@@ -140,33 +141,34 @@ class PrescriptionRepository(BaseRepository):
                 instruction=prescription_dto.instruction,
                 note=prescription_dto.note,
             )
-        self.add(prescription)
-        self.db.flush(prescription)
+            self.add(prescription)
+            self.db.flush(prescription)
 
-        ps = PrescriptionDTO.from_orm(prescription)
+            ps = PrescriptionDTO.from_orm(prescription)
 
-        pres = []
-        for item in prescription_dto.prescriptions or []:
-            dg = item.drug.drug_info
-            prescription_item = self.add(
-                PrescriptionDetail(
-                    drug_id=dg.id,
-                    prescription_id=prescription.id,
-                    form=item.form,
-                    frequency=item.frequency,
-                    weight_volume=item.weight_volume,
-                    dosage=item.dosage,
-                    interval=item.interval,
-                    duration=item.duration,
-                    is_prn=item.is_prn,
-                    status=PrescriptionStatus.Pending
+            pres = []
+            for item in prescription_dto.prescriptions or []:
+                dg = item.drug.drug_info
+                prescription_item = self.add(
+                    PrescriptionDetail(
+                        drug_id=dg.id,
+                        prescription_id=prescription.id,
+                        form=item.form,
+                        frequency=item.frequency,
+                        weight_volume=item.weight_volume,
+                        dosage=item.dosage,
+                        interval=item.interval,
+                        duration=item.duration,
+                        is_prn=item.is_prn,
+                        status=PrescriptionStatus.Pending
+                    )
                 )
-            )
 
-            # pres.append(
-            #     PrescriptionDetailDTO.from_orm(prescription_item)
-            # )
+                # pres.append(
+                #     PrescriptionDetailDTO.from_orm(prescription_item)
+                # )
 
-        ps.prescriptions = pres
+            ps.prescriptions = pres
 
-        return ps
+            return ps
+        return None
