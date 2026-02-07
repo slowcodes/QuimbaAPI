@@ -1,7 +1,149 @@
 id,symptom
-1,Head Ache
-2,Back Pain
-3,Vomiting
-4,Rashes
-5,Gray Hair
-6,Eye Ache
+1,Fever
+2,Low-grade fever
+3,Chills
+4,Night sweats
+5,Fatigue
+6,Malaise
+7,Weakness
+8,Unintentional weight loss
+9,Weight gain
+10,Loss of appetite
+11,Dehydration
+12,Failure to thrive
+13,Headache
+14,Migraine
+15,Dizziness
+16,Lightheadedness
+17,Vertigo
+18,Syncope
+19,Seizures
+20,Tremors
+21,Focal weakness
+22,Generalized weakness
+23,Paralysis
+24,Numbness
+25,Tingling (paresthesia)
+26,Burning sensation
+27,Loss of coordination (ataxia)
+28,Slurred speech
+29,Memory loss
+30,Confusion
+31,Delirium
+32,Hallucinations
+33,Coma
+34,Photophobia
+35,Phonophobia
+36,Chest pain
+37,Chest tightness
+38,Palpitations
+39,Rapid heartbeat (tachycardia)
+40,Slow heartbeat (bradycardia)
+41,Irregular heartbeat
+42,Shortness of breath (dyspnea)
+43,Orthopnea
+44,Leg swelling (edema)
+45,Cyanosis
+46,Cold extremities
+47,High blood pressure symptoms
+48,Low blood pressure symptoms
+49,Cough
+50,Dry cough
+51,Productive cough
+52,Wheezing
+53,Chest congestion
+54,Sputum production
+55,Coughing up blood (hemoptysis)
+56,Stridor
+57,Rapid breathing
+58,Chest pain on breathing
+59,Abdominal pain
+60,Nausea
+61,Vomiting
+62,Diarrhea
+63,Constipation
+64,Bloating
+65,Gas
+66,Indigestion (dyspepsia)
+67,Heartburn
+68,Difficulty swallowing (dysphagia)
+69,Painful swallowing (odynophagia)
+70,Blood in stool
+71,Black tarry stool (melena)
+72,Rectal bleeding
+73,Jaundice
+74,Early satiety
+75,Painful urination (dysuria)
+76,Frequent urination
+77,Urinary urgency
+78,Urinary incontinence
+79,Blood in urine (hematuria)
+80,Dark urine
+81,Decreased urine output
+82,Flank pain
+83,Erectile dysfunction
+84,Vaginal discharge
+85,Abnormal vaginal bleeding
+86,Testicular pain
+87,Pelvic pain
+88,Joint pain (arthralgia)
+89,Muscle pain (myalgia)
+90,Back pain
+91,Neck pain
+92,Joint stiffness
+93,Joint swelling
+94,Muscle cramps
+95,Bone pain
+96,Limited range of motion
+97,Muscle weakness
+98,Rash
+99,Itching (pruritus)
+100,Hives
+101,Dry skin
+102,Excess sweating
+103,Hair loss (alopecia)
+104,Brittle nails
+105,Skin discoloration
+106,Easy bruising
+107,Skin ulcers
+108,Blisters
+109,Acne
+110,Peeling skin
+111,Blurred vision
+112,Double vision
+113,Eye pain
+114,Red eyes
+115,Eye discharge
+116,Sensitivity to light
+117,Vision loss
+118,Floaters
+119,Dry eyes
+120,Ear pain
+121,Hearing loss
+122,Tinnitus
+123,Nasal congestion
+124,Runny nose
+125,Sinus pain
+126,Sore throat
+127,Hoarseness
+128,Loss of smell (anosmia)
+129,Loss of taste
+130,Anxiety
+131,Depression
+132,Mood swings
+133,Irritability
+134,Insomnia
+135,Excessive sleepiness
+136,Panic attacks
+137,Suicidal thoughts
+138,Paranoia
+139,Obsessive thoughts
+140,Excessive thirst (polydipsia)
+141,Excessive urination (polyuria)
+142,Excessive hunger (polyphagia)
+143,Heat intolerance
+144,Cold intolerance
+145,Hair thinning
+146,Tremors (metabolic)
+147,Unexplained weight changes
+
