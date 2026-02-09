@@ -11,7 +11,7 @@ from dtos.auth import UserDTO, TokenData, PrivilegeDTO
 from db import get_db
 from models.auth import AccountStatus
 from repos.auth_repository import UserRepository
-from security.config import SECRET_KEY, ALGORITHM
+from security.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_WINDOW_MINUTES
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
@@ -26,7 +26,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -51,6 +51,32 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
     if user is None:
         raise credentials_exception
     return user
+
+
+def refresh_access_token(token: str) -> str | None:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        return None
+
+    username: str | None = payload.get("sub")
+    if not username:
+        return None
+
+    exp = payload.get("exp")
+    if isinstance(exp, (int, float)):
+        # Only refresh when the token is close to expiring to reduce churn.
+        expires_at = datetime.fromtimestamp(exp, tz=timezone.utc)
+        if expires_at - datetime.now(timezone.utc) > timedelta(minutes=REFRESH_TOKEN_WINDOW_MINUTES):
+            return None
+
+    # Preserve other claims except standard time-based ones.
+    new_payload = {k: v for k, v in payload.items() if k not in {"exp", "iat", "nbf"}}
+    new_payload["sub"] = username
+    return create_access_token(
+        data=new_payload,
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
 
 
 async def get_current_active_user(

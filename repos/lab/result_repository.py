@@ -173,7 +173,7 @@ class ResultRepository:
             base_query = base_query.filter(SampleResult.created_at <= last_date)
 
         total = base_query.count()
-        res = base_query.limit(limit).offset(skip).all()
+        res = base_query.order_by(SampleResult.id.desc()).limit(limit).offset(skip).all()
 
         return {
             'data': [SampleResultDTO.from_orm(record) for record in res],
@@ -200,7 +200,6 @@ class ResultRepository:
             .join(LabVerifiedResult, LabVerifiedResult.result_id == SampleResult.id) \
             .join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id) \
             .join(ServiceBooking, ServiceBooking.id == ServiceBookingDetail.booking_id) \
-            # .filter(LabService.id == lab_service_id).all()
 
         if lab_id != 0:
             rs = rs.filter(LabService.lab_id == lab_id)

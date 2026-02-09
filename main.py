@@ -19,6 +19,8 @@ import os
 
 import redis
 
+from security.dependencies import refresh_access_token
+
 
 app = FastAPI(default_response_class=ORJSONResponse)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -71,7 +73,22 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Refresh-Token"],
 )
+
+
+@app.middleware("http")
+async def sliding_jwt_refresh(request: Request, call_next):
+    response = await call_next(request)
+
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header[len("Bearer "):].strip()
+        new_token = refresh_access_token(token)
+        if new_token:
+            response.headers["X-Refresh-Token"] = new_token
+
+    return response
 
 
 for route in pharm_routers:

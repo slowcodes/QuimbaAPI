@@ -50,12 +50,17 @@ class PaymentRepository:
                 discounted_total = max(0, original_total - discount)
             return original_total, discounted_total
 
+        def _get_field(obj, name, default=None):
+            if isinstance(obj, dict):
+                return obj.get(name, default)
+            return getattr(obj, name, default)
+
         def _compute_lab_service_total_price(labs):
             total = 0
             for lab in _as_list(labs):
-                booking = lab.get("booking") or {}
-                price_code = (booking.get("price_code_rel") or {})
-                total += _get_price(price_code.get("service_price"))
+                booking = _get_field(lab, "booking") or {}
+                price_code = _get_field(booking, "price_code_rel") or {}
+                total += _get_price(_get_field(price_code, "service_price"))
             return total
 
         transaction = TransactionRepository(self.db_session).get_by_id(transaction_id)
