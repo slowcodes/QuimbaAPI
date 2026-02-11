@@ -53,7 +53,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
     return user
 
 
-def refresh_access_token(token: str) -> str | None:
+def refresh_access_token(token: str) -> dict | None:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
@@ -73,10 +73,16 @@ def refresh_access_token(token: str) -> str | None:
     # Preserve other claims except standard time-based ones.
     new_payload = {k: v for k, v in payload.items() if k not in {"exp", "iat", "nbf"}}
     new_payload["sub"] = username
-    return create_access_token(
+    expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_token = create_access_token(
         data=new_payload,
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        expires_delta=expires_delta,
     )
+    return {
+        "token": new_token,
+        "expires_at": datetime.now(timezone.utc) + expires_delta,
+        "expires_in": int(expires_delta.total_seconds()),
+    }
 
 
 async def get_current_active_user(

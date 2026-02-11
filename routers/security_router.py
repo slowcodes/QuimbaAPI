@@ -1,5 +1,5 @@
 from typing import Annotated, List
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
@@ -42,10 +42,16 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expires_at = datetime.now(timezone.utc) + access_token_expires
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        expires_at=expires_at,
+        expires_in=int(access_token_expires.total_seconds()),
+    )
 
 
 @security_router.put("/signup", response_model=SignUpResponseDTO, status_code=status.HTTP_202_ACCEPTED)

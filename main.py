@@ -73,7 +73,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Refresh-Token"],
+    expose_headers=[
+        "X-Refresh-Token",
+        "X-Refresh-Token-Expires-At",
+        "X-Refresh-Token-Expires-In",
+    ],
 )
 
 
@@ -84,9 +88,11 @@ async def sliding_jwt_refresh(request: Request, call_next):
     auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header[len("Bearer "):].strip()
-        new_token = refresh_access_token(token)
-        if new_token:
-            response.headers["X-Refresh-Token"] = new_token
+        refresh_result = refresh_access_token(token)
+        if refresh_result:
+            response.headers["X-Refresh-Token"] = refresh_result["token"]
+            response.headers["X-Refresh-Token-Expires-At"] = refresh_result["expires_at"].isoformat()
+            response.headers["X-Refresh-Token-Expires-In"] = str(refresh_result["expires_in"])
 
     return response
 
