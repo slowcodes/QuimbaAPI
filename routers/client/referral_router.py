@@ -1,6 +1,9 @@
+from typing import Annotated
 from fastapi import APIRouter, Depends, Query, HTTPException, status
+from security.dependencies import get_current_active_user
 
 from dtos.people import ReferralDTO, PersonDTO, OrganisationDTO, ReferralResponseDTO
+from dtos.auth import UserDTO
 from db import get_db
 from sqlalchemy.orm import Session
 
@@ -31,7 +34,9 @@ def get_organization_repository(db: Session = Depends(get_db)) -> OrganizationRe
 def create_referral(referral: ReferralDTO,
                     repo: ReferralRepository = Depends(get_referral_repository),
                     people_repo: PersonRepository = Depends(get_people_repository),
-                    org_repo: OrganizationRepository = Depends(get_organization_repository)):
+                    org_repo: OrganizationRepository = Depends(get_organization_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """Creates a referral by checking if person and organization exist."""
 
     # Check if person already exists by email or phone
@@ -53,19 +58,25 @@ def create_referral(referral: ReferralDTO,
 
 
 @referral_router.get("/{referral_id}")
-def get_referral(referral_id: int, repo: ReferralRepository = Depends(get_referral_repository)):
+def get_referral(referral_id: int, repo: ReferralRepository = Depends(get_referral_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get(referral_id)
 
 
 @referral_router.delete("/{referral_id}")
-def soft_delete_referral(referral_id: int, repo: ReferralRepository = Depends(get_referral_repository)):
+def soft_delete_referral(referral_id: int, repo: ReferralRepository = Depends(get_referral_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return {"success": repo.soft_delete(referral_id)}
 
 
 @referral_router.get("/", response_model=ReferralResponseDTO)
 def get_all_referrals(skip: int = Query(0, alias="page"), limit: int = Query(10),
                       searchtext: str = Query('', alias="searchtext"),
-                      repo: ReferralRepository = Depends(get_referral_repository)):
+                      repo: ReferralRepository = Depends(get_referral_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_all_referrals(skip=skip, limit=limit, search_text=searchtext)
 
 
@@ -73,7 +84,9 @@ def get_all_referrals(skip: int = Query(0, alias="page"), limit: int = Query(10)
 def update_referral(
         referral_id: int,
         referral: ReferralDTO,
-        repo: ReferralRepository = Depends(get_referral_repository)):
+        repo: ReferralRepository = Depends(get_referral_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     try:
         updated = repo.update_referral(referral_id, referral)
     except ValueError as exc:

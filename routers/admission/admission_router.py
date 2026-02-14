@@ -1,8 +1,11 @@
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
+from security.dependencies import get_current_active_user
 from sqlalchemy.orm import Session
 
 from db import get_db
 from dtos.admission import AdmissionCreateDTO, AdmissionDTO, AdmissionUpdateDTO
+from dtos.auth import UserDTO
 from repos.admission.admission_repository import AdmissionRepository
 
 admission_router = APIRouter(prefix="/api/admissions", tags=["Admissions"])
@@ -13,7 +16,9 @@ def get_admission_repository(db: Session = Depends(get_db)) -> AdmissionReposito
 
 
 @admission_router.post("/records", response_model=AdmissionDTO, status_code=status.HTTP_201_CREATED)
-def create_admission(admission: AdmissionCreateDTO, repo: AdmissionRepository = Depends(get_admission_repository)):
+def create_admission(admission: AdmissionCreateDTO, repo: AdmissionRepository = Depends(get_admission_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.create_admission(admission)
 
 
@@ -22,13 +27,16 @@ def list_admissions(
     skip: int = 0,
     limit: int = 100,
     patient_id: int = 0,
-    repo: AdmissionRepository = Depends(get_admission_repository),
+    repo: AdmissionRepository = Depends(get_admission_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     return repo.get_admissions(skip=skip, limit=limit, patient_id=patient_id)
 
 
 @admission_router.get("/records/{admission_id}", response_model=AdmissionDTO, status_code=status.HTTP_200_OK)
-def get_admission(admission_id: int, repo: AdmissionRepository = Depends(get_admission_repository)):
+def get_admission(admission_id: int, repo: AdmissionRepository = Depends(get_admission_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     admission = repo.get_admission(admission_id)
     if not admission:
         raise HTTPException(status_code=404, detail="Admission not found")
@@ -39,7 +47,8 @@ def get_admission(admission_id: int, repo: AdmissionRepository = Depends(get_adm
 def update_admission(
     admission_id: int,
     admission: AdmissionUpdateDTO,
-    repo: AdmissionRepository = Depends(get_admission_repository),
+    repo: AdmissionRepository = Depends(get_admission_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     updated = repo.update_admission(admission_id, admission)
     if not updated:
@@ -48,7 +57,9 @@ def update_admission(
 
 
 @admission_router.delete("/records/{admission_id}", status_code=status.HTTP_200_OK)
-def delete_admission(admission_id: int, repo: AdmissionRepository = Depends(get_admission_repository)):
+def delete_admission(admission_id: int, repo: AdmissionRepository = Depends(get_admission_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     deleted = repo.delete_admission(admission_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Admission not found")

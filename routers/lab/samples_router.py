@@ -25,7 +25,9 @@ sample_collection_router = APIRouter(prefix="/api/laboratories/collected-samples
 
 
 @sample_collection_router.get("/sample-types")
-def get_sample_types():
+def get_sample_types(
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     sTypes = []
     for sample_type in SampleType.__members__.values():
         sTypes.append(sample_type)
@@ -37,26 +39,32 @@ def get_repository(db: Session = Depends(get_db)) -> CollectedSamplesRepository:
 
 
 @sample_collection_router.get("/single-sample/{sample_id}")
-def get_collected_sample(sample_id: int, repo: CollectedSamplesRepository = Depends(get_repository)):
+def get_collected_sample(sample_id: int, repo: CollectedSamplesRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     collected_sample = repo.get_sample_by_id(sample_id)  # repo.get_collected_sample_by_id(sample_id)
     return collected_sample
 
 
 @sample_collection_router.get("/single-sample/queue/{sample_id}")
-def get_collected_sample(sample_id: int, repo: CollectedSamplesRepository = Depends(get_repository)):
+def get_collected_sample(sample_id: int, repo: CollectedSamplesRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     collected_sample = repo.get_collected_sample_by_queue_id(sample_id)  # repo.get_collected_sample_by_id(sample_id)
     return collected_sample
 
 
 @sample_collection_router.get("/result/comments/")
-def get_sample_result_comments(repo: CollectedSamplesRepository = Depends(get_repository)):
+def get_sample_result_comments(repo: CollectedSamplesRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_sample_result_comments()
 
 
 @sample_collection_router.post("/", response_model=CollectedSamplesDTO)
 def create_collected_sample(
-        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
         sample_data: CollectedSamplesCreateDTO,
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
         repo: CollectedSamplesRepository = Depends(get_repository),
         queue_repository: QueueRepository = Depends(get_queue_repository)):
     queue = queue_repository.get_queue(sample_data.queue_id)
@@ -77,7 +85,9 @@ def create_collected_sample(
 def get_collected_samples(skip: int = 0, limit: int = 10, lab_id: int = 0, booking_id: int = 0,
                           start_date: str = None, last_date: str = None, status: QueueStatus = QueueStatus.Processing,
                           search_keyword: str = None, refresh: int = 0, client_id: int = 0,
-                          repo: CollectedSamplesRepository = Depends(get_repository)):
+                          repo: CollectedSamplesRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     date_filter = {
         'start_date': start_date,
         'last_date': last_date,
@@ -102,7 +112,9 @@ def get_collected_samples(skip: int = 0, limit: int = 10, lab_id: int = 0, booki
 
 @sample_collection_router.put("/{sample_id}")
 def update_collected_sample(sample_id: int, sample_data: CollectedSamplesDTO,
-                            repo: CollectedSamplesRepository = Depends(get_repository)):
+                            repo: CollectedSamplesRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     if not repo.get_sample_by_id(sample_id):
         raise HTTPException(status_code=404, detail="Collected sample not found")
     # Perform update operation using repository method
@@ -113,7 +125,9 @@ def update_collected_sample(sample_id: int, sample_data: CollectedSamplesDTO,
 
 @sample_collection_router.delete("/{sample_id}")
 def delete_collected_sample(sample_id: int,
-                            repo: CollectedSamplesRepository = Depends(get_repository)):
+                            repo: CollectedSamplesRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     if not repo.get_sample_by_id(sample_id):
         raise HTTPException(status_code=400, detail="Collected sample not found")
 

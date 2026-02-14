@@ -36,20 +36,26 @@ def get_icd10_repository(db: Session = Depends(get_db)) -> Icd10Repository:
 
 
 @consultation_router.get("/symptoms", response_model=List[SymptomDTO], tags=["Symptoms"])
-def read_symptoms(repo: ConsultantRepository = Depends(get_consultant_repository)):
+def read_symptoms(repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     symptoms = repo.get_symptom()
     return symptoms
 
 
 @consultation_router.get("/consultation/specializations", tags=["Symptoms"])
 def read_specializations(skip: int = 0, limit: int = 100,
-                         repo: ConsultantRepository = Depends(get_consultant_repository)):
+                         repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     symptoms = repo.get_specializations(skip=skip, limit=limit)
     return symptoms
 
 
 @consultation_router.post("/consultation/consultants", response_model=ConsultantDTO, tags=["Consultants"])
-def add_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository = Depends(get_consultation_repository)):
+def add_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository = Depends(get_consultation_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Add a new consultant to the system.
     """
@@ -57,7 +63,9 @@ def add_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository =
 
 
 @consultation_router.put("/consultation/consultants", response_model=ConsultantDTO, tags=["Consultants"])
-def update_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository = Depends(get_consultant_repository)):
+def update_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Update a consultant in the system.
     """
@@ -69,7 +77,9 @@ def update_consultant(consultant: ConsultantCreateDTO, repo: ConsultantRepositor
 
 @consultation_router.get("/consultation/consultants", response_model=List[ConsultantDTO], tags=["Consultants"])
 def get_consultants(skip: int = 0, limit: int = 100,
-                    repo: ConsultantRepository = Depends(get_consultant_repository)):
+                    repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Get a list of consultants with optional pagination.
     """
@@ -90,7 +100,9 @@ def get_consultant(
 @consultation_router.get("/consultation/consultant/by-user/{user_id}", response_model=ConsultantDTO, tags=["Consultants"])
 def get_consultant_by_user_id(
         user_id: int,
-        repo: ConsultantRepository = Depends(get_consultant_repository)):
+        repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Get a consultant by user id.
     """
@@ -102,7 +114,9 @@ def get_consultant_by_user_id(
 
 @consultation_router.post("/consultation/consultants/inhours", response_model=InHoursDTO)
 def add_consulting_hours(in_hours: InHoursDTO,
-                         repo: ConsultantRepository = Depends(get_consultant_repository)):
+                         repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Add a new consulting hours.
     """
@@ -124,7 +138,9 @@ def get_all_consulting_hours(start_time: str, end_time: str,
 
 @consultation_router.post("/consultation/consultant/queue/", response_model=ConsultationQueueDTO)
 def add_consultation_queue(consultant_queue: ConsultationQueueDTO,
-                           repo: ConsultantRepository = Depends(get_consultant_repository)):
+                           repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     queue = repo.add_consultant_queue(consultant_queue)
     if queue is None:
         raise HTTPException(status_code=422, detail="Problem persisting consultation queue")
@@ -134,7 +150,9 @@ def add_consultation_queue(consultant_queue: ConsultationQueueDTO,
 @consultation_router.post("/consultation/consultant/queue/quick", response_model=ConsultationQueueDTO)
 def add_quick_consultation_queue(
         quick_consult: QuickConsultDTO,
-        repo: ConsultationsRepository = Depends(get_consultation_repository)):
+        repo: ConsultationsRepository = Depends(get_consultation_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     queue = repo.create_quick_consultation_queue(quick_consult)
     if queue is None:
         raise HTTPException(status_code=422, detail="Problem persisting consultation queue")
@@ -143,7 +161,9 @@ def add_quick_consultation_queue(
 
 @consultation_router.get("/consultation/icd10/", response_model=Icd10Response)
 def get_icd10(skip: int = 0, limit: int = 100,
-              repo: Icd10Repository = Depends(get_icd10_repository)):
+              repo: Icd10Repository = Depends(get_icd10_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     queue = repo.list(skip=skip, limit=limit)
     if queue is None:
         raise HTTPException(status_code=404, detail="ICD not found")
@@ -152,7 +172,9 @@ def get_icd10(skip: int = 0, limit: int = 100,
 
 @consultation_router.get("/consultation/icd10/search/", response_model=Icd10Response)
 def search_icd10(keyword: str, skip: int = 0, limit: int = 100,
-                 repo: Icd10Repository = Depends(get_icd10_repository)):
+                 repo: Icd10Repository = Depends(get_icd10_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     queue = repo.search(keyword, skip=skip, limit=limit)
     if queue is None:
         raise HTTPException(status_code=404, detail="ICD not found")
@@ -161,7 +183,9 @@ def search_icd10(keyword: str, skip: int = 0, limit: int = 100,
 
 @consultation_router.get("/consultation/consultant/queue/detail/", response_model=ConsultationQueueDTO)
 def get_consultation_booking(queue_id: int, refresh: int = 0,
-                             repo: ConsultantRepository = Depends(get_consultant_repository)):
+                             repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     redis = get_redis_client()
     cache_key = f"consultation:{queue_id}"
     cached_consultation = redis.get(cache_key)
@@ -188,7 +212,9 @@ def get_consultation_booking(queue_id: int, refresh: int = 0,
 @consultation_router.get("/consultation/consultant/queue/", response_model=List[ConsultationQueueDTO])
 def get_consultation_booking(consultant_id: int = 0, client_id=0, start_date='',
                              last_date='', status: str = QueueStatus.Processed, in_hour_id: int = 0,
-                             repo: ConsultantRepository = Depends(get_consultant_repository)):
+                             repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_consultant_queue(
         consultant_id,
         client_id,
@@ -207,14 +233,18 @@ def get_clinical_examination_repository(db: Session = Depends(get_db)) -> Clinic
 # Create Clinical Examination
 @consultation_router.post("/clinical_examinations/", response_model=ClinicalExaminationDTO)
 def create_clinical_exam(clinical_examination: ClinicalExaminationDTO,
-                         repo: ConsultantRepository = Depends(get_clinical_examination_repository)):
+                         repo: ConsultantRepository = Depends(get_clinical_examination_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.create(clinical_examination)
 
 
 # Get Clinical Examination by ID
 @consultation_router.get("/clinical_examinations/{clinical_examination_id}", response_model=ClinicalExaminationDTO)
 def read_clinical_examination(clinical_examination_id: int,
-                              repo: ConsultantRepository = Depends(get_clinical_examination_repository)):
+                              repo: ConsultantRepository = Depends(get_clinical_examination_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     db_clinical_examination = repo.get_clinical_examination(clinical_examination_id=clinical_examination_id)
     if db_clinical_examination is None:
         raise HTTPException(status_code=404, detail="Clinical Examination not found")
@@ -224,7 +254,9 @@ def read_clinical_examination(clinical_examination_id: int,
 # Update Clinical Examination
 @consultation_router.put("/clinical_examinations/{clinical_examination_id}", response_model=ClinicalExaminationDTO)
 def update_clinical_exam(clinical_examination_id: int, clinical_examination: ClinicalExaminationDTO,
-                         repo: ConsultantRepository = Depends(get_clinical_examination_repository)):
+                         repo: ConsultantRepository = Depends(get_clinical_examination_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     db_clinical_examination = repo.update_clinical_examination(clinical_examination_id=clinical_examination_id,
                                                                clinical_examination=clinical_examination)
     if db_clinical_examination is None:
@@ -235,7 +267,9 @@ def update_clinical_exam(clinical_examination_id: int, clinical_examination: Cli
 # Delete Clinical Examination
 @consultation_router.delete("/clinical_examinations/{clinical_examination_id}")
 def delete_clinical_examination(clinical_examination_id: int,
-                                repo: ConsultantRepository = Depends(get_clinical_examination_repository)):
+                                repo: ConsultantRepository = Depends(get_clinical_examination_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     db_clinical_examination = repo.delete_clinical_examination(clinical_examination_id=clinical_examination_id)
     if db_clinical_examination is None:
         raise HTTPException(status_code=404, detail="Clinical Examination not found")
@@ -243,7 +277,9 @@ def delete_clinical_examination(clinical_examination_id: int,
 
 
 @consultation_router.get("/internal-systems/", response_model=List[str])
-def read_internal_systems(repo: ConsultantRepository = Depends(get_consultant_repository)):
+def read_internal_systems(repo: ConsultantRepository = Depends(get_consultant_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     internal_systems = repo.get_internal_systems()
     if internal_systems is None:
         raise HTTPException(status_code=404, detail="Internal not found")
@@ -265,7 +301,8 @@ def list_consultations(
         repo: ConsultationsRepository = Depends(get_consultations_repository),
         skip: int = 0,
         limit: int = 100,
-        client_id: int = 0,
+        client_id: int = 0,*, 
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
 ):
     return repo.get_all(skip=skip, limit=limit, client_id=client_id)
 
@@ -278,9 +315,10 @@ def list_consultations(
                          response_model=ConsultationDetailDTO
                          )
 def get_consultation(
-        current_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
+        privileged_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
         consultation_id: int,
-        repo: ConsultationsRepository = Depends(get_consultations_repository)
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+        repo: ConsultationsRepository = Depends(get_consultations_repository),
 ):
     consultation = repo.get_consultation_details_by_queue_id(consultation_id)
     if not consultation:
@@ -296,13 +334,14 @@ def get_consultation(
                          response_model=List[ConsultationDTO]
                          )
 def get_consultation_case_files(
-        current_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
+        privileged_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
         client_id: int = 0,
         limit: int = 100,
         skip: int = 0,
         case_status: str = 'Open',
-        consultation_type: ConsultationType = ConsultationType.base_case,
-        repo: ConsultationsRepository = Depends(get_consultations_repository)
+        consultation_type: ConsultationType = ConsultationType.base_case,*, 
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+        repo: ConsultationsRepository = Depends(get_consultations_repository),
 ):
     case_files = repo.get_consultation_case_files(
         client_id=client_id,
@@ -323,13 +362,15 @@ def get_consultation_case_files(
                          description="Retrieve consultation by a collection of variables",
                          response_model=List[ConsultationDTO]
                          )
-def get_case_follow_ups(current_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
-                        case_id: int = 0,
-                        limit: int = 100,
-                        skip: int = 0,
-                        case_status: str = 'Open',
-                        repo: ConsultationsRepository = Depends(
-                            get_consultations_repository)) -> List[ConsultationDTO]:
+def get_case_follow_ups(
+        privileged_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
+        case_id: int = 0,
+        limit: int = 100,
+        skip: int = 0,
+        case_status: str = 'Open',*, 
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+        repo: ConsultationsRepository = Depends(get_consultations_repository),
+) -> List[ConsultationDTO]:
     follow_ups = repo.get_follow_up_consultation(
         consultation_id=case_id,
         limit=limit,
@@ -352,7 +393,8 @@ def get_case_follow_ups(current_user: Annotated[UserDTO, Depends(require_access_
 def create_consultation(
         privileged_user: Annotated[UserDTO, Depends(require_access_privilege(14))],
         consultation_data: ConsultationDetailDTO,
-        repo: ConsultationsRepository = Depends(get_consultations_repository)
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+        repo: ConsultationsRepository = Depends(get_consultations_repository),
 ):
     return repo.create(consultation_data, created_by=privileged_user)
 
@@ -362,7 +404,8 @@ def create_consultation(
 def update_consultation(
         consultation_id: int,
         consultation_data: ConsultationUpdate,
-        repo: ConsultationsRepository = Depends(get_consultations_repository)
+        repo: ConsultationsRepository = Depends(get_consultations_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     updated = repo.update(consultation_id, consultation_data)
     if not updated:
@@ -374,7 +417,8 @@ def update_consultation(
 @consultation_router.delete("/{consultation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_consultation(
         consultation_id: int,
-        repo: ConsultationsRepository = Depends(get_consultations_repository)
+        repo: ConsultationsRepository = Depends(get_consultations_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     success = repo.delete(consultation_id)
     if not success:

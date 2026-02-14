@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from typing import List
+from security.dependencies import get_current_active_user
+from dtos.auth import UserDTO
+from typing import List, Annotated
 from sqlalchemy.orm import Session
 
 from db import get_db
@@ -19,7 +21,9 @@ def get_supply_repository(db: Session = Depends(get_db)):
 
 @pharmacy_router.get("/stock/")
 def get_all_drug_groups(skip: int = Query(0), limit: int = Query(100),
-                        repo: SupplyRepository = Depends(get_supply_repository)):
+                        repo: SupplyRepository = Depends(get_supply_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Get all drug groups with optional pagination.
     """

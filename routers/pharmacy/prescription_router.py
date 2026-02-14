@@ -37,7 +37,9 @@ def get_prescription(skip: int = Query(0), limit: int = Query(100),
                      start_date: str = Query(None),
                      end_date: str = Query(None),
                      client_id: int = Query(None),
-                     repo: PrescriptionRepository = Depends(get_prescription_repository)):
+                     repo: PrescriptionRepository = Depends(get_prescription_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Get all prescriptions with optional filters and pagination.
     """

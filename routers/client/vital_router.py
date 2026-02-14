@@ -1,10 +1,12 @@
 from http.client import HTTPException
-from typing import List
+from typing import List, Annotated
 
 from fastapi import APIRouter, Depends
+from security.dependencies import get_current_active_user
 from starlette import status
 
 from dtos.people import ClientDTO, OrganisationDTO, VitalDTO
+from dtos.auth import UserDTO
 from sqlalchemy.orm import Session
 from db import get_db
 from starlette.responses import JSONResponse
@@ -27,7 +29,9 @@ def get_vital_repository(db: Session = Depends(get_db)) -> VitalsRepository:
 
 
 @vital_router.post("/", status_code=status.HTTP_201_CREATED)
-def create_vital(vital_dto: VitalDTO, repo: VitalsRepository = Depends(get_vital_repository)):
+def create_vital(vital_dto: VitalDTO, repo: VitalsRepository = Depends(get_vital_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Create a new vital record.
     """
@@ -36,7 +40,9 @@ def create_vital(vital_dto: VitalDTO, repo: VitalsRepository = Depends(get_vital
 
 
 @vital_router.get("/{vital_id}", response_model=VitalDTO)
-def get_vital_by_id(vital_id: int, repo: VitalsRepository = Depends(get_vital_repository)):
+def get_vital_by_id(vital_id: int, repo: VitalsRepository = Depends(get_vital_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Retrieve a vital record by its ID.
     """
@@ -52,7 +58,8 @@ def get_vitals_by_client_id(
     skip: int = 0,
     limit: int = 10,
     vital_type: str = None,
-    repo: VitalsRepository = Depends(get_vital_repository),
+    repo: VitalsRepository = Depends(get_vital_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     """
     Retrieve vital records for a specific client with pagination.
@@ -62,7 +69,9 @@ def get_vitals_by_client_id(
 
 
 @vital_router.put("/{vital_id}", response_model=VitalDTO)
-def update_vital(vital_id: int, vital_dto: VitalDTO, repo: VitalsRepository = Depends(get_vital_repository)):
+def update_vital(vital_id: int, vital_dto: VitalDTO, repo: VitalsRepository = Depends(get_vital_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Update an existing vital record.
     """
@@ -73,7 +82,9 @@ def update_vital(vital_id: int, vital_dto: VitalDTO, repo: VitalsRepository = De
 
 
 @vital_router.delete("/{vital_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_vital(vital_id: int, repo: VitalsRepository = Depends(get_vital_repository)):
+def delete_vital(vital_id: int, repo: VitalsRepository = Depends(get_vital_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Delete a vital record by its ID.
     """

@@ -58,8 +58,9 @@ async def login_for_access_token(
 async def sign_up(signup_dto: AccountDTO,
                   auth=Depends(auth_repo),
                   # person_repo=Depends(get_person_repository),
-                  security=Depends(require_role_and_privilege(20, "write"))
-                  ):
+                  security=Depends(require_role_and_privilege(20, "write")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     updated_user = auth.updateSignUp(signup_dto)
     if updated_user.error:
         return JSONResponse(status_code=status.HTTP_406_NOT_ACCEPTABLE,
@@ -71,8 +72,9 @@ async def sign_up(signup_dto: AccountDTO,
 async def sign_up(signup_dto: AccountDTO,
                   auth=Depends(auth_repo),
                   repo=Depends(auth_repo),
-                  security=Depends(require_role_and_privilege(20, "write"))
-                  ):
+                  security=Depends(require_role_and_privilege(20, "write")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     new_user = auth.register_user(signup_dto)
     return SignUpResponseDTO(error=False, data=new_user, msg='User registered successfully')
 
@@ -86,8 +88,9 @@ async def read_users_me(
 
 @security_router.get("/users")
 async def get_all_user(skip: int = 0, limit: int = 20, auth=Depends(auth_repo),
-                       security=Depends(require_role_and_privilege(20, "read"))
-                       ):
+                       security=Depends(require_role_and_privilege(20, "read")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return auth.get_all_users(limit, skip)
 
 
@@ -102,7 +105,9 @@ async def get_roles(
 async def getUserById(id: int,
                       auth=Depends(auth_repo),
                       person_repo=Depends(get_person_repository),
-                      security=Depends(require_role_and_privilege(20, "read"))):
+                      security=Depends(require_role_and_privilege(20, "read")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     usr_details = auth.get_user_by_id(id)
     person = person_repo.get(usr_details.person_id)
     return {
@@ -121,8 +126,9 @@ async def getUserById(id: int,
 
 @security_router.put("/users/update-user")
 async def update_user_account(account_dto: AccountDTO, auth=Depends(auth_repo),
-                              security=Depends(require_role_and_privilege(20, "execute"))
-                              ):
+                              security=Depends(require_role_and_privilege(20, "execute")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return auth.update_user(account_dto)
 
 
@@ -131,8 +137,9 @@ async def reset_user_password(password: str,
                               new_password: str,
                               new_password_confirm: str,
                               username: str, auth=Depends(auth_repo),
-                              security=Depends(require_role_and_privilege(20, "execute"))
-                              ):
+                              security=Depends(require_role_and_privilege(20, "execute")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     is_reset = auth.reset_password(password, new_password, new_password_confirm, username)
     if is_reset:
         return JSONResponse(status_code=status.HTTP_200_OK,
@@ -146,7 +153,8 @@ async def reset_user_password(password: str,
 @security_router.get("/users/group/")  # response_model=List[UserGroupDTO]
 async def get_groups(
         auth=Depends(auth_repo),
-        security=Depends(require_role_and_privilege(20, "read"))
+        security=Depends(require_role_and_privilege(20, "read")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     return auth.get_all_groups()
     # JSONResponse(
@@ -158,32 +166,36 @@ async def get_groups(
 @security_router.post("/users/group")
 def add_group(group: UserGroupDTO,
               auth=Depends(auth_repo),
-              security=Depends(require_role_and_privilege(20, "write"))
-              ):
+              security=Depends(require_role_and_privilege(20, "write")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return auth.add_user_group(group)
 
 
 @security_router.post("/users/group/member")
 def add_group_member(member: UserGroupMemberDTO,
                      auth=Depends(auth_repo),
-                     security=Depends(require_role_and_privilege(20, "write"))
-                     ):
+                     security=Depends(require_role_and_privilege(20, "write")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return auth.add_user_to_group(member)
 
 
 @security_router.delete("/users/group/member")
 def remove_group_member(user_id: int, group_id: int,
                         auth=Depends(auth_repo),
-                        security=Depends(require_role_and_privilege(20, "execute"))
-                        ):
+                        security=Depends(require_role_and_privilege(20, "execute")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return auth.remove_user_from_group(user_id, group_id)
 
 
 @security_router.get("/users/group/member/")
 def get_all_user_group_members(user_id: int,
                                auth=Depends(auth_repo),
-                               security=Depends(require_role_and_privilege(20, "read"))
-                               ):
+                               security=Depends(require_role_and_privilege(20, "read")),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return auth.get_all_user_groups(user_id)
 
 
@@ -192,5 +204,7 @@ def conf_repo(db: Session = Depends(get_db)) -> ConfSettingRepository:
 
 
 @security_router.get("/config/setting", response_model=List[ConfSettingDTO])
-def list_conf_settings(repo: Session = Depends(conf_repo)):
+def list_conf_settings(repo: Session = Depends(conf_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_all()

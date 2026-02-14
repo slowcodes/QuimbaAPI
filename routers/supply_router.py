@@ -20,14 +20,17 @@ def supply_repository(db: Session = Depends(get_db)):
 @supply_router.post("/", status_code=status.HTTP_201_CREATED)
 def create_supply(
     # current_user: Annotated[UserDTO, Depends(get_current_active_user())],
-    supply: SupplyDTO, repo: SupplyRepository = Depends(supply_repository),
-                  ):
+    supply: SupplyDTO, repo: SupplyRepository = Depends(supply_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     instock = repo.process_supply(supply)
     return supply
 
 
 @supply_router.post("/inventory", status_code=status.HTTP_201_CREATED)
 def pharmacy_inventory(
-        skip: int, limit: int, repo: SupplyRepository = Depends(supply_repository)):
+        skip: int, limit: int, repo: SupplyRepository = Depends(supply_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
 
     return []

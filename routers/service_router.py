@@ -20,7 +20,7 @@ from repos.services.service_bundle_repository import ServiceBundleRepository
 from repos.services.service_cart_repository import ServiceCartRepository
 from repos.services.service_repository import ServiceRepository
 from repos.transaction_repository import TransactionRepository
-from security.dependencies import require_access_privilege
+from security.dependencies import require_access_privilege, get_current_active_user
 
 service_router = APIRouter(prefix="/api/service-bookings", tags=["Service Bookings"])
 
@@ -38,20 +38,24 @@ def queue_repository(db: Session = Depends(get_db)):
 
 
 @service_router.post("/", response_model=ServiceBookingDTO, status_code=status.HTTP_201_CREATED)
-def create_service_booking(service_booking: ServiceBookingDTO, repo: ServiceRepository = Depends(service_repository)):
+def create_service_booking(service_booking: ServiceBookingDTO, repo: ServiceRepository = Depends(service_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     booking = repo.create_service_booking(service_booking=service_booking)
     return booking
 
 
 @service_router.post("/detail/", response_model=ServiceBookingDetailDTO, status_code=status.HTTP_201_CREATED)
 def create_service_booking_detail(service_booking_detail: ServiceBookingDetailDTO,
-                                  repo: ServiceRepository = Depends(service_repository)):
+                                  repo: ServiceRepository = Depends(service_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.create_service_booking_detail(service_booking=service_booking_detail)
 
 
 @service_router.get("/all-booking/", status_code=status.HTTP_200_OK)
 def get_service_booking_detail(
-        # current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
         skip: int = 0, limit: int = 20, client_id: int = 0, lab_id=0, start_date: str = None, last_date: str = None, status: str = None, booking_type: str = None,
         repo: ServiceRepository = Depends(service_repository)):
     booking = repo.get_all_service_bookings(limit,
@@ -60,7 +64,9 @@ def get_service_booking_detail(
 
 
 @service_router.get("/{service_booking_id}", response_model=ServiceBookingDTO)
-def read_service_booking(service_booking_id: int, db: Session = Depends(get_db)):
+def read_service_booking(service_booking_id: int, db: Session = Depends(get_db),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     db_service_booking = service_repository.get_service_booking(db=db, service_booking_id=service_booking_id)
     if db_service_booking is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service booking not found")
@@ -69,7 +75,9 @@ def read_service_booking(service_booking_id: int, db: Session = Depends(get_db))
 
 @service_router.put("/{service_booking_id}", response_model=ServiceBookingDTO)
 def update_service_booking(service_booking_id: int, service_booking: ServiceBookingDTO,
-                           db: Session = Depends(get_db)):
+                           db: Session = Depends(get_db),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     db_service_booking = service_repository.get_service_booking(db=db, service_booking_id=service_booking_id)
     if db_service_booking is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service booking not found")
@@ -80,7 +88,9 @@ def update_service_booking(service_booking_id: int, service_booking: ServiceBook
 @service_router.delete("/{service_booking_id}")
 def delete_service_booking(service_booking_id: int,
                            repo: ServiceRepository = Depends(service_repository),
-                           transaction_repo: TransactionRepository = Depends(transaction_repository)):
+                           transaction_repo: TransactionRepository = Depends(transaction_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     service_booking = repo.get_service_booking(service_booking_id)
 
     if service_booking is None:
@@ -96,7 +106,9 @@ def delete_service_booking(service_booking_id: int,
 @service_router.get("/track/{service_booking_id}")
 def track_service_booking(service_booking_id: int,
                           repo: ServiceRepository = Depends(service_repository),
-                          queue_repo: QueueRepository = Depends(queue_repository)):
+                          queue_repo: QueueRepository = Depends(queue_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     service_booking = repo.get_service_booking(service_booking_id)
     if service_booking is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service booking not found")
@@ -104,7 +116,9 @@ def track_service_booking(service_booking_id: int,
 
 
 @service_router.get("/service-booking-status/{queue_id}")
-def service_booking_status(queue_id: int, repo: ServiceRepository = Depends(service_repository)):
+def service_booking_status(queue_id: int, repo: ServiceRepository = Depends(service_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.update_transaction_booking_status_based_on_procesed_result(queue_id)
 
 
@@ -114,7 +128,9 @@ def service_bundle_repository(db: Session = Depends(get_db)):
 
 @service_router.post("/bundles/", tags=["Service", "Bundles"], status_code=status.HTTP_201_CREATED)
 def create_service_bundle(service_bundle: BundleDTO,
-                          repo: ServiceBundleRepository = Depends(service_bundle_repository)):
+                          repo: ServiceBundleRepository = Depends(service_bundle_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     bundle = repo.add_service_bundle(service_bundle)
     return BundleDTO(**bundle.__dict__)
 
@@ -126,7 +142,8 @@ def create_service_bundle(service_bundle: BundleDTO,
     description="Retrieve paginated service bundles with optional skip and limit parameters."
 )
 def get_service_bundle(skip: int = 0, limit: int = 20,
-                       repo: ServiceBundleRepository = Depends(service_bundle_repository)):
+                       repo: ServiceBundleRepository = Depends(service_bundle_repository),*, 
+                       current_user: Annotated[UserDTO, Depends(get_current_active_user)]):
     try:
         # Fetch service bundles from repository
         return repo.get_all_bundles(limit=limit, skip=skip)
@@ -141,7 +158,11 @@ def get_service_bundle(skip: int = 0, limit: int = 20,
     summary="Delete service bundles",
     description="Delete lab bundles along with collections"
 )
-def delete_bundle(bundle_id: int, repo: ServiceBundleRepository = Depends(service_bundle_repository)):
+def delete_bundle(
+        bundle_id: int,
+        repo: ServiceBundleRepository = Depends(service_bundle_repository),*, 
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+):
     try:
         return repo.delete_bundle(bundle_id)
     except Exception as e:
@@ -156,7 +177,8 @@ def delete_bundle(bundle_id: int, repo: ServiceBundleRepository = Depends(servic
 )
 def get_lab_service_bundle(skip: int = 0, limit: int = 20,
                            keyword: str = Query(None, description="Search keyword for bundle name"),
-                           repo: ServiceBundleRepository = Depends(service_bundle_repository)):
+                           repo: ServiceBundleRepository = Depends(service_bundle_repository),*, 
+                           current_user: Annotated[UserDTO, Depends(get_current_active_user)]):
     try:
         return repo.get_all_bundles(limit, skip, keyword=keyword)
     except Exception as e:
@@ -171,7 +193,8 @@ def get_lab_service_bundle(skip: int = 0, limit: int = 20,
     description="Retrieve paginated service bundles with optional skip and limit parameters."
 )
 def add_lab_service_bundle(lab_service_bundle: BundleDTO,
-                           repo: ServiceBundleRepository = Depends(service_bundle_repository)):
+                           repo: ServiceBundleRepository = Depends(service_bundle_repository),*, 
+                           current_user: Annotated[UserDTO, Depends(get_current_active_user)]):
     try:
         bundle = repo.add_service_bundle(
             BundleDTO(
@@ -206,7 +229,8 @@ def add_lab_service_bundle(lab_service_bundle: BundleDTO,
     description="Retrieve paginated service bundles with optional skip and limit parameters."
 )
 def add_lab_service_bundle(lab_service_bundle: BundleDTO,
-                           repo: ServiceBundleRepository = Depends(service_bundle_repository)):
+                           repo: ServiceBundleRepository = Depends(service_bundle_repository),*, 
+                           current_user: Annotated[UserDTO, Depends(get_current_active_user)]):
     try:
         return repo.update_bundle(service_bundle=lab_service_bundle)
     except Exception as e:
@@ -222,7 +246,8 @@ def add_lab_service_bundle(lab_service_bundle: BundleDTO,
     description="Retrieve paginated service bundles with optional skip and limit parameters."
 )
 def delete_lab_bundle_collection(lab_collection_id: int,
-                                 repo: ServiceBundleRepository = Depends(service_bundle_repository)):
+                                 repo: ServiceBundleRepository = Depends(service_bundle_repository),*, 
+                                 current_user: Annotated[UserDTO, Depends(get_current_active_user)]):
     try:
         return repo.delete_lab_bundle(lab_collection_id)
     except Exception as e:
@@ -247,7 +272,8 @@ def get_client_cart_items(client_id: int = Query(..., description="ID of the cli
                           last_date: str = Query(None, description="End date for filtering carts"),
                           cart_status: str = Query(None, description="Status filter for carts"),
                           refresh: int = Query(0, ge=0, description="Set to 1 to bypass cache"),
-                          repo: ServiceCartRepository = Depends(get_service_cart_repository)
+                          repo: ServiceCartRepository = Depends(get_service_cart_repository),*, 
+                          current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     try:
         redis = get_redis_client()
@@ -285,6 +311,6 @@ def get_client_cart_items(client_id: int = Query(..., description="ID of the cli
     response_model=ProcessedCartDTO | None,
     description="Update a client's saved cart status by cart ID.")
 def process_client_cart(cart: ProcessedCartDTO,
-                        # current_user: Annotated[UserDTO, Depends(require_access_privilege)],
-                        repo: ServiceCartRepository = Depends(get_service_cart_repository)):
+                        repo: ServiceCartRepository = Depends(get_service_cart_repository),*, 
+                        current_user: Annotated[UserDTO, Depends(get_current_active_user)]):
     return repo.update_cart_status(cart)

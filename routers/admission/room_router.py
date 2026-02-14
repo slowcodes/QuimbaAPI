@@ -1,8 +1,11 @@
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
+from security.dependencies import get_current_active_user
 from sqlalchemy.orm import Session
 
 from db import get_db
 from dtos.admission import RoomCreateDTO, RoomDTO, RoomUpdateDTO
+from dtos.auth import UserDTO
 from repos.admission.room_repository import RoomRepository
 
 room_router = APIRouter(prefix="/api/admissions", tags=["Admissions"])
@@ -13,17 +16,23 @@ def get_room_repository(db: Session = Depends(get_db)) -> RoomRepository:
 
 
 @room_router.post("/rooms", response_model=RoomDTO, status_code=status.HTTP_201_CREATED)
-def create_room(room: RoomCreateDTO, repo: RoomRepository = Depends(get_room_repository)):
+def create_room(room: RoomCreateDTO, repo: RoomRepository = Depends(get_room_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.create_room(room)
 
 
 @room_router.get("/rooms", status_code=status.HTTP_200_OK)
-def list_rooms(skip: int = 0, limit: int = 100, ward_id: int = 0, repo: RoomRepository = Depends(get_room_repository)):
+def list_rooms(skip: int = 0, limit: int = 100, ward_id: int = 0, repo: RoomRepository = Depends(get_room_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_rooms(skip=skip, limit=limit, ward_id=ward_id)
 
 
 @room_router.get("/rooms/{room_id}", response_model=RoomDTO, status_code=status.HTTP_200_OK)
-def get_room(room_id: int, repo: RoomRepository = Depends(get_room_repository)):
+def get_room(room_id: int, repo: RoomRepository = Depends(get_room_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     room = repo.get_room(room_id)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
@@ -31,7 +40,9 @@ def get_room(room_id: int, repo: RoomRepository = Depends(get_room_repository)):
 
 
 @room_router.put("/rooms/{room_id}", response_model=RoomDTO, status_code=status.HTTP_200_OK)
-def update_room(room_id: int, room: RoomUpdateDTO, repo: RoomRepository = Depends(get_room_repository)):
+def update_room(room_id: int, room: RoomUpdateDTO, repo: RoomRepository = Depends(get_room_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     updated = repo.update_room(room_id, room)
     if not updated:
         raise HTTPException(status_code=404, detail="Room not found")
@@ -39,7 +50,9 @@ def update_room(room_id: int, room: RoomUpdateDTO, repo: RoomRepository = Depend
 
 
 @room_router.delete("/rooms/{room_id}", status_code=status.HTTP_200_OK)
-def delete_room(room_id: int, repo: RoomRepository = Depends(get_room_repository)):
+def delete_room(room_id: int, repo: RoomRepository = Depends(get_room_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     deleted = repo.delete_room(room_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Room not found")

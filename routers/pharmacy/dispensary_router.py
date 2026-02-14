@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -29,7 +29,8 @@ def read_dispensed_drugs(
         client_id: Optional[int] = None,
         start_date: Optional[datetime] = None,
         last_date: Optional[datetime] = None,
-        repo: DispensedDrugRepository = Depends(get_dispensary_repository)
+        repo: DispensedDrugRepository = Depends(get_dispensary_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     return repo.get_dispensed_drugs(
         skip=skip,
@@ -45,8 +46,9 @@ def get_dispensed_prescription(skip: int = 0,
                                client_id: Optional[int] = None,
                                start_date: Optional[datetime] = None,
                                last_date: Optional[datetime] = None,
-                               repo: DispensedDrugRepository = Depends(get_dispensary_repository)
-                               ):
+                               repo: DispensedDrugRepository = Depends(get_dispensary_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_dispensed_prescription(
         client_id=client_id,
         skip=skip,
@@ -59,7 +61,8 @@ def get_dispensed_prescription(skip: int = 0,
 @dispensary_router.post("/", response_model=DispensedPrescriptionRead, status_code=status.HTTP_201_CREATED)
 def create_dispensed_prescription(
         payload: DispensedPrescriptionCreate,
-        repo: DispensedDrugRepository = Depends(get_dispensary_repository)
+        repo: DispensedDrugRepository = Depends(get_dispensary_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     try:
         new_entry = repo.create(payload.dict())

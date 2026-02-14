@@ -34,14 +34,18 @@ def transaction_repo(db: Session = Depends(get_db)) -> TransactionRepository:
 
 @result_router.post("/experiment-results/", response_model=ExperimentResultReadingDTO)
 def create_experiment_result(reading: ExperimentResultReadingDTO,
-                             repo: ExperimentRepository = Depends(experiment_result_repo)):
+                             repo: ExperimentRepository = Depends(experiment_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     if repo.reading_exits(reading):
         raise HTTPException(status_code=409, detail="Experiment reading already exist")
     return repo.create_reading(reading)
 
 
 @result_router.get("/experiment-results/{reading_id}")
-def read_experiment_result(reading_id: int, repo: ExperimentRepository = Depends(experiment_result_repo)):
+def read_experiment_result(reading_id: int, repo: ExperimentRepository = Depends(experiment_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     db_reading = repo.get_reading_by_id(reading_id)
     if db_reading is None:
         raise HTTPException(status_code=404, detail="Experiment reading not found")
@@ -73,7 +77,9 @@ def read_sample_results(limit: int = 15, skip: int = 0,
                         last_date: Optional[datetime] = None,
                         date_filter_status: Optional[str] = None,
                         client_id: int = 0,
-                        repo: ResultRepository = Depends(sample_result_repo)):
+                        repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     date_filter: DateFilterDTO = {
         "start_date": start_date,
         "last_date": last_date,
@@ -89,7 +95,9 @@ def read_sample_results(limit: int = 15, skip: int = 0,
 @result_router.get("/sample-results/verified/")
 def read_verified_sample_results(limit: int = 15, skip: int = 0, lab_id: int = 0, search_text: str = '',
                                  start_date: datetime = None, last_date: datetime = None, date_filter_status: str = '',
-                                 repo: ResultRepository = Depends(sample_result_repo)):
+                                 repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     date_filter: DateFilterDTO = {
         "start_date": start_date,
         "last_date": last_date,
@@ -106,7 +114,9 @@ def read_verified_sample_results(limit: int = 15, skip: int = 0, lab_id: int = 0
 
 @result_router.delete("/sample-results/{result_id}")
 def delete_sample_result(result_id: int,
-                         repo: ResultRepository = Depends(sample_result_repo)):
+                         repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     response = repo.delete_result(sample_result_id=result_id)
     if not response:
         raise HTTPException(status_code=409, detail="Sample result does not exist")
@@ -117,7 +127,9 @@ def delete_sample_result(result_id: int,
 
 
 @result_router.get("/sample-results/{result_id}", response_model=SampleResultDTO)
-def read_sample_result(result_id: int, repo: ResultRepository = Depends(sample_result_repo)):
+def read_sample_result(result_id: int, repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     db_result = repo.get_result_by_id(result_id)
     if db_result is None:
         raise HTTPException(status_code=404, detail="Result not found")
@@ -128,7 +140,9 @@ def read_sample_result(result_id: int, repo: ResultRepository = Depends(sample_r
 def collate_result_by_queue(limit: int = 15, skip: int = 0,
                             lab_id: int = 0, search_text: str = '', client_id: int = 0,
                             start_date: datetime = None, last_date: datetime = None, date_filter_status: str = '',
-                            repo: ResultRepository = Depends(sample_result_repo)):
+                            repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     date_filter: DateFilterDTO = {
         "start_date": start_date,
         "last_date": last_date,
@@ -147,7 +161,9 @@ def collate_result_by_queue(limit: int = 15, skip: int = 0,
 
 @result_router.get("/sample-results/collated-results/")
 def get_result_by_transaction_id(trx_id: str,
-                                 repo: ResultRepository = Depends(sample_result_repo)):
+                                 repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     single_result = repo.get_result_by_transaction_id(trx_id)
 
     if single_result is None:
@@ -160,7 +176,9 @@ def read_collated_results(limit: int = 15, skip: int = 0, booking_status: Bookin
                           lab_id: int = 0, search_text: str = '', client_id: int = 0,
                           start_date: datetime = None, last_date: datetime = None, date_filter_status: str = '',
                           booking_id: int = 0,
-                          repo: ResultRepository = Depends(sample_result_repo)):
+                          repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     date_filter: DateFilterDTO = {
         "start_date": start_date,
         "last_date": last_date,
@@ -177,7 +195,9 @@ def read_collated_results(limit: int = 15, skip: int = 0, booking_status: Bookin
 
 @result_router.get("/booking-result/")
 def read_group_booking_result(booking_id: int,
-                              repo: ResultRepository = Depends(sample_result_repo)):
+                              repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     result = repo.get_result_by_booking_id(booking_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Result not found")
@@ -199,7 +219,9 @@ def create_result_verification(verified_result_entry: VerifiedResultEntryDTO,
 def read_collated_results(limit: int = 15, skip: int = 0, booking_status: BookingStatus = BookingStatus.Processing,
                           lab_id: int = 0, search_text: str = '', client_id: int = 0,
                           start_date: str = '', last_date: str = '', date_filter_status: str = '',
-                          repo: TransactionRepository = Depends(transaction_repo)):
+                          repo: TransactionRepository = Depends(transaction_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     date_filter: DateFilterDTO = {
         "start_date": start_date,
         "last_date": last_date,
@@ -241,7 +263,9 @@ def unarchive_completed_lab_booking(booking_id: int,
 @result_router.get("/analytics/compute-average-times")
 def compute_average_times(lab_service_id: int = 0, lab_id: int = 0, start_date: str = None,
                           last_date: str = None, date_filter_status: str = None,
-                          repo: ResultRepository = Depends(sample_result_repo)):
+                          repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     # try:
     date_filter: DateFilterDTO = {
         "start_date": start_date,
@@ -259,7 +283,9 @@ def compute_average_times(lab_service_id: int = 0, lab_id: int = 0, start_date: 
 @result_router.get("/analytics/generate-barchart-data")
 def generate_barchart_data(start_date: str = None, last_date: str = None,
                            interval: str = 'daily', lab_id: int = 0,
-                           repo: ResultRepository = Depends(sample_result_repo)):
+                           repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     try:
         data = repo.generate_barchart_data(start_date, last_date, interval.lower(), lab_id)
         return data
@@ -273,7 +299,9 @@ def generate_barchart_data(start_date: str = None, last_date: str = None,
 @result_router.get("/analytics/total-bookings-per-lab-service")
 def get_total_bookings_per_lab_service(start_date: str = None, end_date: str = None, lab_id: int = 0,
                                        lab_service_id: int = 0,
-                                       repo: ResultRepository = Depends(sample_result_repo)):
+                                       repo: ResultRepository = Depends(sample_result_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     try:
         data = repo.get_total_bookings_per_lab_service()
         return data
@@ -287,7 +315,9 @@ def get_approved_result_repository(db: Session = Depends(get_db)):
 
 @result_router.get("/approved-booking-results/{id}", response_model=ApprovedLabBookingResultDTO)
 def get_approved_lab_booking_result(id: int, repository: ApprovedLabBookingResultRepository = Depends(
-    get_approved_result_repository)):
+    get_approved_result_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     result = repository.get_by_id(id)
     if result is None:
         raise HTTPException(status_code=404, detail="ApprovedLabBookingResult not found")
@@ -297,7 +327,9 @@ def get_approved_lab_booking_result(id: int, repository: ApprovedLabBookingResul
 @result_router.get("/approved_lab_booking_results/booking/{booking_id}", response_model=ApprovedLabBookingResultDTO)
 def get_approved_lab_booking_result_by_booking_id(booking_id: int,
                                                   repository: ApprovedLabBookingResultRepository = Depends(
-                                                      get_approved_result_repository)):
+                                                      get_approved_result_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     result = repository.get_by_booking_id(booking_id)
 
     if result is None:
@@ -319,7 +351,9 @@ def create_approved_lab_booking_result(dto: ApprovedLabBookingResultDTO,
 @result_router.put("/approved_lab_booking_results/{id}", response_model=ApprovedLabBookingResultDTO)
 def update_approved_lab_booking_result(id: int, dto: ApprovedLabBookingResultDTO,
                                        repository: ApprovedLabBookingResultRepository = Depends(
-                                           get_approved_result_repository)):
+                                           get_approved_result_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     result = repository.update(id, dto)
     if result is None:
         raise HTTPException(status_code=404, detail="ApprovedLabBookingResult not found")
@@ -329,7 +363,9 @@ def update_approved_lab_booking_result(id: int, dto: ApprovedLabBookingResultDTO
 @result_router.delete("/approved_lab_booking_results/{id}", response_model=bool)
 def delete_approved_lab_booking_result(id: int,
                                        repository: ApprovedLabBookingResultRepository = Depends(
-                                           get_approved_result_repository)):
+                                           get_approved_result_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     result = repository.delete_by_booking_id(id)
     if not result:
         raise HTTPException(status_code=404, detail="ApprovedLabBookingResult not found")

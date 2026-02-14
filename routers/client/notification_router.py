@@ -1,9 +1,11 @@
-from typing import List
+from typing import List, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from security.dependencies import get_current_active_user
 from sqlalchemy.orm import Session
 
 from dtos.people import ClientNotificationDTO
+from dtos.auth import UserDTO
 from db import get_db
 from models.client import MsgType
 from repos.client.notification_repository import NotificationRepository
@@ -26,7 +28,9 @@ def get_repository(db: Session = Depends(get_db)) -> NotificationRepository:
 @notification_router.get("/{notification_id}")
 def get_notification(
         notification_id: int,
-        repository: NotificationRepository = Depends(get_repository)):
+        repository: NotificationRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     """
     Retrieve a notification by ID.
     """
@@ -42,7 +46,8 @@ def get_notification(
 def get_all_notifications(
         limit: int = 100,
         offset: int = 0,
-        repository: NotificationRepository = Depends(get_repository),
+        repository: NotificationRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     """
     Retrieve all notifications with optional pagination.
@@ -54,7 +59,8 @@ def get_all_notifications(
 def update_notification(
         notification_id: int,
         payload: dict,
-        repository: NotificationRepository = Depends(get_repository),
+        repository: NotificationRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     """
     Update a notification by ID.
@@ -76,7 +82,8 @@ def update_notification(
 def create_subscription(
         client_id: int,
         msg_type: MsgType,
-        repository: NotificationRepository = Depends(get_repository),
+        repository: NotificationRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     """
     Create a new subscription for a client.
@@ -95,7 +102,8 @@ def get_subscriptions_by_client(
         client_id: int,
         limit: int = 100,
         offset: int = 0,
-        repository: NotificationRepository = Depends(get_repository),
+        repository: NotificationRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     """
     Retrieve all subscriptions for a specific client.
@@ -106,7 +114,8 @@ def get_subscriptions_by_client(
 @notification_router.delete("/subscriptions/{subscription_id}")
 def delete_subscription(
         subscription_id: int,
-        repository: NotificationRepository = Depends(get_repository)
+        repository: NotificationRepository = Depends(get_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     """
     Delete a subscription by ID.
@@ -125,7 +134,8 @@ def update_client_notification(
         state: bool,
         notification_id: int,
         notification_type: MsgType,
-        repository: NotificationRepository = Depends(get_notification_repository)
+        repository: NotificationRepository = Depends(get_notification_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     """
     Update a specific notification for a client. If the notification is not found, add it with the state set to false.

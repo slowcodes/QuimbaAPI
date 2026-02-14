@@ -1,9 +1,12 @@
+from typing import Annotated
 from fastapi import APIRouter, Depends
 from starlette import status
 import json
 from fastapi.encoders import jsonable_encoder
+from security.dependencies import get_current_active_user
 from cache.redis import get_redis_client, decode_bytes
 from dtos.people import ClientDTO, OrganisationDTO
+from dtos.auth import UserDTO
 from sqlalchemy.orm import Session
 from db import get_db
 from starlette.responses import JSONResponse
@@ -20,7 +23,9 @@ def get_client_repository(db: Session = Depends(get_db)) -> ClientRepository:
 @client_router.get('/api/clients/', tags=['Clients'])
 async def get_all_clients(skip: int = 0,
                     limit: int = 20, keyword: str = '', refresh: int = 0,
-                    repo: ClientRepository = Depends(get_client_repository)):
+                    repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
 
     redis = get_redis_client()
     cache_key = f"clients:{skip}:{limit}:{keyword}"
@@ -42,13 +47,17 @@ async def get_all_clients(skip: int = 0,
 
 
 @client_router.get('/api/clients/client', response_model=None, tags=['Clients'])
-def get_client(id: int, repo: ClientRepository = Depends(get_client_repository)):
+def get_client(id: int, repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     # return JSONResponse(status_code=status.HTTP_200_OK, content=repos.client_repository.get_client(db, id))
     return repo.get_client(id);
 
 
 @client_router.post('/api/clients/enroll', response_model=None, tags=['Clients', 'Enrollment'])
-def enroll_client(client: ClientDTO, repo: ClientRepository = Depends(get_client_repository)):
+def enroll_client(client: ClientDTO, repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
 
     if client.id:
         update = repo.update_client(client.id, client)
@@ -60,7 +69,9 @@ def enroll_client(client: ClientDTO, repo: ClientRepository = Depends(get_client
 
 
 @client_router.get('/api/clients/check_email', response_model=None, tags=['Clients', 'Enrollment', 'Username'])
-def check_client_username(email: str, repo: ClientRepository = Depends(get_client_repository)):
+def check_client_username(email: str, repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
 
     exist = repo.is_email_unique(email)
     return exist
@@ -68,33 +79,45 @@ def check_client_username(email: str, repo: ClientRepository = Depends(get_clien
 
 
 @client_router.get('/api/clients/search', response_model=None, tags=['Clients', 'Search'])
-def search_client(searchtext: str, repo: ClientRepository = Depends(get_client_repository)):
+def search_client(searchtext: str, repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.search_client(searchtext)
 
 
 @client_router.get('/api/staff/', tags=['Staff'])
-def get_all_staff(repo: ClientRepository = Depends(get_client_repository)):
+def get_all_staff(repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_all_staff()
 
 
 @client_router.post('/api/staff/enroll', tags=['Staff', 'Enrollment'])
-def enroll_Staff(client: ClientDTO, repo: ClientRepository = Depends(get_client_repository)):
+def enroll_Staff(client: ClientDTO, repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.enroll_staff(client)
 
 
 @client_router.get('/api/resources/states/', tags=['State', 'Resources'])
-def get_states(repo: ClientRepository = Depends(get_client_repository)):
+def get_states(repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     res = repo.get_states()
     return res
 
 
 @client_router.get('/api/resources/states/lga/', tags=['State', 'Resources', 'LGA'])
-def get_state_lga(state_id: int, repo: ClientRepository = Depends(get_client_repository)):
+def get_state_lga(state_id: int, repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_state_lga(state_id)
 
 
 @client_router.get('/api/resources/occupations/', tags=['Occupation', 'Resources'])
-def get_occupations(repo: ClientRepository = Depends(get_client_repository)):
+def get_occupations(repo: ClientRepository = Depends(get_client_repository),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_occupations()
 
 

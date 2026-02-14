@@ -58,7 +58,9 @@ def get_transaction(transaction_id: int,
 def get_open_transactions(
         # transaction_type: TransactionType = TransactionType.All,
         limit: int = 100, skip: int = 0,
-        repo: TransactionRepository = Depends(transaction_repo)):
+        repo: TransactionRepository = Depends(transaction_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     open_transactions = repo.get_clients_with_open_transactions(limit=limit, skip=skip)
     return open_transactions
 
@@ -66,7 +68,9 @@ def get_open_transactions(
 @transaction_router.post("/transaction-package/")
 def add_transaction_package(
         transaction_package: TransactionPackageDTO,
-        repo: TransactionRepository = Depends(transaction_repo)):
+        repo: TransactionRepository = Depends(transaction_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     transaction_package = repo.create_transaction_package(transaction_package)
     if transaction_package is None:
         raise HTTPException(status_code=400, detail="Transaction package creation failed")
@@ -97,8 +101,9 @@ def read_transactions(path: str, limit: int = 15, skip: int = 0,
                       only_referred_transactions: int = 0,
                       start_date: str = '', last_date: str = '', date_filter_status: str = '',
                       transaction_type: TransactionType = TransactionType.All,
-                      repo: TransactionRepository = Depends(transaction_repo),
-                      ):
+                      repo: TransactionRepository = Depends(transaction_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     date_filter = DateFilterDTO(
         start_date=start_date + " 00:00:00" if start_date else None,
         last_date=last_date + " 23:59:59" if last_date else None,
@@ -129,7 +134,9 @@ def read_transactions(path: str, limit: int = 15, skip: int = 0,
 
 
 @transaction_router.get("/transactions/{transaction_id}/payments", tags=["Payment"], response_model=List[PaymentDTO])
-def get_payments_by_transaction(transaction_id: int, db: Session = Depends(get_db)):
+def get_payments_by_transaction(transaction_id: int, db: Session = Depends(get_db),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     prp = PaymentRepository(db)
     payments = prp.get_payments_by_transaction_id(db, transaction_id=transaction_id)
     if not payments:
@@ -139,14 +146,18 @@ def get_payments_by_transaction(transaction_id: int, db: Session = Depends(get_d
 
 @transaction_router.post("/payments/", response_model=PaymentDTO, tags=["Payment"])
 def create_payment(payment: PaymentDTO,
-                   db: Session = Depends(get_db)):
+                   db: Session = Depends(get_db),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     repo = PaymentRepository(db)
     return repo.create_payment(payment=payment)
 
 
 @transaction_router.get("/payments/{payment_id}", response_model=PaymentDTO, tags=["Payment"])
 def read_payment(payment_id: int,
-                 db: Session = Depends(get_db)):
+                 db: Session = Depends(get_db),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     prp = PaymentRepository(db)
     db_payment = prp.get_payment(db=db, payment_id=payment_id)
     if db_payment is None:
@@ -160,8 +171,8 @@ def read_payment(payment_id: int,
     status_code=status.HTTP_201_CREATED
 )
 def create_settlement(
-        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
         payload: ReferredTransactionSettlementCreateDTO,
+        current_user: Annotated[UserDTO, Depends(get_current_active_user)],
         repo: TransactionRepository = Depends(transaction_repo),
 ):
     settlement = repo.create_settlement(
@@ -201,7 +212,9 @@ def get_settlement(
 @transaction_router.put("/payments/{payment_id}", response_model=PaymentDTO)
 def update_payment(payment_id: int,
                    payment: PaymentDTO,
-                   db: Session = Depends(get_db)):
+                   db: Session = Depends(get_db),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     db_payment = transaction_repository.update_payment(db=db, payment_id=payment_id, payment=payment)
     if db_payment is None:
         raise HTTPException(status_code=404, detail="Payment not found")
@@ -210,7 +223,9 @@ def update_payment(payment_id: int,
 
 @transaction_router.delete("/payments")
 def delete_payment(payment_id: int,
-                   repo: PaymentRepository = Depends(payment_repo)):
+                   repo: PaymentRepository = Depends(payment_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     payment = repo.delete_payment(payment_id)
     if payment is None:
         raise HTTPException(status_code=404, detail="Payment not found")
@@ -221,6 +236,8 @@ def delete_payment(payment_id: int,
 def get_payments(limit: int = 15, skip: int = 0,
                  transaction_type: str = None,
                  client_id: int = 0, start_date: str = '', last_date: str = '', date_filter_status: str = '',
-                 repo: PaymentRepository = Depends(payment_repo)):
+                 repo: PaymentRepository = Depends(payment_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
     return repo.get_payments(limit, skip, transaction_type, client_id,
                              start_date, last_date)
