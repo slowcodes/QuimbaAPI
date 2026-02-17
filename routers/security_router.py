@@ -12,7 +12,7 @@ from db import get_db
 from sqlalchemy.orm import Session
 
 from repos.client.person_repository import PersonRepository
-from repos.conf_setting_repository import ConfSettingRepository
+from repos.setting_repository import SettingRepository
 from security.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from security.dependencies import get_current_active_user, create_access_token, require_role_and_privilege
 
@@ -199,12 +199,49 @@ def get_all_user_group_members(user_id: int,
     return auth.get_all_user_groups(user_id)
 
 
-def conf_repo(db: Session = Depends(get_db)) -> ConfSettingRepository:
-    return ConfSettingRepository(db)
+def conf_repo(db: Session = Depends(get_db)) -> SettingRepository:
+    return SettingRepository(db)
 
 
 @security_router.get("/config/setting", response_model=List[ConfSettingDTO])
-def list_conf_settings(repo: Session = Depends(conf_repo),*, 
+def list_conf_settings(skip: int = 0, limit: int = 100, repo: SettingRepository = Depends(conf_repo),*, 
     current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
-    return repo.get_all()
+    return repo.get_settings(skip=skip, limit=limit)
+
+
+@security_router.post("/config/setting", response_model=ConfSettingDTO, status_code=status.HTTP_201_CREATED)
+def create_conf_setting(setting: ConfSettingDTO, repo: SettingRepository = Depends(conf_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
+    return repo.create_setting(setting)
+
+
+@security_router.get("/config/setting/{setting_id}", response_model=ConfSettingDTO)
+def get_conf_setting(setting_id: int, repo: SettingRepository = Depends(conf_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
+    setting = repo.get_setting(setting_id)
+    if not setting:
+        raise HTTPException(status_code=404, detail="Config setting not found")
+    return setting
+
+
+@security_router.put("/config/setting/{setting_id}", response_model=ConfSettingDTO)
+def update_conf_setting(setting_id: int, setting: ConfSettingDTO, repo: SettingRepository = Depends(conf_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
+    updated = repo.update_setting(setting_id, setting)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Config setting not found")
+    return updated
+
+
+@security_router.delete("/config/setting/{setting_id}", status_code=status.HTTP_200_OK)
+def delete_conf_setting(setting_id: int, repo: SettingRepository = Depends(conf_repo),*, 
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
+    deleted = repo.delete_setting(setting_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Config setting not found")
+    return {"deleted": True}
