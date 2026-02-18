@@ -15,6 +15,7 @@ class SettingRepository:
         return ConfSettingDTO(
             id=setting.id,
             parameter=setting.parameter,
+            param_desc=setting.param_desc,
             data_type=setting.data_type,
             param_value=setting.param_value,
             ui_control_type=setting.ui_control_type,
@@ -23,6 +24,7 @@ class SettingRepository:
     def create_setting(self, setting: ConfSettingDTO) -> ConfSettingDTO:
         db_setting = ConfSetting(
             parameter=setting.parameter,
+            param_desc=setting.param_desc,
             data_type=setting.data_type,
             param_value=setting.param_value,
             ui_control_type=setting.ui_control_type,
@@ -60,6 +62,7 @@ class SettingRepository:
             return None
 
         record.parameter = setting.parameter
+        record.param_desc = setting.param_desc
         record.data_type = setting.data_type
         record.param_value = setting.param_value
         record.ui_control_type = setting.ui_control_type

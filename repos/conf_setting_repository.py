@@ -17,6 +17,7 @@ class ConfSettingRepository:
         return ConfSettingDTO(
             id=entity.id,
             parameter=entity.parameter,
+            param_desc=entity.param_desc,
             data_type=entity.data_type,
             param_value=entity.param_value,
             ui_control_type=entity.ui_control_type
@@ -26,6 +27,7 @@ class ConfSettingRepository:
     def create(self, dto: ConfSettingDTO) -> ConfSettingDTO:
         setting = ConfSetting(
             parameter=dto.parameter,
+            param_desc=dto.param_desc,
             data_type=dto.data_type,
             param_value=dto.param_value,
         )
@@ -77,6 +79,7 @@ class ConfSettingRepository:
             return None
 
         setting.parameter = dto.parameter
+        setting.param_desc = dto.param_desc
         setting.data_type = dto.data_type
         setting.param_value = dto.param_value
 
