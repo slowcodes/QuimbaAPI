@@ -18,6 +18,7 @@ from routers.security_router import security_router
 from routers.service_router import service_router
 from routers.supply_router import supply_router
 from routers.transaction_router import transaction_router
+from routers.upload_router import upload_router
 
 base_routers = [
     product_router,
@@ -44,4 +45,5 @@ base_routers = [
     sample_collection_router,
     queue_router,
     service_router,
+    upload_router,
 ]
