@@ -20,11 +20,7 @@ import os
 import redis
 
 from security.dependencies import refresh_access_token
-
-
-app = FastAPI(default_response_class=ORJSONResponse)
-app.add_middleware(GZipMiddleware, minimum_size=1000)
-
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="Quimba API",
@@ -40,7 +36,10 @@ app = FastAPI(
         "name": "Apache 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
     },
+    default_response_class=ORJSONResponse,
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 r = redis.Redis(host="localhost", port=6379, db=0)
 
