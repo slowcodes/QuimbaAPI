@@ -260,12 +260,16 @@ class ServiceRepository:
         #
         # print('booking details id', booking_id)
         complete = 0
+        no_of_waiting_service = 0
         for serv in all_services:
             # queue = self.queue_repo.get_queue_by_booking_id(serv['id'])
             queue = self.session.query(LabServicesQueue).filter(LabServicesQueue.booking_id == serv.id).first()
 
             if queue is not None:
                 # check observation result is ready
+                if queue.status == QueueStatus.Waiting:
+                    no_of_waiting_service = no_of_waiting_service + 1
+
                 if queue.lab_service.lab_type == LabType.Observation and queue.lab_result is not None:
                     complete = complete + 1
                     continue
@@ -277,7 +281,10 @@ class ServiceRepository:
                     if sample.status == QueueStatus.Processed:
                         complete = complete + 1
 
-        no_of_booked_services = len(all_services)
+        # get number of LabServiceQueue with waiting status for this booking id
+
+
+        no_of_booked_services = len(all_services) - no_of_waiting_service
 
         if no_of_booked_services == 0:
             no_of_booked_services = 1

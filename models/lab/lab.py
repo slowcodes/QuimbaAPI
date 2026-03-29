@@ -140,7 +140,7 @@ class Lab_Collected_Result(Base):
 
 class QueueStatus(str, Enum):
     All = 'All'
-    Waiting = 'Waiting'
+    Waiting = 'Waiting' # suspended
     Processed = 'Processed'
     Processing = 'Processing'
     Cancelled = 'Cancelled'

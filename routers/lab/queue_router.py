@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from cache.redis import get_redis_client
 from db import get_db
-from dtos.lab import LabServicesQueueDTO, QueueListingDTO, QueueDTO, LabServicesQueueCreateDTO
+from dtos.lab import LabServicesQueueDTO, LabServicesQueueCreateDTO
 from dtos.auth import UserDTO
 from repos.lab.queue_repository import QueueRepository
 
@@ -91,13 +91,12 @@ def delete_lab_service_queue(queue_id: int, qr: QueueRepository = Depends(get_qu
 
 
 @queue_router.post("/repriotize/")
-def repriotize(queue: QueueListingDTO, db: Session = Depends(get_db),*, 
+def repriotize(queue: LabServicesQueueDTO, qr: QueueRepository = Depends(get_queue_repository),*,
     current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
-    qr = QueueRepository(db)
-
     priority_dict = {
-        "priority": queue.priority
+        "priority": queue.priority,
+        "status": queue.status
     }
 
     # Get  queuing details

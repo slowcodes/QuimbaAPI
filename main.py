@@ -39,7 +39,6 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 r = redis.Redis(host="localhost", port=6379, db=0)
 
@@ -104,6 +103,8 @@ for route in sales_router:
 
 for route in base_routers:
     app.include_router(route, prefix='')
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 if os.getenv("AUTO_CREATE_TABLES", "false").lower() == "true":

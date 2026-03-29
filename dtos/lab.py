@@ -130,24 +130,6 @@ class LabServiceQueueBase(BaseModel):
     class Config:
         from_attributes = True
 
-class QueueListingDTO(BaseModel):
-    id: int
-    scheduled_at: datetime
-    lab_service: str
-    laboratory: str
-    status: QueueStatus
-    priority: QueuePriority
-    est_delivery_time: int
-    client_first_name: str
-    client_last_name: str
-    booking_ref: int
-
-
-class QueueDTO(BaseModel):
-    total: int
-    total_processed: int
-    queue: List[QueueListingDTO]
-
 
 class CollectedSamplesBaseDTO(BaseModel):
     id: Optional[int] = None
@@ -240,25 +222,6 @@ class LabResultByQueueDTO(LabServiceQueueBase):
         from_attributes = True
 
 
-class Queue(BaseModel):
-    queue_status: str
-    queue_priority: str
-    queue_id: int
-    queue_booking_time: str
-
-
-class SampleDetailDTO(BaseModel):
-    sample_type: SampleType
-    sample_id: int
-    collected_at: str
-    lab_service_id: int
-    container_label: str
-    service_agent: Optional[BasicUserDTO] = None
-    lab_service_name: str
-    queue: Queue
-    client: ClientDTO;
-
-
 class DateFilterDTO(BaseModel):
     start_date: Optional[datetime] = None
     last_date: Optional[datetime] = None
@@ -330,9 +293,3 @@ class LabResultLogUpdate(BaseModel):
     action: Optional[ResultStatus]  # Only allow updating the action field
 
 
-class LabResultLogResponse(LabResultLogBase):
-    id: int
-    logged_at: datetime
-
-    class Config:
-        from_attributes = True

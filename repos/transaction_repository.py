@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Optional, Type, TypeVar
 from datetime import datetime
 
-from sqlalchemy import select, or_, func, String
+from sqlalchemy import select, or_, and_, func, String
 from sqlalchemy.orm import Session, joinedload
 
 from db import Base
@@ -126,7 +126,7 @@ class TransactionRepository:
         total = query.count()
 
         # --- Ordering (optional but recommended) ---
-        query = query.order_by(Transaction.transaction_date.desc())
+        query = query.order_by(Transaction.id.desc(), Transaction.transaction_date.desc())
 
         # # --- Pagination ---
         if skip:
@@ -153,15 +153,22 @@ class TransactionRepository:
         booking_status: Optional[str] = None,
         search_text: str = ''
     ):
+        detail_filters = [
+            ServiceBookingDetail.booking_type == BookingType.Laboratory,
+            ServiceBookingDetail.lab_service_queue.has(),
+        ]
+
+        if lab_id != 0:
+            detail_filters.append(
+                ServiceBookingDetail.lab_service_queue.has(
+                    LabServicesQueue.lab_service.has(LabService.lab_id == lab_id)
+                )
+            )
+
         query = (
             self.db_session.query(Transaction)
             .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id)
-            .join(ServiceBooking.booking_detail)
-            .join(ServiceBookingDetail.lab_service_queue)
-            .join(LabServicesQueue.lab_service)
-            .join(LabService.laboratory)
-            .filter(ServiceBookingDetail.booking_type == BookingType.Laboratory)
-            .distinct(Transaction.id)
+            .filter(ServiceBooking.booking_detail.any(and_(*detail_filters)))
             .options(
                 joinedload(Transaction.sales_services)
                 .joinedload(ServiceBooking.booking_detail)
@@ -169,10 +176,8 @@ class TransactionRepository:
                 .joinedload(LabServicesQueue.lab_service)
             )
         )
-        search_text = (search_text or "").strip()
 
-        if lab_id != 0:
-            query = query.filter(LabService.lab_id == lab_id)
+        search_text = (search_text or "").strip()
 
         if client_id != 0:
             query = query.filter(ServiceBooking.client_id == client_id)
@@ -214,10 +219,12 @@ class TransactionRepository:
 
         # --- Pagination ---
         total = query.count()
+        query = query.order_by(Transaction.transaction_time.desc())
         if skip:
             query = query.offset(skip)
         if limit:
             query = query.limit(limit)
+
 
         return {
             'data': [self.get_list(datum, BookingType.Laboratory) for datum in query.all()],

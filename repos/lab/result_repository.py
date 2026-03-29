@@ -66,10 +66,10 @@ class ResultRepository:
 
                 if result.queue.lab_service.lab_type == LabType.Observation:
                     # set queue as processing
-                    self.queue_repository.update_lab_queue(
-                        result.queue_id,
-                        {'status': QueueStatus.Processing}
-                    )
+                    lab_service_queue = self.db_session.query(LabServicesQueue).filter(
+                        LabServicesQueue.id == result.queue_id).first()
+                    if lab_service_queue:
+                        lab_service_queue.status = QueueStatus.Processing
                 else:
                     # update sample status to processing
                     csr = CollectedSamplesRepository(self.db_session)

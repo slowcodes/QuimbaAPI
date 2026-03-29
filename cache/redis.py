@@ -4,7 +4,7 @@ import os
 
 def get_redis_client():
     # Use environment variable or default to 'cache' (Docker service name)
-    redis_host = os.getenv("REDIS_HOST", "cache")
+    redis_host = os.getenv("REDIS_HOST", "127.0.0.1")
     redis_port = int(os.getenv("REDIS_PORT", 6379))
 
     return redis.Redis(

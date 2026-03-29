@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from dtos.lab import LabServicesQueueDTO, QueueDTO, VerifiedResultEntryDTO, SampleResultDTO, LabServicesQueueCreateDTO
+from dtos.lab import LabServicesQueueDTO, VerifiedResultEntryDTO, SampleResultDTO, LabServicesQueueCreateDTO
 from dtos.services import ServiceEventDTO, EventType, ServiceTrackingDTO
 from models.client import Client, Person
 from models.lab.lab import LabServicesQueue, Laboratory, QueueStatus, LabService, CollectedSamples, SampleResult, \
@@ -55,7 +55,7 @@ class QueueRepository:
 
         return LabServicesQueueDTO.from_orm(lab_service_queue)
 
-    def search_lab_service_queue(self, keyword='', skip=0, limit=10, lab_id: int = 0) -> QueueDTO:
+    def search_lab_service_queue(self, keyword='', skip=0, limit=10, lab_id: int = 0) :
         query = self.base_query. \
             filter(LabService.lab_service_name.ilike(f"%{keyword}%")
                    | Laboratory.lab_name.ilike(f"%{keyword}%")

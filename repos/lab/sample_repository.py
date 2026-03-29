@@ -5,7 +5,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from dtos.all import DataResponseDTO
-from dtos.lab import CollectedSamplesDTO, SampleDetailDTO, LabServicesQueueDTO, CollectedSamplesCreateDTO
+from dtos.lab import CollectedSamplesDTO, LabServicesQueueDTO, CollectedSamplesCreateDTO
 from models.auth import User
 from models.client import Person, Client
 from models.lab.lab import CollectedSamples, LabService, LabServicesQueue, QueueStatus, SampleType, SampleResult

@@ -33,6 +33,7 @@ PyYAML==6.0
 requests==2.31.0
 rsa==4.9
 shellescape==3.8.1
+orjson
 six==1.16.0
 sniffio==1.3.0
 SQLAlchemy~=2.0.41
