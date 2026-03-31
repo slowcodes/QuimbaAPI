@@ -8,6 +8,8 @@ from dtos.auth import UserDTO
 from security.dependencies import get_current_active_user
 
 upload_router = APIRouter(prefix="/uploads/img/config", tags=["Uploads"])
+BASE_DIR = Path(__file__).resolve().parent.parent
+UPLOAD_DIR = BASE_DIR / "uploads" / "img" / "config"
 
 
 @upload_router.post("/", status_code=status.HTTP_201_CREATED)
@@ -25,9 +27,8 @@ def upload_config_image(
     extension = Path(original_name).suffix
     stored_name = f"{uuid4().hex}{extension}"
 
-    upload_dir = Path("uploads") / "img" / "config"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    output_path = upload_dir / stored_name
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = UPLOAD_DIR / stored_name
 
     try:
         with output_path.open("wb") as buffer:

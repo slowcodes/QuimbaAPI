@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 import uvicorn
@@ -21,6 +22,9 @@ import redis
 
 from security.dependencies import refresh_access_token
 from fastapi.staticfiles import StaticFiles
+
+BASE_DIR = Path(__file__).resolve().parent
+UPLOADS_DIR = BASE_DIR / "uploads"
 
 app = FastAPI(
     title="Quimba API",
@@ -104,7 +108,8 @@ for route in sales_router:
 for route in base_routers:
     app.include_router(route, prefix='')
 
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 
 if os.getenv("AUTO_CREATE_TABLES", "false").lower() == "true":
