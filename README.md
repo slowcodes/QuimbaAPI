@@ -67,6 +67,9 @@ docker compose up
 
 The API container already has `DATABASE_URL` configured to talk to the `db` service.
 
+Uploaded files are served by the API on both `/uploads/...` and `/api/uploads/...`.
+When running with Docker Compose, the API stores uploads in `/app/uploads`, backed by the `app_uploads` named volume so files remain available across container restarts.
+
 ## Database Initialization
 On startup, the app:
 - creates tables (see `main.py`)

@@ -31,13 +31,17 @@ services:
     ports:
        - "8000:8000"
     environment:
+      - REDIS_HOST=cache
       - DATABASE_URL=postgresql://quimba:secretofthesand@db:5432/postgres
+      - UPLOADS_DIR=/app/uploads
     depends_on:
       - db
       - cache
     restart: unless-stopped
     networks:
       - quimba_network
+    volumes:
+      - app_uploads:/app/uploads
   db:
     image: postgres:13
     environment:
@@ -54,5 +58,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  app_uploads:
 networks:
   quimba_network:  # Shared network for all containers

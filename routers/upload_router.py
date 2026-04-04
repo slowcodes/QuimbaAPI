@@ -6,13 +6,14 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from dtos.auth import UserDTO
 from security.dependencies import get_current_active_user
+from storage import UPLOADS_DIR
 
-upload_router = APIRouter(prefix="/uploads/img/config", tags=["Uploads"])
-BASE_DIR = Path(__file__).resolve().parent.parent
-UPLOAD_DIR = BASE_DIR / "uploads" / "img" / "config"
+upload_router = APIRouter(tags=["Uploads"])
+UPLOAD_DIR = UPLOADS_DIR / "img" / "config"
 
 
-@upload_router.post("/", status_code=status.HTTP_201_CREATED)
+@upload_router.post("/uploads/img/config/", status_code=status.HTTP_201_CREATED)
+@upload_router.post("/api/uploads/img/config/", status_code=status.HTTP_201_CREATED)
 def upload_config_image(
     current_user: Annotated[UserDTO, Depends(get_current_active_user)],
     file: UploadFile = File(...)
@@ -46,5 +47,6 @@ def upload_config_image(
         "stored_filename": stored_name,
         "content_type": file.content_type,
         "size": output_path.stat().st_size,
-        "path": f"/uploads/img/config/{stored_name}",
+        "path": f"/api/uploads/img/config/{stored_name}",
+        "legacy_path": f"/uploads/img/config/{stored_name}",
     }
