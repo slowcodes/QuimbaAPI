@@ -89,6 +89,7 @@ class ExperimentParameter(Base):
     measuring_unit = Column(String(50))
     parameter_type = Column(SqlEnum(ParameterType))
     exp_id = Column(Integer, ForeignKey("lab_experiment.id", ondelete="cascade"))
+    stacking_order = Column(Integer, default=0)  # This is used to determine the order of parameters when displaying results
 
     lab_experiment = relationship("Experiment", back_populates="parameters")
     boundary = relationship("ExperimentParameterBounds", back_populates="parameter", uselist=True)
