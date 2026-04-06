@@ -5,7 +5,8 @@ services:
     ports:
       - "80:80"
     environment:
-      - API_URL=http://app/api/
+      # Use a browser-visible relative path; `app` is only resolvable inside Docker.
+      - API_URL=/api/
     depends_on:
       - app
     restart: unless-stopped

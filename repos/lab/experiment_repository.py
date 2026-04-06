@@ -76,9 +76,13 @@ class ExperimentRepository:
             ExperimentParameter.parameter,
             ExperimentParameter.measuring_unit,
             ExperimentParameter.parameter_type,
+            ExperimentParameter.stacking_order,
         ]
         rs = self.session.query(*cols).select_from(ExperimentParameter).filter(
-            ExperimentParameter.exp_id == exp_id).all()
+            ExperimentParameter.exp_id == exp_id).order_by(
+            ExperimentParameter.stacking_order.asc(),
+            ExperimentParameter.id.asc()
+        ).all()
         parameter = []
         for param in rs:
             parameter.append({
@@ -86,6 +90,7 @@ class ExperimentRepository:
                 'name': param.parameter,
                 'unit': param.measuring_unit,
                 'type': param.parameter_type,
+                'stacking_order': param.stacking_order,
                 'paramKey': param.id
             })
         return parameter
@@ -170,6 +175,7 @@ class ExperimentRepository:
             existing_param.parameter = param.parameter
             existing_param.measuring_unit = param.measuring_unit
             existing_param.parameter_type = param.parameter_type
+            existing_param.stacking_order = param.stacking_order
             param_id = existing_param.id
 
             self.session.commit()
@@ -179,7 +185,8 @@ class ExperimentRepository:
                 parameter=param.parameter,
                 measuring_unit=param.measuring_unit,
                 parameter_type=param.parameter_type,
-                exp_id=exp_id
+                exp_id=exp_id,
+                stacking_order=param.stacking_order
             )
             self.session.add(new_param)
             self.session.flush()  # Ensure new_param has an ID before adding boundaries

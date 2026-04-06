@@ -1,8 +1,10 @@
+import mimetypes
 from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 
 from dtos.auth import UserDTO
 from security.dependencies import get_current_active_user
@@ -50,3 +52,25 @@ def upload_config_image(
         "path": f"/api/uploads/img/config/{stored_name}",
         "legacy_path": f"/uploads/img/config/{stored_name}",
     }
+
+
+def _get_config_image_path(filename: str) -> Path:
+    safe_name = Path(filename).name
+    file_path = UPLOAD_DIR / safe_name
+    if not file_path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+    return file_path
+
+
+def _serve_config_image(filename: str) -> FileResponse:
+    file_path = _get_config_image_path(filename)
+    media_type, _ = mimetypes.guess_type(str(file_path))
+    return FileResponse(file_path, media_type=media_type or "application/octet-stream")
+
+
+@upload_router.get("/uploads/img/config/{filename}")
+@upload_router.get("/api/uploads/img/config/{filename}")
+@upload_router.get("/img/config/{filename}")
+@upload_router.get("/api/img/config/{filename}")
+def get_config_image(filename: str):
+    return _serve_config_image(filename)

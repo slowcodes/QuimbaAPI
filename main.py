@@ -27,7 +27,7 @@ app = FastAPI(
     title="Quimba API",
     description="This API and it's accompanying documentation is developed and maintained by Business Innovation and Techonology Systems. Its provides details on how to access the identity and and biometric enrollment services.py provided by the DataTruck Platform.",
     version="0.0.1",
-    terms_of_service="https://bitsystems.com.ng/terms/",
+    terms_of_service="https://bitsystems.com.ng/quimba/terms/",
     contact={
         "name": "Business Innovation & Technology",
         "url": "https://bitsystems.com.ng/contact/",

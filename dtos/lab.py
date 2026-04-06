@@ -54,6 +54,7 @@ class ExperimentParameterDTO(BaseModel):
     measuring_unit: str
     parameter_type: ParameterType
     exp_id: Optional[int] = None
+    stacking_order: int = 0
     boundary: List[ParameterBoundaryDTO] = []
 
     class Config:
@@ -291,5 +292,4 @@ class LabResultLogCreate(LabResultLogBase):
 
 class LabResultLogUpdate(BaseModel):
     action: Optional[ResultStatus]  # Only allow updating the action field
-
 

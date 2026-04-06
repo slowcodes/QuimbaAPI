@@ -270,7 +270,8 @@ class LabRepository:
                         parameter=parameter.parameter,
                         measuring_unit=parameter.measuring_unit,
                         exp_id=new_experiment.id,
-                        parameter_type=parameter.parameter_type
+                        parameter_type=parameter.parameter_type,
+                        stacking_order=parameter.stacking_order
                     )
                     self.session.add(new_parameter)
                     self.session.flush()
