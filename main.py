@@ -12,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
+
+from messaging.resend import send_mail
 from routers.pharmacy.all_pharm_router import pharm_routers
 from routers.all_base_router import base_routers
 from routers.sales.all import sales_router
@@ -123,6 +125,7 @@ current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logging.error("App has re-started. Startup time: "+current_time)
 
 if __name__ == '__main__':
+    send_mail()
     # Set up logging
 
     # SQLModel.metadata.create_all(engine)
