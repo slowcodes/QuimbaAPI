@@ -2,7 +2,7 @@ from http.client import HTTPException
 from typing import Optional
 
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, aliased
 
 from dtos.lab import LaboratoryGroupDTO, LaboratoryServiceDetailDTO, LaboratoryDTO, LabServiceDTO
@@ -74,6 +74,7 @@ class LabRepository:
             LabServiceGroup).count()
 
     def get_lab_services(self, skip, limit, lab_id: int, keyword):
+        search_keyword = (keyword or "").strip()
         query = self.session.query(LabService).filter(LabService.deleted_at.is_(None))
 
         # Add conditions based on lab_id
@@ -81,9 +82,13 @@ class LabRepository:
             query = query.filter(LabService.lab_id == lab_id)
 
         # Apply search keyword if any
-        if len(keyword.replace(' ', '')) > 2:
-            query = query.filter(LabService.lab_service_name.ilike(f"%{keyword}%") |
-                                 Laboratory.lab_name.ilike(f"%{keyword}%"))
+        if len(search_keyword.replace(' ', '')) > 2:
+            query = query.join(Laboratory, Laboratory.id == LabService.lab_id).filter(
+                or_(
+                    LabService.lab_service_name.ilike(f"%{search_keyword}%"),
+                    Laboratory.lab_name.ilike(f"%{search_keyword}%")
+                )
+            )
         total = query.count()
 
         # Apply offset and limit

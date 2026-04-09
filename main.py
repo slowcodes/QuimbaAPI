@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
 
+from messaging.bulksmsnigeria import send_sms
 from messaging.resend import send_mail
 from routers.pharmacy.all_pharm_router import pharm_routers
 from routers.all_base_router import base_routers
@@ -44,7 +45,8 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 r = redis.Redis(host="localhost", port=6379, db=0)
-
+send_mail()
+send_sms()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -125,7 +127,7 @@ current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logging.error("App has re-started. Startup time: "+current_time)
 
 if __name__ == '__main__':
-    send_mail()
+
     # Set up logging
 
     # SQLModel.metadata.create_all(engine)
