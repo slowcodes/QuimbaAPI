@@ -48,3 +48,4 @@ websockets==11.0.1
 twilio~=9.3.7
 alembic~=1.15.1
 sqlmodel~=0.0.24
+resend
