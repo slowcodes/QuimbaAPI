@@ -73,7 +73,7 @@ class ExpDTO(BaseModel):
 class LabServiceExperimentDTO(BaseModel):
     id: Optional[int] = None
     lab_service_id: int
-    experiment_id: int
+    experiment_id: Optional[int] = None
 
     experiment: Optional[ExpDTO]
 
@@ -292,4 +292,3 @@ class LabResultLogCreate(LabResultLogBase):
 
 class LabResultLogUpdate(BaseModel):
     action: Optional[ResultStatus]  # Only allow updating the action field
-

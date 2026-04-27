@@ -45,8 +45,18 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 r = redis.Redis(host="localhost", port=6379, db=0)
-send_mail()
-send_sms()
+# send_mail()
+# gfr for things like kft to be included in the next release, we can use the same approach as the sms, which is to run it in a separate thread so that it doesn't block the main thread. This way, we can ensure that the email sending process doesn't interfere with the responsiveness of the API.
+# font, size, bold, italic, etc. not working
+# no result available for observation, in results,
+# qr code to be included,
+# whatsapp message status, on
+# widal colors issues,
+# lab service not updating,
+# patient info, too much space on the result.
+# footnote and header spaces too much.
+# optimised for printing
+# send_sms()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
