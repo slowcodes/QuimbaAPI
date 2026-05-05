@@ -54,6 +54,15 @@ def get_transaction(transaction_id: int,
                         content={'data': {}, 'error': True, 'msg': 'Invalid Transaction ID'})
 
 
+@transaction_router.get("/lab_service/{lab_service_id}")
+def get_transaction_by_lab_service(lab_service_id: int,
+                                # current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+                                repo: TransactionRepository = Depends(transaction_repo),
+                                start_date: str = '', last_date: str = '',
+                                ):
+    return repo.get_lab_service_transactions_by_lab_id(lab_service_id, start_date, last_date)
+
+
 @transaction_router.get("/open")
 def get_open_transactions(
         # transaction_type: TransactionType = TransactionType.All,

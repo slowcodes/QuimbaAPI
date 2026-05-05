@@ -412,6 +412,33 @@ class TransactionRepository:
     def get_all_referred_transactions(self):
         pass
 
+    def get_lab_service_transactions_by_lab_id(self, lab_id: int, start_date: Optional[str] = None, end_date: Optional[str] = None):
+        query = (
+            self.db_session.query(Transaction)
+            .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id)
+            .join(ServiceBooking.booking_detail)
+            .filter(
+                ServiceBookingDetail.booking_type == BookingType.Laboratory,
+                ServiceBookingDetail.lab_service_queue.has(
+                    LabServicesQueue.lab_service.has(LabService.id == lab_id)
+                )
+            )
+        )
+
+        if start_date and end_date:
+            query = query.filter(
+                Transaction.transaction_date.between(start_date, end_date)
+            )
+        elif start_date:
+            query = query.filter(Transaction.transaction_date >= start_date)
+        elif end_date:
+            query = query.filter(Transaction.transaction_date <= end_date)
+
+        return {
+            'data': [self.get_list(datum, BookingType.Laboratory) for datum in query.all()],
+            'total': query.count()
+        }
+
     def tid_exist(self, tid: int) -> bool:
         exits = self.db_session.query(Transaction).filter(Transaction.id == tid)
         if exits is not None:

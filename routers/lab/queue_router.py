@@ -42,12 +42,13 @@ def read_lab_service_queue(queue_id: int,  qr: QueueRepository = Depends(get_que
 @queue_router.get("/")
 def read_lab_service_queue(lab_id: int = 0, skip: int = 0, limit: int = 10, booking_id: int = 0,
                            search_text: str = '', last_date: str = None,
-                           start_date: str = None, status: str = None, refresh: int = 0, client_id: int = 0,  qr: QueueRepository = Depends(get_queue_repository),*, 
+                           start_date: str = None, status: str = None, refresh: int = 0, client_id: int = 0,
+                           lab_service_id: int = 0,  qr: QueueRepository = Depends(get_queue_repository),*,
     current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
 
     redis = get_redis_client()
-    cache_key = f"lab_queue:{skip}:{limit}:{booking_id}:{last_date}:{start_date}:{status}:{client_id}:{lab_id}:{search_text}"
+    cache_key = f"lab_queue:{skip}:{limit}:{booking_id}:{last_date}:{start_date}:{status}:{client_id}:{lab_id}:{lab_service_id}:{search_text}"
     cached_queue = redis.get(cache_key)
     if cached_queue and refresh == 0:
         return json.loads(cached_queue) if isinstance(cached_queue, str) else json.loads(cached_queue.decode("utf-8"))
@@ -64,6 +65,7 @@ def read_lab_service_queue(lab_id: int = 0, skip: int = 0, limit: int = 10, book
         status=status,
         client_id=client_id,
         search_text=search_text,
+        lab_service_id=lab_service_id,
     )
 
     safe_data = jsonable_encoder(db_lab_service_queue)

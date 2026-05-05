@@ -53,6 +53,16 @@ class LabService(Base, SoftDelMixin):
     lab_experiments = relationship("LabServiceExperiment", uselist=True)
 
 
+class LabObservationResultTemplate(Base):
+    __tablename__ = "lab_observation_result_template"
+
+    id = Column(Integer, primary_key=True, index=True)
+    lab_service_id = Column(Integer, ForeignKey("lab_service.id", ondelete="cascade"))
+    template = Column(Text)
+    template_desc = Column(String(150))
+
+
+
 class LabServiceGroupTag(Base):
     __tablename__ = "lab_service_group_tag"
 

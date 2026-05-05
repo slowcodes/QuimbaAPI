@@ -86,16 +86,19 @@ class QueueRepository:
         status: str = QueueStatus.Processing,
         client_id: int = 0,
         search_text: str = "",
+        lab_service_id: int = 0,
     ):
 
         base_query = self.db_session.query(LabServicesQueue)
-        needs_lab_service = lab_id != 0 or bool(search_text)
+        needs_lab_service = lab_id != 0 or lab_service_id != 0 or bool(search_text)
         needs_booking = client_id != 0 or booking_id != 0 or bool(search_text)
 
         if needs_lab_service:
             base_query = base_query.join(LabService, LabServicesQueue.lab_service_id == LabService.id)
             if lab_id != 0:
                 base_query = base_query.join(Laboratory, Laboratory.id == LabService.lab_id).filter(Laboratory.id == lab_id)
+            if lab_service_id != 0:
+                base_query = base_query.filter(LabService.id == lab_service_id)
 
         if needs_booking:
             base_query = base_query.join(ServiceBookingDetail, ServiceBookingDetail.id == LabServicesQueue.booking_id)
@@ -160,104 +163,6 @@ class QueueRepository:
 
         return [LabServicesQueueDTO.from_orm(queue) for queue in q_result]
 
-    def track_booking_from_queue(self, booking_id: int):
-        """
-        Not all transactions have lab services booked
-        Transaction may have consultation services, sales or neither.
-        Sales need not be tracked here as they are instant.
-        A transaction may be initiated due to patient registration alone.
-        Transaction may also be initiated when a when services are placed in a clients cart"""
-
-        elements = self.get_lab_service_queue_by_booking_id(booking_id)
-        consultation_elements = []
-
-        service_tracks: List[ServiceTrackingDTO] = []  # List[ServiceTrackingDTO]
-
-        for element in elements:
-            complete = 1
-            tracks: List[ServiceEventDTO] = []  # List[ServiceEventDTO]
-
-            # add queuing elements
-            tracks.append(
-                ServiceEventDTO(
-                    event_time=str(element["scheduled_at"]),
-                    event_desc=(
-                        f"{element['lab_service_name']} was scheduled with queue # {element['queue_id']} "
-                        f" on a {element['priority']} priority. Current status of this queue item is {element['status']}."
-                    ),
-                    event_type=EventType.Queuing
-                )
-            )
-
-            # add sample collection elements
-            if len(element["samples"]) > 0:
-                complete += 1
-
-            for smpl in element["samples"]:
-                tracks.append(
-                    ServiceEventDTO(
-                        event_time=str(smpl["collected_at"]),
-                        event_desc=(
-                            f"{smpl['sample_type']} was collected for {element['lab_service_name']}. "
-                            f"This is sample # {smpl['id']} for queue #{smpl['queue_id']} and the current status is {smpl['status']}."
-                        ),
-                        event_type=EventType.SampleCollection
-                    )
-                )
-
-                # get results
-                if smpl["sample_result"] is not None:
-                    complete += 1
-                    result = smpl["sample_result"]
-                    tracks.append(
-                        ServiceEventDTO(
-                            event_time=str(result["created_at"]),
-                            event_desc=(
-                                f"Investigation result has been prepared for sample # {result['sample_id']}."
-                            ),
-                            event_type=EventType.Result,
-                        )
-                    )
-
-                    # get result verification
-                    if result["verification"] is not None:
-                        complete += 1
-                        verification = (result["verification"]).__dict__
-                        tracks.append(
-                            ServiceEventDTO(
-                                event_time=str(verification["verified_at"]),
-                                event_desc=(
-                                    f"Result for sample # {result['sample_id']} was verified at {verification['verified_at']}."
-                                ),
-                                event_type=EventType.Verification,
-                            )
-                        )
-
-            percentage_complete = (complete / 4) * 100 if complete > 0 else 0
-
-            service_tracks.append(
-                ServiceTrackingDTO(
-                    queue_id=element["queue_id"],
-                    booked_service=element["lab_service_name"],
-                    service_tracking_details=tracks,
-                    complete=percentage_complete
-                )
-            )
-
-        # return service_tracks
-        transaction_id = 998774401717  # elements[0]["transaction_id"] if elements else None
-        # return TrackingDataDTO(
-        #     service_tracking=service_tracks,
-        #     transaction=self.transaction_repository.get_laboratory_transaction(transaction_id),
-        # )
-
-        booking_transaction = (self.transaction_repository.get_transaction_by_id(transaction_id)).dict()
-        booking_transaction['services'] = self.lab_repository.get_lab_services_booking(transaction_id)
-
-        return {
-            'service_tracking': service_tracks,
-            'transaction': self.sales_service_repository.get_full_transaction_details(transaction_id)
-        }
 
     def get_result_by_sample_id(self, sample_id: int):
         res = self.db_session.query(SampleResult).filter(SampleResult.sample_id == sample_id).first()
