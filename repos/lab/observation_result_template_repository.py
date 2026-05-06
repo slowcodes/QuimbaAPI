@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from dtos.lab import (
     LabObservationResultTemplateCreateDTO,
@@ -36,13 +36,16 @@ class LabObservationResultTemplateRepository:
     def get_template(self, template_id: int) -> Optional[LabObservationResultTemplateDTO]:
         template = (
             self.session.query(LabObservationResultTemplate)
+            .options(joinedload(LabObservationResultTemplate.user))
             .filter(LabObservationResultTemplate.id == template_id)
             .first()
         )
         return self._to_dto(template) if template else None
 
     def get_templates(self, skip: int = 0, limit: int = 100, search_text: str = "") -> dict:
-        query = self.session.query(LabObservationResultTemplate)
+        query = self.session.query(LabObservationResultTemplate).options(
+            joinedload(LabObservationResultTemplate.user)
+        )
 
         if search_text:
             return self.search_templates(search_text=search_text, skip=skip, limit=limit)
@@ -60,7 +63,9 @@ class LabObservationResultTemplateRepository:
         }
 
     def search_templates(self, search_text: str, skip: int = 0, limit: int = 100) -> dict:
-        query = self.session.query(LabObservationResultTemplate)
+        query = self.session.query(LabObservationResultTemplate).options(
+            joinedload(LabObservationResultTemplate.user)
+        )
 
         if search_text:
             search_value = f"%{search_text}%"
@@ -90,6 +95,7 @@ class LabObservationResultTemplateRepository:
     ) -> Optional[LabObservationResultTemplateDTO]:
         template = (
             self.session.query(LabObservationResultTemplate)
+            .options(joinedload(LabObservationResultTemplate.user))
             .filter(LabObservationResultTemplate.id == template_id)
             .first()
         )

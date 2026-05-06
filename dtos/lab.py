@@ -121,6 +121,7 @@ class LabObservationResultTemplateDTO(LabObservationResultTemplateBaseDTO):
     id: Optional[int] = None
     created_at: Optional[datetime] = None
     created_by: Optional[int] = None
+    user: Optional[BasicUserDTO] = None
 
 
 class LaboratoryServiceDetailDTO(BaseModel):

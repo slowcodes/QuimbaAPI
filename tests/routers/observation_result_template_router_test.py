@@ -36,6 +36,7 @@ class FakeObservationResultTemplateRepository:
             id=self._next_id,
             created_by=created_by,
             created_at=datetime(2026, 5, 6),
+            user={"id": created_by, "username": "tester"},
         )
         self._next_id += 1
         dto = LabObservationResultTemplateDTO(**data)
@@ -97,6 +98,7 @@ def test_observation_result_template_crud_and_search_flow():
     )
     assert create_resp.status_code == 201
     assert create_resp.json()["created_by"] == 99
+    assert create_resp.json()["user"]["username"] == "tester"
     assert repo.created_by == 99
     template_id = create_resp.json()["id"]
 

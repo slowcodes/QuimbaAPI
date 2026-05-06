@@ -63,6 +63,8 @@ class LabObservationResultTemplate(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     created_by = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
 
+    user = relationship("User")
+
 
 
 class LabServiceGroupTag(Base):
@@ -319,4 +321,3 @@ class ApprovedLabBookingResult(Base):
 
     booking = relationship("ServiceBooking", back_populates="result_approval", uselist=False)
     user = relationship("User")
-

@@ -10,6 +10,7 @@ from dtos.lab import (
     LabObservationResultTemplateCreateDTO,
     LabObservationResultTemplateUpdateDTO,
 )
+from models.auth import User
 from repos.lab.observation_result_template_repository import (
     LabObservationResultTemplateRepository,
 )
@@ -24,6 +25,8 @@ def create_session():
 
 def test_create_template_sets_created_by_and_created_at():
     session = create_session()
+    session.add(User(id=42, username="lab-user"))
+    session.commit()
     repo = LabObservationResultTemplateRepository(session)
 
     result = repo.create_template(
@@ -39,6 +42,7 @@ def test_create_template_sets_created_by_and_created_at():
     assert result.template_desc == "General observation"
     assert result.created_by == 42
     assert result.created_at is not None
+    assert result.user.username == "lab-user"
 
 
 def test_search_templates_matches_template_and_description():
