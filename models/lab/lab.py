@@ -241,7 +241,7 @@ class ExperimentResultReading(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     parameter_id = Column(Integer, ForeignKey("lab_experiment_parameter.id", ondelete="cascade"))
-    parameter_value = Column(String(100))
+    parameter_value = Column(Text)
     result_id = Column(Integer, ForeignKey("lab_sample_result.id", ondelete="cascade"))
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
