@@ -10,6 +10,7 @@ from routers.admission.admission_router import admission_router
 from routers.admission.room_router import room_router
 from routers.admission.ward_router import ward_router
 from routers.lab.lab_router import lab_router
+from routers.lab.observation_result_template_router import observation_result_template_router
 from routers.lab.queue_router import queue_router
 from routers.lab.result_router import result_router
 from routers.lab.samples_router import sample_collection_router
@@ -41,6 +42,7 @@ base_routers = [
     referral_router,
 
     lab_router,
+    observation_result_template_router,
     result_router,
     sample_collection_router,
     queue_router,

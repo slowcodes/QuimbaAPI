@@ -57,9 +57,11 @@ class LabObservationResultTemplate(Base):
     __tablename__ = "lab_observation_result_template"
 
     id = Column(Integer, primary_key=True, index=True)
-    lab_service_id = Column(Integer, ForeignKey("lab_service.id", ondelete="cascade"))
+    # lab_service_id = Column(Integer, ForeignKey("lab_service.id", ondelete="cascade"))
     template = Column(Text)
     template_desc = Column(String(150))
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="cascade"))
 
 
 

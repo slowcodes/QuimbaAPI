@@ -4,8 +4,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from decimal import Decimal
 
-from dtos.auth import UserDTO, BasicUserDTO
-from dtos.people import ClientDTO
+from dtos.auth import BasicUserDTO
 from dtos.services import ServiceBookingDetailDTO, BusinessServiceDTO, PriceCodeDTO
 from models.lab.lab import BoundaryType, QueueStatus, QueuePriority, SampleType, ResultStatus, ParameterType, LabType
 from models.services.services import StoreVisibility, ServiceType
@@ -98,6 +97,32 @@ class LabServiceDTO(BaseModel):
         from_attributes = True
 
 
+class LabObservationResultTemplateBaseDTO(BaseModel):
+    template: Optional[str] = None
+    template_desc: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class LabObservationResultTemplateCreateDTO(LabObservationResultTemplateBaseDTO):
+    pass
+
+
+class LabObservationResultTemplateUpdateDTO(BaseModel):
+    template: Optional[str] = None
+    template_desc: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class LabObservationResultTemplateDTO(LabObservationResultTemplateBaseDTO):
+    id: Optional[int] = None
+    created_at: Optional[datetime] = None
+    created_by: Optional[int] = None
+
+
 class LaboratoryServiceDetailDTO(BaseModel):
     lab_service_id: Optional[int] = None
     groups: List[int]
@@ -137,8 +162,12 @@ class CollectedSamplesBaseDTO(BaseModel):
     queue_id: int
     sample_type: SampleType
     collected_by: int
+    collected_at: Optional[datetime] = None
     status: Optional[QueueStatus] = QueueStatus.Processing
     container_label: str
+
+    class Config:
+        from_attributes = True
 
 
 class CollectedSamplesCreateDTO(BaseModel):
@@ -199,6 +228,7 @@ class SampleResultDTO(BaseModel):
 
 class LabServicesQueueDTO(LabServiceQueueBase):
     lab_result: Optional[SampleResultDTO] = None
+    samples: Optional[List[CollectedSamplesBaseDTO]] = None
 
     class Config:
         from_attributes = True
