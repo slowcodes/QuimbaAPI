@@ -1,6 +1,7 @@
-from http.client import HTTPException
 from typing import Optional
+import logging
 
+from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, aliased
@@ -16,6 +17,9 @@ from models.transaction import Transaction
 from repos.lab.experiment_repository import ExperimentRepository
 from repos.services.price_repository import PriceRepository
 from repos.services.service_repository import ServiceRepository
+
+
+logger = logging.getLogger(__name__)
 
 
 class LabRepository:
@@ -197,7 +201,19 @@ class LabRepository:
             lab_service.lab_service_name = updated_service.lab_service_name
             lab_service.lab_service_desc = updated_service.lab_service_desc
             lab_service.lab_type = updated_service.lab_type
-            lab_service.lab_id = updated_service.laboratory.id
+
+            lab_id = updated_service.lab_id
+            if updated_service.laboratory and updated_service.laboratory.id:
+                lab_id = updated_service.laboratory.id
+
+            if not lab_id:
+                raise HTTPException(status_code=400, detail="A valid laboratory is required")
+
+            laboratory = self.session.query(Laboratory).filter(Laboratory.id == lab_id).first()
+            if laboratory is None:
+                raise HTTPException(status_code=400, detail="Selected laboratory does not exist")
+
+            lab_service.lab_id = lab_id
 
             # update groups
             self.session.query(LabServiceGroupTag).filter(LabServiceGroupTag.lab_service_id == lab_service_id).delete()
@@ -221,8 +237,12 @@ class LabRepository:
             self.session.refresh(lab_service)
 
             return updated_service
-        except:
+        except HTTPException:
             self.session.rollback()
+            raise
+        except Exception:
+            self.session.rollback()
+            logger.exception("Error updating lab service %s", lab_service_id)
             raise HTTPException(status_code=500, detail="An error occurred while updating the lab service")
 
     def add_lab_services(self, laboratory_service: LaboratoryServiceDetailDTO):
@@ -263,33 +283,40 @@ class LabRepository:
             exps = []
             for experiment in laboratory_service.exps:
                 new_experiment = Experiment(
-                    description=experiment.description
+                    description=experiment.description,
+                    use_only_dynamic_param=experiment.use_only_dynamic_param,
                 )
                 self.session.add(new_experiment)
                 self.session.flush()
 
                 exps.append(new_experiment.id)
 
-                for parameter in experiment.parameters:
-                    new_parameter = ExperimentParameter(
-                        parameter=parameter.parameter,
-                        measuring_unit=parameter.measuring_unit,
-                        exp_id=new_experiment.id,
-                        parameter_type=parameter.parameter_type,
-                        stacking_order=parameter.stacking_order
-                    )
-                    self.session.add(new_parameter)
-                    self.session.flush()
+                self.experiment_repository.sync_dynamic_param_type(
+                    new_experiment.id,
+                    experiment.dynamic_param_type,
+                )
 
-                    for boundary in parameter.boundary:
-                        new_boundary = ExperimentParameterBounds(
-                            parameter_id=new_parameter.id,
-                            upper_bound=boundary.upper_bound,
-                            lower_bound=boundary.lower_bound,
-                            boundary_type=boundary.boundary_type
+                if not experiment.use_only_dynamic_param:
+                    for parameter in experiment.parameters:
+                        new_parameter = ExperimentParameter(
+                            parameter=parameter.parameter,
+                            measuring_unit=parameter.measuring_unit,
+                            exp_id=new_experiment.id,
+                            parameter_type=parameter.parameter_type,
+                            stacking_order=parameter.stacking_order
                         )
-                        self.session.add(new_boundary)
+                        self.session.add(new_parameter)
                         self.session.flush()
+
+                        for boundary in parameter.boundary:
+                            new_boundary = ExperimentParameterBounds(
+                                parameter_id=new_parameter.id,
+                                upper_bound=boundary.upper_bound,
+                                lower_bound=boundary.lower_bound,
+                                boundary_type=boundary.boundary_type
+                            )
+                            self.session.add(new_boundary)
+                            self.session.flush()
 
             for exp in exps:
                 new_lab_experiment = LabServiceExperiment(

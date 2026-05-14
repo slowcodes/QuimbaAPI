@@ -1,15 +1,15 @@
 import json
-from http.client import HTTPException
 from typing import List, Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 from security.dependencies import get_current_active_user
 from sqlalchemy.orm import Session
 
 from cache.redis import get_redis_client
 from db import get_db
-from dtos.lab import LabServicesQueueDTO, LabServicesQueueCreateDTO
+from dtos.lab import DynamicParameterBaseDTO, DynamicParameterCreateDTO, DynamicParameterDTO, \
+    DynamicParameterUpdateDTO, LabServicesQueueDTO, LabServicesQueueCreateDTO
 from dtos.auth import UserDTO
 from repos.lab.queue_repository import QueueRepository
 
@@ -82,6 +82,71 @@ def update_lab_service_queue(queue_id: int, lab_service_queue: LabServicesQueueD
         raise HTTPException(status_code=404, detail="Lab service queue not found")
     return qr.update_lab_service_queue(lab_service_queue=db_lab_service_queue,
                                        new_lab_service_queue=lab_service_queue)
+
+
+@queue_router.get("/{queue_id}/dynamic-parameters", response_model=List[DynamicParameterDTO])
+def get_dynamic_parameters(
+    queue_id: int,
+    qr: QueueRepository = Depends(get_queue_repository),
+    *,
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
+    if qr.get_queue(queue_id=queue_id) is None:
+        raise HTTPException(status_code=404, detail="Lab service queue not found")
+    return qr.get_dynamic_parameters(queue_id)
+
+
+@queue_router.post("/dynamic-parameters", response_model=DynamicParameterDTO)
+def create_dynamic_parameter(
+    dynamic_parameter: DynamicParameterCreateDTO,
+    qr: QueueRepository = Depends(get_queue_repository),
+    *,
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
+    result = qr.create_dynamic_parameter(dynamic_parameter)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Lab service queue not found")
+    return result
+
+
+@queue_router.put("/{queue_id}/dynamic-parameters", response_model=List[DynamicParameterDTO])
+def replace_dynamic_parameters(
+    queue_id: int,
+    dynamic_parameters: List[DynamicParameterBaseDTO],
+    qr: QueueRepository = Depends(get_queue_repository),
+    *,
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
+    result = qr.replace_dynamic_parameters(queue_id, dynamic_parameters)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Lab service queue not found")
+    return result
+
+
+@queue_router.put("/dynamic-parameters/{dynamic_parameter_id}", response_model=DynamicParameterDTO)
+def update_dynamic_parameter(
+    dynamic_parameter_id: int,
+    dynamic_parameter: DynamicParameterUpdateDTO,
+    qr: QueueRepository = Depends(get_queue_repository),
+    *,
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
+    result = qr.update_dynamic_parameter(dynamic_parameter_id, dynamic_parameter)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Dynamic parameter not found")
+    return result
+
+
+@queue_router.delete("/dynamic-parameters/{dynamic_parameter_id}")
+def delete_dynamic_parameter(
+    dynamic_parameter_id: int,
+    qr: QueueRepository = Depends(get_queue_repository),
+    *,
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)]
+):
+    if not qr.delete_dynamic_parameter(dynamic_parameter_id):
+        raise HTTPException(status_code=404, detail="Dynamic parameter not found")
+    return {"deleted": True}
 
 
 @queue_router.delete("/{queue_id}")

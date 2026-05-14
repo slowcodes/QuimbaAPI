@@ -6,7 +6,10 @@ from sqlalchemy.orm import sessionmaker
 os.environ.setdefault("DATABASE_URL", "postgresql://user:pass@localhost:5432/testdb")
 
 from db import Base
-from models.lab.lab import Laboratory, LabService, LabType
+from decimal import Decimal
+
+from dtos.lab import ExperimentDynamicParamTypeDTO, ExpDTO, LaboratoryServiceDetailDTO
+from models.lab.lab import DynamicParameterType, Experiment, ExperimentDynamicParamType, Laboratory, LabService, LabType
 from models.services.services import BusinessServices, PriceCode, ServiceType, StoreVisibility
 from repos.lab.lab_repository import LabRepository
 
@@ -61,3 +64,40 @@ def test_get_lab_services_search_by_lab_name_only_returns_matching_lab_services(
     assert result["total"] == 1
     assert len(result["data"]) == 1
     assert result["data"][0].lab_service_name == "Blood Test"
+
+
+def test_add_lab_services_persists_dynamic_experiment_configuration():
+    session = create_session()
+    repo = LabRepository(session)
+    lab = Laboratory(lab_name="Dynamic Lab", lab_desc="Dynamic Lab description")
+    session.add(lab)
+    session.commit()
+
+    created = repo.add_lab_services(
+        LaboratoryServiceDetailDTO(
+            groups=[],
+            name="Drug Sensitivity",
+            description="Dynamic drug sensitivity panel",
+            exps=[
+                ExpDTO(
+                    description="Sensitivity",
+                    use_only_dynamic_param=True,
+                    dynamic_param_type=ExperimentDynamicParamTypeDTO(param_type=DynamicParameterType.Drugs),
+                )
+            ],
+            lab_type=LabType.Experiment,
+            price=Decimal("100.00"),
+            discount=Decimal("0.00"),
+            visibility=StoreVisibility.Active,
+            lab_id=lab.id,
+            est_turn_around_time=24,
+        )
+    )
+
+    assert created is True
+    experiment = session.query(Experiment).one()
+    assert experiment.use_only_dynamic_param is True
+
+    dynamic_param = session.query(ExperimentDynamicParamType).one()
+    assert dynamic_param.experiment_id == experiment.id
+    assert dynamic_param.param_type == DynamicParameterType.Drugs

@@ -1,12 +1,12 @@
 import decimal
 from decimal import Decimal
-from http.client import HTTPException
 
 from sqlalchemy.orm import Session
 
-from dtos.lab import ExperimentResultReadingDTO, ParameterBoundaryDTO, ExpDTO, ExperimentParameterDTO
+from dtos.lab import ExperimentResultReadingDTO, ParameterBoundaryDTO, ExpDTO, ExperimentParameterDTO, \
+    ExperimentDynamicParamTypeDTO
 from models.lab.lab import ExperimentParameterBounds, ExperimentResultReading, ExperimentParameter, Experiment, \
-    LabServiceExperiment
+    LabServiceExperiment, ExperimentDynamicParamType
 
 
 class ExperimentRepository:
@@ -99,6 +99,7 @@ class ExperimentRepository:
         cols = [
             Experiment.id,
             Experiment.description,
+            Experiment.use_only_dynamic_param,
             LabServiceExperiment.lab_service_id.label("service_id")
         ]
 
@@ -112,10 +113,42 @@ class ExperimentRepository:
                 {
                     'name': items.description,
                     'key': items.id,
-                    'parameter': self.get_experiment_parameter(items.id)
+                    'use_only_dynamic_param': items.use_only_dynamic_param,
+                    'parameter': self.get_experiment_parameter(items.id),
+                    'dynamic_param_type': self.get_experiment_dynamic_param_type(items.id)
                 })
 
         return rtn
+
+    def get_experiment_dynamic_param_type(self, exp_id: int):
+        param_type = self.session.query(ExperimentDynamicParamType).filter(
+            ExperimentDynamicParamType.experiment_id == exp_id
+        ).one_or_none()
+        if param_type is None:
+            return None
+        return {
+            "id": param_type.id,
+            "experiment_id": param_type.experiment_id,
+            "param_type": param_type.param_type,
+        }
+
+    def sync_dynamic_param_type(
+        self,
+        experiment_id: int,
+        dynamic_param_type: ExperimentDynamicParamTypeDTO | None,
+    ) -> None:
+        self.session.query(ExperimentDynamicParamType).filter(
+            ExperimentDynamicParamType.experiment_id == experiment_id
+        ).delete(synchronize_session=False)
+
+        if dynamic_param_type is not None:
+            self.session.add(
+                ExperimentDynamicParamType(
+                    experiment_id=experiment_id,
+                    param_type=dynamic_param_type.param_type,
+                )
+            )
+        self.session.flush()
 
     def update_experiment(self, lab_service_id: int, exp: ExpDTO):
         """ Updates or creates an experiment and its parameters. """
@@ -123,7 +156,10 @@ class ExperimentRepository:
         experiment = ''
         if exp.id is None:
             # If exp.key is None, create a new experiment with the name as description
-            experiment = Experiment(description=exp.description)
+            experiment = Experiment(
+                description=exp.description,
+                use_only_dynamic_param=exp.use_only_dynamic_param,
+            )
             self.session.add(experiment)  # Only add if it's a new experiment
             self.session.flush()  # Ensure the experiment has an ID before linking it
 
@@ -134,10 +170,12 @@ class ExperimentRepository:
         else:
             # If exp.key is not None, try to find the existing experiment
             experiment = self.session.query(Experiment).filter(Experiment.id == exp.id).first()
-            print('update exp', experiment)
             if not experiment:
                 # If experiment is not found, create a new one
-                experiment = Experiment(description=exp.description)
+                experiment = Experiment(
+                    description=exp.description,
+                    use_only_dynamic_param=exp.use_only_dynamic_param,
+                )
                 self.session.add(experiment)  # Only add if it's a new experiment
                 self.session.flush()  # Ensure the experiment has an ID before linking it
 
@@ -148,22 +186,25 @@ class ExperimentRepository:
             else:
                 # If found, update the existing experiment's attributes (NO db.add here)
                 experiment.description = exp.description
+                experiment.use_only_dynamic_param = exp.use_only_dynamic_param
                 self.session.add(experiment)
-                print('update exp II', exp.description)  # Add the existing experiment to the session
                 # Here, no need to call db.add() since it's already in the session
+
+        self.sync_dynamic_param_type(experiment.id, exp.dynamic_param_type)
 
         # Update parameters for the experiment
         allowed_params = []
-        for param in exp.parameters:
-            updated_param_id = self.update_parameter(experiment.id, param)
-            allowed_params.append(updated_param_id)
+        if not exp.use_only_dynamic_param:
+            for param in exp.parameters:
+                updated_param_id = self.update_parameter(experiment.id, param)
+                allowed_params.append(updated_param_id)
 
         # Remove parameters that are no longer associated with the experiment
         self.session.query(ExperimentParameter).filter(ExperimentParameter.exp_id == experiment.id,
                                                        ~ExperimentParameter.id.in_(allowed_params)).delete(
             synchronize_session=False)
 
-        self.session.commit()  # Commit to persist all changes
+        self.session.flush()  # Persist all changes as part of the parent transaction
 
     def update_parameter(self, exp_id: int, param: ExperimentParameterDTO):
         """ Updates a single experiment parameter and its boundaries. """
@@ -178,7 +219,7 @@ class ExperimentRepository:
             existing_param.stacking_order = param.stacking_order
             param_id = existing_param.id
 
-            self.session.commit()
+            self.session.flush()
 
         else:
             new_param = ExperimentParameter(
@@ -203,15 +244,17 @@ class ExperimentRepository:
                                                              ~ExperimentParameterBounds.id.in_(
                                                                  allowed_boundaries)).delete(synchronize_session=False)
 
-        self.session.commit()
+        self.session.flush()
         return param_id
 
     def update_parameter_boundary(self, parameter_id: int, boundary: ParameterBoundaryDTO):
         """ Updates a single boundary for a given experiment parameter. """
 
-        self.session.query(ExperimentParameterBounds).filter(
-            ExperimentParameterBounds.parameter_id == parameter_id and ExperimentParameterBounds.id == boundary.boundary_id
-        ).delete()
+        if boundary.boundary_id is not None:
+            self.session.query(ExperimentParameterBounds).filter(
+                ExperimentParameterBounds.parameter_id == parameter_id,
+                ExperimentParameterBounds.id == boundary.boundary_id
+            ).delete(synchronize_session=False)
 
         """ 
         boundaries can be removed and replace without any issue

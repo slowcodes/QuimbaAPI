@@ -2,7 +2,7 @@
 import datetime
 
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Enum as SqlEnum, Text, \
-    UniqueConstraint
+    UniqueConstraint, Boolean
 
 from db import Base
 from enum import Enum
@@ -83,8 +83,39 @@ class Experiment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     description = Column(Text, default='Methodology/Experiment')
+    use_only_dynamic_param = Column(Boolean, default=False)
 
     parameters = relationship("ExperimentParameter", back_populates="lab_experiment")
+    dynamic_param_type = relationship("ExperimentDynamicParamType", back_populates="experiment", uselist=False)
+    dynamic_parameters = relationship("DynamicParameter", back_populates="lab_experiment", uselist=True)
+
+
+class DynamicParameterType(str, Enum):
+    Drugs = 'Drugs'
+    Strings = 'Strings'
+
+
+class ExperimentDynamicParamType(Base):
+    __tablename__ = "lab_experiment_dynamic_param_type"
+
+    id = Column(Integer, primary_key=True, index=True)
+    experiment_id = Column(Integer, ForeignKey("lab_experiment.id", ondelete="cascade"))
+    param_type = Column(SqlEnum(DynamicParameterType))
+
+    # relationship
+    experiment = relationship("Experiment", back_populates="dynamic_param_type")
+
+class DynamicParameter(Base):
+    __tablename__ = "lab_dynamic_experiment_parameter"
+
+    id = Column(Integer, primary_key=True, index=True)
+    parameter = Column(String(50))
+    parameter_value = Column(String(50))
+    lab_service_queue_id = Column(Integer, ForeignKey("lab_service_queue.id", ondelete="cascade"))
+    exp_id = Column(Integer, ForeignKey("lab_experiment.id", ondelete="cascade"))
+
+    lab_service_queue = relationship("LabServicesQueue", back_populates="dynamic_parameters")
+    lab_experiment = relationship("Experiment", back_populates="dynamic_parameters")
 
 
 class ParameterType(str, Enum):
@@ -183,6 +214,7 @@ class LabServicesQueue(Base):
     lab_result = relationship("SampleResult", back_populates="queue",
                               uselist=False)  # observation based results may not have samples
     admission_lab_services = relationship("AdmissionLabServices", back_populates="lab_service_queue", uselist=False)
+    dynamic_parameters = relationship("DynamicParameter", back_populates="lab_service_queue", uselist=True)
 
     @property
     def sample(self):
@@ -271,6 +303,10 @@ class SampleResult(Base):
     queue = relationship("LabServicesQueue", back_populates="lab_result", uselist=False)
     experiment_readings = relationship("ExperimentResultReading", back_populates="sample_result", uselist=True)
     verification = relationship("LabVerifiedResult", back_populates="sample_result", uselist=False)
+
+    @property
+    def dynamic_parameters(self):
+        return self.queue.dynamic_parameters if self.queue else []
 
 
 class LabVerifiedResult(Base):

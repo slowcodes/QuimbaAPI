@@ -3,11 +3,12 @@ from typing import List
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from dtos.lab import LabServicesQueueDTO, VerifiedResultEntryDTO, SampleResultDTO, LabServicesQueueCreateDTO
+from dtos.lab import DynamicParameterBaseDTO, DynamicParameterCreateDTO, DynamicParameterDTO, \
+    DynamicParameterUpdateDTO, LabServicesQueueDTO, VerifiedResultEntryDTO, SampleResultDTO, LabServicesQueueCreateDTO
 from dtos.services import ServiceEventDTO, EventType, ServiceTrackingDTO
 from models.client import Client, Person
 from models.lab.lab import LabServicesQueue, Laboratory, QueueStatus, LabService, CollectedSamples, SampleResult, \
-    LabVerifiedResult
+    LabVerifiedResult, DynamicParameter
 from models.services.services import ServiceBooking, BusinessServices, ServiceBookingDetail
 from repos.auth_repository import UserRepository
 from repos.lab.lab_repository import LabRepository
@@ -155,6 +156,85 @@ class QueueRepository:
 
     def get_queue_by_booking_id(self, booking_id: int) -> LabServicesQueueDTO:
         return self.db_session.query(LabServicesQueue).filter(LabServicesQueue.booking_id == booking_id).first()
+
+    def get_dynamic_parameters(self, queue_id: int) -> list[DynamicParameterDTO]:
+        return [
+            DynamicParameterDTO.from_orm(dynamic_parameter)
+            for dynamic_parameter in self.db_session.query(DynamicParameter)
+            .filter(DynamicParameter.lab_service_queue_id == queue_id)
+            .order_by(DynamicParameter.id.asc())
+            .all()
+        ]
+
+    def create_dynamic_parameter(self, dynamic_parameter: DynamicParameterCreateDTO) -> DynamicParameterDTO:
+        queue = self.db_session.query(LabServicesQueue).filter(
+            LabServicesQueue.id == dynamic_parameter.lab_service_queue_id
+        ).first()
+        if queue is None:
+            return None
+
+        db_dynamic_parameter = DynamicParameter(**dynamic_parameter.dict())
+        self.db_session.add(db_dynamic_parameter)
+        self.db_session.commit()
+        self.db_session.refresh(db_dynamic_parameter)
+        return DynamicParameterDTO.from_orm(db_dynamic_parameter)
+
+    def update_dynamic_parameter(
+        self,
+        dynamic_parameter_id: int,
+        dynamic_parameter: DynamicParameterUpdateDTO,
+    ) -> DynamicParameterDTO | None:
+        db_dynamic_parameter = self.db_session.query(DynamicParameter).filter(
+            DynamicParameter.id == dynamic_parameter_id
+        ).first()
+        if db_dynamic_parameter is None:
+            return None
+
+        for key, value in dynamic_parameter.dict(exclude_unset=True).items():
+            setattr(db_dynamic_parameter, key, value)
+        self.db_session.commit()
+        self.db_session.refresh(db_dynamic_parameter)
+        return DynamicParameterDTO.from_orm(db_dynamic_parameter)
+
+    def replace_dynamic_parameters(
+        self,
+        queue_id: int,
+        dynamic_parameters: list[DynamicParameterBaseDTO],
+    ) -> list[DynamicParameterDTO] | None:
+        queue = self.db_session.query(LabServicesQueue).filter(LabServicesQueue.id == queue_id).first()
+        if queue is None:
+            return None
+
+        self.db_session.query(DynamicParameter).filter(
+            DynamicParameter.lab_service_queue_id == queue_id
+        ).delete(synchronize_session=False)
+
+        saved_parameters = []
+        for dynamic_parameter in dynamic_parameters:
+            db_dynamic_parameter = DynamicParameter(
+                lab_service_queue_id=queue_id,
+                parameter=dynamic_parameter.parameter,
+                parameter_value=dynamic_parameter.parameter_value,
+                exp_id=dynamic_parameter.exp_id,
+            )
+            self.db_session.add(db_dynamic_parameter)
+            saved_parameters.append(db_dynamic_parameter)
+
+        self.db_session.commit()
+        for dynamic_parameter in saved_parameters:
+            self.db_session.refresh(dynamic_parameter)
+        return [DynamicParameterDTO.from_orm(dynamic_parameter) for dynamic_parameter in saved_parameters]
+
+    def delete_dynamic_parameter(self, dynamic_parameter_id: int) -> bool:
+        db_dynamic_parameter = self.db_session.query(DynamicParameter).filter(
+            DynamicParameter.id == dynamic_parameter_id
+        ).first()
+        if db_dynamic_parameter is None:
+            return False
+
+        self.db_session.delete(db_dynamic_parameter)
+        self.db_session.commit()
+        return True
 
     def get_lab_service_queue_by_booking_id(self, booking_id: int):
         q_result = self.db_session.query(LabServicesQueue) \

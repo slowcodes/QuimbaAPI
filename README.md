@@ -46,6 +46,14 @@ This app expects a `DATABASE_URL` environment variable:
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DBNAME
 ```
 
+Optional Resend startup email configuration:
+```
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=Your App <noreply@yourdomain.com>
+RESEND_TO_EMAIL=recipient@example.com
+SEND_STARTUP_EMAIL=true
+```
+
 Redis is assumed to be available at `localhost:6379` by default (see `main.py`).
 
 ## Run Locally

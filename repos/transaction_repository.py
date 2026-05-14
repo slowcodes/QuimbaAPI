@@ -14,7 +14,8 @@ from dtos.transaction import TransactionDTO, TransactionPackageDTO, ReferredTran
 from models.auth import User
 from models.client import Person, Client
 from models.consultation import ConsultationQueue, InHours, Specialist
-from models.lab.lab import LabServicesQueue, LabService
+from models.lab.lab import DynamicParameter, ExperimentParameter, ExperimentResultReading, LabServicesQueue, LabService, \
+    SampleResult
 from models.pharmacy import DispensedPrescriptionDetail, PrescriptionDetail, Drug
 from models.sales import BusinessSales
 from models.services.services import ServiceBooking, BookingStatus, Bundles, ServiceBookingDetail, BookingType
@@ -173,7 +174,19 @@ class TransactionRepository:
                 joinedload(Transaction.sales_services)
                 .joinedload(ServiceBooking.booking_detail)
                 .joinedload(ServiceBookingDetail.lab_service_queue)
-                .joinedload(LabServicesQueue.lab_service)
+                .joinedload(LabServicesQueue.lab_service),
+                joinedload(Transaction.sales_services)
+                .joinedload(ServiceBooking.booking_detail)
+                .joinedload(ServiceBookingDetail.lab_service_queue)
+                .joinedload(LabServicesQueue.dynamic_parameters)
+                .joinedload(DynamicParameter.lab_experiment),
+                joinedload(Transaction.sales_services)
+                .joinedload(ServiceBooking.booking_detail)
+                .joinedload(ServiceBookingDetail.lab_service_queue)
+                .joinedload(LabServicesQueue.lab_result)
+                .joinedload(SampleResult.experiment_readings)
+                .joinedload(ExperimentResultReading.parameter)
+                .joinedload(ExperimentParameter.lab_experiment)
             )
         )
 

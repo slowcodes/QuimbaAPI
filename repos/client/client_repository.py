@@ -130,13 +130,13 @@ class ClientRepository:
                 raise ValueError(f"Person with ID {client.person_id} not found.")
 
             # Update Person details
-            person.first_name = client_data.first_name
-            person.middle_name = client_data.middle_name
-            person.last_name = client_data.last_name
-            person.sex = client_data.sex
+            person.first_name = client_data.person.first_name
+            person.middle_name = client_data.person.middle_name
+            person.last_name = client_data.person.last_name
+            person.sex = client_data.person.sex
             # person.email = client_data.email
-            person.phone = client_data.phone
-            person.title = client_data.title
+            person.phone = client_data.person.phone
+            person.title = client_data.person.title
 
             # Update Client details
             client.photo = client_data.photo
@@ -360,6 +360,7 @@ class ClientRepository:
 
         cols = [
             Client.id,
+            Person.title,
             Person.first_name,
             Person.last_name,
             Person.middle_name,
@@ -385,7 +386,9 @@ class ClientRepository:
 
         if rs:
             return {
+
                 'id': rs.id,
+                'title': rs.title,
                 'first_name': rs.first_name,
                 'last_name': rs.last_name,
                 'middle_name': rs.middle_name,

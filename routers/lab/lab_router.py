@@ -5,6 +5,7 @@ from starlette import status
 
 from dtos.lab import LaboratoryDTO, LaboratoryGroupDTO, LaboratoryServiceDetailDTO, LabServicesQueueDTO, LabServiceDTO
 from dtos.auth import UserDTO
+from models.lab.lab import DynamicParameterType
 from sqlalchemy.orm import Session
 from db import get_db
 from starlette.responses import JSONResponse
@@ -16,6 +17,14 @@ lab_router = APIRouter()
 
 def get_lab_repository(db: Session = Depends(get_db)):
     return LabRepository(db)
+
+
+@lab_router.get('/api/laboratories/experiment-dynamic-parameter-types',
+                tags=['Laboratories', 'Laboratory Service', 'Experiment'])
+def get_experiment_dynamic_parameter_types(
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+):
+    return [{"name": item.name, "value": item.value} for item in DynamicParameterType]
 
 
 @lab_router.get('/api/laboratories/labs', tags=['Laboratories'])

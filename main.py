@@ -14,6 +14,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
 
 from messaging.bulksmsnigeria import send_sms
+from messaging.kudisms import send_kudi_sms
 from messaging.resend import send_mail
 from routers.pharmacy.all_pharm_router import pharm_routers
 from routers.all_base_router import base_routers
@@ -45,7 +46,14 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 r = redis.Redis(host="localhost", port=6379, db=0)
-# send_mail()
+
+
+@app.on_event("startup")
+async def send_startup_email():
+    if os.getenv("SEND_STARTUP_EMAIL", "false").lower() == "true":
+        send_mail(to_email='kc.ezenna@gmail.com', background=False)
+
+
 # gfr for things like kft to be included in the next release, we can use the same approach as the sms, which is to run it in a separate thread so that it doesn't block the main thread. This way, we can ensure that the email sending process doesn't interfere with the responsiveness of the API.
 # font, size, bold, italic, etc. not working
 # no result available for observation, in results,
@@ -123,6 +131,8 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 app.mount("/api/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="api-uploads")
 
+send_mail()
+# send_kudi_sms()
 
 if os.getenv("AUTO_CREATE_TABLES", "false").lower() == "true":
     Base.metadata.create_all(bind=engine)

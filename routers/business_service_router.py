@@ -1,7 +1,6 @@
 from typing import Annotated
-from http.client import HTTPException
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from security.dependencies import get_current_active_user
 from starlette import status
 
