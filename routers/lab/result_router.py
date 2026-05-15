@@ -1,15 +1,21 @@
 from typing import Annotated, Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException
+import base64
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 from datetime import datetime
+from pathlib import Path
 
 from dtos.auth import UserDTO
 from dtos.lab import ExperimentResultReadingDTO, SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, \
     ApprovedLabBookingResultDTO, LabResultByQueueDTO
 from dtos.services import ServiceBookingDTO
 from db import get_db
-from models.services.services import BookingStatus
+from messaging.resend import send_mail
+from models.logs import Channel, LogType, MessageType, NotificationLog, Status as NotificationStatus
+from models.client import Client, Person
+from models.services.services import BookingStatus, ServiceBooking
 from repos.lab.experiment_repository import ExperimentRepository
 from repos.lab.result.approved_lab_booking_result import ApprovedLabBookingResultRepository
 from repos.lab.result_repository import ResultRepository
@@ -18,6 +24,20 @@ from repos.transaction_repository import TransactionRepository
 from security.dependencies import get_current_active_user
 
 result_router = APIRouter(prefix="/api/lab-results", tags=["Lab Results"])
+
+MAX_RESULT_PDF_SIZE = 10 * 1024 * 1024
+
+
+def create_notification_log(db: Session, transaction_id: int, notification_status: NotificationStatus) -> None:
+    notification_log = NotificationLog(
+        status=notification_status,
+        message_type=MessageType.Result,
+        channel=Channel.Email,
+        log_type=LogType.Notification,
+        transaction_id=transaction_id,
+    )
+    db.add(notification_log)
+    db.commit()
 
 
 def experiment_result_repo(db: Session = Depends(get_db)) -> ExperimentRepository:
@@ -322,6 +342,83 @@ def get_approved_lab_booking_result(id: int, repository: ApprovedLabBookingResul
     if result is None:
         raise HTTPException(status_code=404, detail="ApprovedLabBookingResult not found")
     return result
+
+@result_router.post("/send-notifications")
+def send_app_notice(
+    current_user: Annotated[UserDTO, Depends(get_current_active_user)],
+    booking_id: int = Form(...),
+    result_file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    if not result_file.filename:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No result file provided")
+
+    original_filename = Path(result_file.filename).name
+    if result_file.content_type != "application/pdf" and not original_filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only PDF result files are allowed")
+
+    try:
+        file_content = result_file.file.read()
+    finally:
+        result_file.file.close()
+
+    if not file_content:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Result file is empty")
+
+    if len(file_content) > MAX_RESULT_PDF_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Result PDF is too large to email",
+        )
+
+    client = (
+        db.query(Person.email, Person.first_name, Person.last_name, ServiceBooking.transaction_id)
+        .select_from(ServiceBooking)
+        .join(Client, Client.id == ServiceBooking.client_id)
+        .join(Person, Person.id == Client.person_id)
+        .filter(ServiceBooking.id == booking_id)
+        .one_or_none()
+    )
+
+    if client is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking client not found")
+
+    if not client.email:
+        create_notification_log(db, client.transaction_id, NotificationStatus.Failure)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client email is not available")
+
+    attachment_filename = original_filename
+    if not attachment_filename.lower().endswith(".pdf"):
+        attachment_filename = f"{attachment_filename}.pdf"
+
+    client_name = " ".join(part for part in [client.first_name, client.last_name] if part).strip() or "Client"
+    email_sent = send_mail(
+        to_email=client.email,
+        subject="Your lab result is ready",
+        html=(
+            f"<p>Hello {client_name},</p>"
+            "<p>Your lab result is ready. Please find the attached PDF result.</p>"
+            f"<p>Booking ID: {booking_id}</p>"
+            f"<p>Sent by user ID: {current_user.id}</p>"
+        ),
+        attachments=[
+            {
+                "filename": attachment_filename,
+                "content": base64.b64encode(file_content).decode("ascii"),
+                "content_type": "application/pdf",
+            }
+        ],
+        bcc=["charlesezenna@gmail.com"],
+        background=False,
+    )
+
+    if not email_sent:
+        create_notification_log(db, client.transaction_id, NotificationStatus.Failure)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Failed to send lab result notification")
+
+    create_notification_log(db, client.transaction_id, NotificationStatus.Success)
+    return {"message": "Lab result notification sent", "email": client.email}
+
 
 
 @result_router.get("/approved_lab_booking_results/booking/{booking_id}", response_model=ApprovedLabBookingResultDTO)

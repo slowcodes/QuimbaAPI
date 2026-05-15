@@ -16,6 +16,8 @@ def _send_mail(
     subject: str,
     html: str,
     from_email: str,
+    attachments: Optional[list[dict]] = None,
+    bcc: Optional[list[str] | str] = None,
 ) -> bool:
     api_key = os.getenv("RESEND_API_KEY")
     if not api_key:
@@ -24,14 +26,18 @@ def _send_mail(
 
     resend.api_key = api_key
     try:
-        response = resend.Emails.send(
-            {
-                "from": from_email,
-                "to": [to_email],
-                "subject": subject,
-                "html": html,
-            }
-        )
+        params = {
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html,
+        }
+        if attachments:
+            params["attachments"] = attachments
+        if bcc:
+            params["bcc"] = bcc
+
+        response = resend.Emails.send(params)
     except Exception:
         logger.exception("Failed to send Resend email.")
         return False
@@ -45,6 +51,8 @@ def send_mail(
     subject: str = "Hello World",
     html: str = "<p>Congrats on sending your <strong>first email</strong>!</p>",
     from_email: Optional[str] = None,
+    attachments: Optional[list[dict]] = None,
+    bcc: Optional[list[str] | str] = None,
     background: bool = True,
 ):
     to_email = to_email or os.getenv("RESEND_TO_EMAIL")
@@ -55,11 +63,11 @@ def send_mail(
         return False
 
     if not background:
-        return _send_mail(to_email, subject, html, from_email)
+        return _send_mail(to_email, subject, html, from_email, attachments, bcc)
 
     thread = Thread(
         target=_send_mail,
-        args=(to_email, subject, html, from_email),
+        args=(to_email, subject, html, from_email, attachments, bcc),
         daemon=False,
     )
     thread.start()
