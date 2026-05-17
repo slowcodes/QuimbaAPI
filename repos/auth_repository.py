@@ -103,22 +103,12 @@ class UserRepository:
             self.session.rollback()
             raise
 
-    def get_user_by_id(self, user_id: int) -> User | None:
-
-        user = self.query.filter(User.id == user_id).one_or_none()
-
+    def get_user_by_id(self, user_id: int) -> UserDTO | None:
+        user = self.session.query(User).filter(User.id == user_id).one_or_none()
         if user is None:
             return None
+        return UserDTO.from_orm(user)
 
-        # return user
-        return User(
-            id=user.id,
-            username=user.username,
-            person_id=user.person_id,
-            password=user.password,
-            status=user.status,
-            # created_at=user.created_at
-        )
 
     def get_user(self, username: str):
 
@@ -165,6 +155,7 @@ class UserRepository:
         return user_dict
         # return None
 
+
     def get_user_roles(self, user_id) -> List[int]:
         groups = self.session.query(UserGroupMember).filter(UserGroupMember.user_id == user_id).all()
         roles = []
@@ -204,15 +195,6 @@ class UserRepository:
         return privileges
 
     def update_user(self, account_dto: AccountDTO):
-        # self.create_user(
-        #     {
-        #         "username": "nd_ekekwe",
-        #         "password": "$2b$12$gtRoj575/uH.iufajh2OSOajlIB0alq7IYwVrnXzhR7J8E2Oax/hC",
-        #         "status": AccountStatus.Active,
-        #         "person_id": 5
-        #     }
-        # )
-        # user = self.query.filter(User.id == account_dto.id).one_or_none()
         user = self.session.query(User) \
             .filter(User.status != AccountStatus.Deleted) \
             .filter(User.id == account_dto.id).first()
@@ -220,26 +202,37 @@ class UserRepository:
         if user is None:
             return None
 
-        account_data = account_dto.dict(exclude_unset=True)
-        for key, value in account_data.items():
-            if key == 'password':
-                # If the password is not a hash, hash it
-                value = get_password_hash(value) if not is_bcrypt_hash(value) else value
-            if key not in {'created_at'}:
+        try:
+            account_data = account_dto.dict(exclude_unset=True)
+            user_fields = {'username', 'password', 'status', 'person_id'}
+            for key, value in account_data.items():
+                if key not in user_fields:
+                    continue
+                if key == 'password':
+                    if value is None:
+                        continue
+                    # If the password is not a hash, hash it
+                    value = get_password_hash(value) if not is_bcrypt_hash(value) else value
                 setattr(user, key, value)
-        self.session.commit()
-        self.session.refresh(user)
 
-        # try:
-        #     print(f"Setting {key} to {value}")
-        #     setattr(user, key, value)
-        #     self.session.commit(user)
-        # except AttributeError as e:
-        #     print(f"Failed to set attribute {key}: {e}")
-        # user.username = account_dto.username
-        # user_account.person_id = account_dto.person_id
+            if account_dto.person is not None:
+                person_id = account_dto.person.id or user.person_id
+                person = self.session.query(Person).filter(Person.id == person_id).one_or_none()
+                if person is None:
+                    self.session.rollback()
+                    return None
 
-        # $2b$12$gtRoj575/uH.iufajh2OSOajlIB0alq7IYwVrnXzhR7J8E2Oax/hC nd_ekekwe, person_id:5, status: Active
+                person_data = account_dto.person.dict(exclude_unset=True)
+                for key, value in person_data.items():
+                    if key in {'id', 'organization_people'}:
+                        continue
+                    setattr(person, key, value)
+
+            self.session.commit()
+            self.session.refresh(user)
+        except Exception:
+            self.session.rollback()
+            raise
 
         return {
             'username': user.username

@@ -2,6 +2,7 @@ from typing import Annotated, Optional, List
 
 import base64
 
+from email_validator import EmailNotValidError, validate_email
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -38,6 +39,13 @@ def create_notification_log(db: Session, transaction_id: int, notification_statu
     )
     db.add(notification_log)
     db.commit()
+
+
+def get_valid_email(email: str) -> str:
+    try:
+        return validate_email(email, check_deliverability=False).normalized
+    except EmailNotValidError:
+        return ""
 
 
 def experiment_result_repo(db: Session = Depends(get_db)) -> ExperimentRepository:
@@ -387,13 +395,18 @@ def send_app_notice(
         create_notification_log(db, client.transaction_id, NotificationStatus.Failure)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client email is not available")
 
+    client_email = get_valid_email(client.email)
+    if not client_email:
+        create_notification_log(db, client.transaction_id, NotificationStatus.Failure)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client email is invalid")
+
     attachment_filename = original_filename
     if not attachment_filename.lower().endswith(".pdf"):
         attachment_filename = f"{attachment_filename}.pdf"
 
     client_name = " ".join(part for part in [client.first_name, client.last_name] if part).strip() or "Client"
     email_sent = send_mail(
-        to_email=client.email,
+        to_email=client_email,
         subject="Your lab result is ready",
         html=(
             f"<p>Hello {client_name},</p>"
@@ -417,7 +430,7 @@ def send_app_notice(
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Failed to send lab result notification")
 
     create_notification_log(db, client.transaction_id, NotificationStatus.Success)
-    return {"message": "Lab result notification sent", "email": client.email}
+    return {"message": "Lab result notification sent", "email": client_email}
 
 
 

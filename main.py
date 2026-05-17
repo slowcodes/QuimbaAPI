@@ -51,19 +51,15 @@ r = redis.Redis(host="localhost", port=6379, db=0)
 @app.on_event("startup")
 async def send_startup_email():
     if os.getenv("SEND_STARTUP_EMAIL", "false").lower() == "true":
-        send_mail(to_email='kc.ezenna@gmail.com', background=False)
+        # send_mail(to_email='kc.ezenna@gmail.com', background=False)
+        pass
 
 
 # gfr for things like kft to be included in the next release, we can use the same approach as the sms, which is to run it in a separate thread so that it doesn't block the main thread. This way, we can ensure that the email sending process doesn't interfere with the responsiveness of the API.
-# font, size, bold, italic, etc. not working
 # no result available for observation, in results,
 # qr code to be included,
 # whatsapp message status, on
 # widal colors issues,
-# lab service not updating,
-# patient info, too much space on the result.
-# footnote and header spaces too much.
-# optimised for printing
 # send_sms()
 
 # Configure logging
@@ -131,7 +127,7 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 app.mount("/api/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="api-uploads")
 
-send_mail()
+# send_mail()
 # send_kudi_sms()
 
 if os.getenv("AUTO_CREATE_TABLES", "false").lower() == "true":
@@ -144,7 +140,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'  # Log format
 )
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-logging.error("App has re-started. Startup time: "+current_time)
+logging.error("Quimba has started. Startup time: "+current_time)
 
 if __name__ == '__main__':
 

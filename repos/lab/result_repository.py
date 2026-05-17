@@ -4,13 +4,13 @@ from collections import defaultdict
 from datetime import datetime
 
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from dtos.auth import UserDTO
 from dtos.lab import SampleResultDTO, VerifiedResultEntryDTO, DateFilterDTO, LabResultLogCreate
 from models.client import Person, Client
-from models.lab.lab import SampleResult, LabVerifiedResult, QueueStatus, ResultStatus, LabResultLog, CollectedSamples, \
-    LabServicesQueue, LabService, LabType
+from models.lab.lab import DynamicParameter, ExperimentParameter, ExperimentResultReading, SampleResult, \
+    LabVerifiedResult, QueueStatus, ResultStatus, LabResultLog, CollectedSamples, LabServicesQueue, LabService, LabType
 from models.services.services import ServiceBooking, BookingStatus, ServiceBookingDetail, BusinessServices
 from models.transaction import Transaction
 from repos.auth_repository import UserRepository
@@ -106,7 +106,14 @@ class ResultRepository:
     def get_all_sample_results(self, limit: int, skip: int, lab_id=0, search_keyword: str = '',
                                dateFilter: DateFilterDTO = None, client_id: int = 0) -> dict:
 
-        base_query = self.db_session.query(SampleResult)
+        base_query = self.db_session.query(SampleResult).options(
+            joinedload(SampleResult.queue)
+            .joinedload(LabServicesQueue.dynamic_parameters)
+            .joinedload(DynamicParameter.lab_experiment),
+            joinedload(SampleResult.experiment_readings)
+            .joinedload(ExperimentResultReading.parameter)
+            .joinedload(ExperimentParameter.lab_experiment),
+        )
         joined_queue = False
         joined_lab_service = False
         status_value = None

@@ -1,11 +1,13 @@
+from datetime import date, datetime
 from typing import List, Optional
 import logging
 
+from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Session
 
 from dtos.services import ServiceBookingDTO, ServiceBookingDetailDTO, BusinessServiceDTO, ServiceBookingWithTrxDTO
 from models.client import Client, Person
-from models.lab.lab import CollectedSamples, LabBundleCollection, LabServicesQueue, QueueStatus, LabType
+from models.lab.lab import CollectedSamples, LabBundleCollection, LabService, LabServicesQueue, QueueStatus, LabType
 from models.services.services import Bundles, ServiceBooking, ServiceBookingDetail, BookingStatus, \
     ServiceClinicalExamination, BusinessServices, BookingType
 from models.transaction import Transaction
@@ -87,6 +89,22 @@ class ServiceRepository:
     def get_service_booking(self, booking_id: int) -> ServiceBookingDTO:
         return self.session.query(ServiceBooking).filter(ServiceBooking.id == booking_id).first()
 
+    @staticmethod
+    def _parse_date_filter_value(value):
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                return None
+            try:
+                return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+            except ValueError:
+                return value
+        return value
+
     def get_all_service_bookings(
         self,
         limit: int,
@@ -96,22 +114,70 @@ class ServiceRepository:
         last_date: Optional[str] = None,
         status: Optional[str] = None,
         booking_type: Optional[str] = None,
-        lab_id: Optional[int] = None
+        lab_id: Optional[int] = None,
+        search_text: Optional[str] = None,
     ) -> dict:
 
         query = self.session.query(ServiceBooking)
+        joined_transaction = False
+        joined_booking_detail = False
+        joined_client = False
+        joined_person = False
+        needs_distinct = False
 
         if client_id != 0:
             query = query.filter(ServiceBooking.client_id == client_id)
 
-        if start_date and last_date:
-            query = query.join(Transaction).filter(
-                Transaction.transaction_time.between(start_date, last_date)
-            )
+        start_date = self._parse_date_filter_value(start_date)
+        last_date = self._parse_date_filter_value(last_date)
+        if start_date or last_date:
+            query = query.join(Transaction, Transaction.id == ServiceBooking.transaction_id)
+            joined_transaction = True
+            if start_date and last_date:
+                query = query.filter(Transaction.transaction_date.between(start_date, last_date))
+            elif start_date:
+                query = query.filter(Transaction.transaction_date >= start_date)
+            else:
+                query = query.filter(Transaction.transaction_date <= last_date)
+
         if booking_type == BookingType.Laboratory:
             # get transactions that have laboratory service bookings
             query = query.join(ServiceBookingDetail).filter(
                 ServiceBookingDetail.booking_type == BookingType.Laboratory
+            )
+            joined_booking_detail = True
+            needs_distinct = True
+
+        if lab_id:
+            if not joined_booking_detail:
+                query = query.join(ServiceBookingDetail)
+                joined_booking_detail = True
+            query = query.join(LabServicesQueue, LabServicesQueue.booking_id == ServiceBookingDetail.id) \
+                .join(LabService, LabService.id == LabServicesQueue.lab_service_id) \
+                .filter(LabService.lab_id == lab_id)
+            needs_distinct = True
+
+        search_text = (search_text or "").strip()
+        if search_text:
+            keyword = f"%{search_text}%"
+            if not joined_transaction:
+                query = query.join(Transaction, Transaction.id == ServiceBooking.transaction_id)
+                joined_transaction = True
+            if not joined_client:
+                query = query.join(Client, Client.id == ServiceBooking.client_id)
+                joined_client = True
+            if not joined_person:
+                query = query.join(Person, Person.id == Client.person_id)
+                joined_person = True
+            query = query.filter(
+                or_(
+                    Person.first_name.ilike(keyword),
+                    Person.last_name.ilike(keyword),
+                    Person.middle_name.ilike(keyword),
+                    cast(ServiceBooking.id, String).ilike(keyword),
+                    cast(ServiceBooking.transaction_id, String).ilike(keyword),
+                    cast(Transaction.id, String).ilike(keyword),
+                )
             )
 
 
@@ -121,7 +187,10 @@ class ServiceRepository:
                 query = query.filter(ServiceBooking.booking_status == booking_status)
             except ValueError:
                 pass
-        total = query.count()
+        if needs_distinct:
+            query = query.distinct()
+
+        total = query.order_by(None).count()
         selected_booking = query.order_by(ServiceBooking.id.desc()).offset(skip).limit(limit).all()
 
         data = [ServiceBookingWithTrxDTO.from_orm(booking) for booking in selected_booking]

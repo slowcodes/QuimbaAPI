@@ -56,10 +56,12 @@ def create_service_booking_detail(service_booking_detail: ServiceBookingDetailDT
 @service_router.get("/all-booking/", status_code=status.HTTP_200_OK)
 def get_service_booking_detail(
         current_user: Annotated[UserDTO, Depends(get_current_active_user)],
-        skip: int = 0, limit: int = 20, client_id: int = 0, lab_id=0, start_date: str = None, last_date: str = None, status: str = None, booking_type: str = None,
+        skip: int = 0, limit: int = 20, client_id: int = 0, lab_id: int = 0, start_date: str = None, last_date: str = None, status: str = None, booking_type: str = None,
+        search_text: str = '',
         repo: ServiceRepository = Depends(service_repository)):
     booking = repo.get_all_service_bookings(limit,
-                                            skip, client_id, start_date, last_date, status, booking_type, lab_id)
+                                            skip, client_id, start_date, last_date, status, booking_type, lab_id,
+                                            search_text)
     return booking
 
 

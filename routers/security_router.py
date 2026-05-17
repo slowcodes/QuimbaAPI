@@ -109,19 +109,7 @@ async def getUserById(id: int,
     current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
     usr_details = auth.get_user_by_id(id)
-    person = person_repo.get(usr_details.person_id)
-    return {
-        'id': person.id,
-        'first_name': person.first_name,
-        'last_name': person.last_name,
-        'middle_name': person.middle_name,
-        'email': person.email,
-        'phone': person.phone,
-        'sex': person.sex,
-        'title': person.title,
-        # 'date_of_birth': person.date_of_birth,
-        'user_account': usr_details
-    }
+    return usr_details
 
 
 @security_router.put("/users/update-user")

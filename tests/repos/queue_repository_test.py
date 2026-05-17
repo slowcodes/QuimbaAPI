@@ -10,6 +10,7 @@ from dtos.lab import DynamicParameterBaseDTO, LabResultByQueueDTO
 from models.lab.lab import DynamicParameter, Experiment, ExperimentParameter, ExperimentResultReading, LabServicesQueue, \
     ParameterType, SampleResult
 from repos.lab.queue_repository import QueueRepository
+from repos.lab.result_repository import ResultRepository
 
 
 def create_session():
@@ -168,3 +169,35 @@ def test_lab_result_groups_experiment_readings_by_experiment():
     assert len(grouped["Haematology"].parameters) == 2
     assert grouped["Haematology"].parameters[0].parameter.parameter == "Haemoglobin"
     assert grouped["Chemistry"].parameters[0].parameter.parameter == "Sodium"
+
+
+def test_sample_results_include_dynamic_parameters_in_experiment_readings():
+    session = create_session()
+    repo = ResultRepository(session)
+    experiment = Experiment(description="Culture")
+    queue = LabServicesQueue(lab_service_id=1, booking_id=1)
+    session.add_all([experiment, queue])
+    session.flush()
+
+    result = SampleResult(queue_id=queue.id, created_by=1, comment="Ready")
+    session.add(result)
+    session.add(
+        DynamicParameter(
+            lab_service_queue_id=queue.id,
+            parameter="Drug",
+            parameter_value="Ampicillin",
+            exp_id=experiment.id,
+        )
+    )
+    session.commit()
+
+    response = repo.get_all_sample_results(limit=15, skip=0)
+    dto = response["data"][0]
+
+    assert dto.experiment_readings is not None
+    assert len(dto.experiment_readings) == 1
+    assert dto.experiment_readings[0].experiment_id == experiment.id
+    assert dto.experiment_readings[0].parameters == []
+    assert len(dto.experiment_readings[0].dynamic_parameters) == 1
+    assert dto.experiment_readings[0].dynamic_parameters[0].parameter == "Drug"
+    assert dto.experiment_readings[0].dynamic_parameters[0].parameter_value == "Ampicillin"
