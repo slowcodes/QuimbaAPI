@@ -14,6 +14,7 @@ from routers.lab.observation_result_template_router import observation_result_te
 from routers.lab.queue_router import queue_router
 from routers.lab.result_router import result_router
 from routers.lab.samples_router import sample_collection_router
+from routers.notification_router import user_notification_router
 from routers.product_router import product_router
 from routers.security_router import security_router
 from routers.service_router import service_router
@@ -27,6 +28,7 @@ base_routers = [
     supply_router,
     service_router,
     security_router,
+    user_notification_router,
     consultation_router,
     business_service_router,
     ward_router,

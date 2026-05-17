@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from datetime import datetime
 
 from fastapi import FastAPI, Request
@@ -26,6 +27,7 @@ import redis
 from security.dependencies import refresh_access_token
 from fastapi.staticfiles import StaticFiles
 from storage import UPLOADS_DIR
+from services.notification_service import run_hourly_user_notification_generator
 
 app = FastAPI(
     title="Quimba API",
@@ -46,12 +48,30 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 r = redis.Redis(host="localhost", port=6379, db=0)
+notification_generator_task = None
 
 
 @app.on_event("startup")
 async def send_startup_email():
     if os.getenv("SEND_STARTUP_EMAIL", "false").lower() == "true":
         # send_mail(to_email='kc.ezenna@gmail.com', background=False)
+        pass
+
+
+@app.on_event("startup")
+async def start_user_notification_generator():
+    global notification_generator_task
+    notification_generator_task = asyncio.create_task(run_hourly_user_notification_generator())
+
+
+@app.on_event("shutdown")
+async def stop_user_notification_generator():
+    if notification_generator_task is None:
+        return
+    notification_generator_task.cancel()
+    try:
+        await notification_generator_task
+    except asyncio.CancelledError:
         pass
 
 

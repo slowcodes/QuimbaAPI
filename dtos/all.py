@@ -20,3 +20,12 @@ class DataResponseDTO(BaseModel, Generic[T]):
 class EnumItem(BaseModel):
     key: str
     value: str
+
+
+class NotificationDTO(BaseModel):
+    id: int
+    title: str
+    message: str
+    user_id: int
+    is_read: bool
+    created_at: str
