@@ -1,4 +1,5 @@
-from typing import List, Optional
+import json
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -62,8 +63,25 @@ class UserNotificationRepository:
         return NotificationDTO(
             id=notification.id,
             title=notification.title,
-            message=notification.message,
+            description=notification.description,
+            message=UserNotificationRepository._parse_message(notification.message),
             user_id=notification.user_id,
             is_read=notification.is_read,
             created_at=notification.created_at.isoformat() if notification.created_at else "",
         )
+
+    @staticmethod
+    def _parse_message(message: Optional[str]) -> List[Dict[str, Any]]:
+        if not message:
+            return []
+
+        try:
+            parsed = json.loads(message)
+        except (TypeError, json.JSONDecodeError):
+            return [{"message": message}]
+
+        if isinstance(parsed, list):
+            return [item for item in parsed if isinstance(item, dict)]
+        if isinstance(parsed, dict):
+            return [parsed]
+        return []

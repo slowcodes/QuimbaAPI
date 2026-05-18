@@ -92,8 +92,11 @@ def create_sample_result(result: SampleResultDTO,
                          ):
     result.created_by = current_user.id
     if repo.sample_result_exist(result):
-        raise HTTPException(status_code=409, detail="Sample result already exist")
-    response = repo.create_result(result)
+        raise HTTPException(status_code=409, detail="Sample result already exists for this queue")
+    try:
+        response = repo.create_result(result)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
     return response
 

@@ -1,4 +1,4 @@
-from typing import List, TypeVar, Generic
+from typing import Any, Dict, List, Optional, TypeVar, Generic
 
 from pydantic import BaseModel
 
@@ -25,7 +25,8 @@ class EnumItem(BaseModel):
 class NotificationDTO(BaseModel):
     id: int
     title: str
-    message: str
+    description: Optional[str] = None
+    message: List[Dict[str, Any]]
     user_id: int
     is_read: bool
     created_at: str

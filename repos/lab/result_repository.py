@@ -33,6 +33,9 @@ class ResultRepository:
         self.transaction_repository = TransactionRepository(self.db_session)
 
     def create_result(self, sample_result: SampleResultDTO) -> SampleResultDTO:
+        if self.sample_result_exist(sample_result):
+            raise ValueError("Sample result already exists for this queue")
+
         result = SampleResult(queue_id=sample_result.queue_id,
                               created_by=sample_result.created_by,
                               comment=sample_result.comment)
