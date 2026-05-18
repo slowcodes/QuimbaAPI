@@ -108,6 +108,7 @@ def read_transactions(path: str, limit: int = 15, skip: int = 0,
                       booking_status: BookingStatus | None = None,
                       lab_id: int = 0, search_text: str = '', client_id: int = 0,
                       only_referred_transactions: int = 0,
+                      current_user_only: bool = False,
                       start_date: str = '', last_date: str = '', date_filter_status: str = '',
                       transaction_type: TransactionType = TransactionType.All,
                       repo: TransactionRepository = Depends(transaction_repo),*, 
@@ -118,6 +119,7 @@ def read_transactions(path: str, limit: int = 15, skip: int = 0,
         last_date=last_date + " 23:59:59" if last_date else None,
         status=transaction_type
     )
+    user_id = current_user.id if current_user_only else None
 
     if path == 'laboratories':
         results = repo.get_all_lab(
@@ -127,7 +129,8 @@ def read_transactions(path: str, limit: int = 15, skip: int = 0,
             lab_id=lab_id,
             client_id=client_id,
             booking_status=booking_status,
-            search_text=search_text
+            search_text=search_text,
+            user_id=user_id
         )
     elif path == 'consultation':
         results = repo.get_all_consultation()
@@ -141,11 +144,12 @@ def read_transactions(path: str, limit: int = 15, skip: int = 0,
             skip=skip,
             limit=limit,
             client_id=client_id,
-            booking_status=booking_status
+            booking_status=booking_status,
+            user_id=user_id
         )
     elif path == 'referred':
         ref_id = None if only_referred_transactions == 0 else only_referred_transactions
-        results = repo.get_all(date_filter, skip, limit, True, ref_id, booking_status=booking_status)
+        results = repo.get_all(date_filter, skip, limit, True, ref_id, booking_status=booking_status, user_id=user_id)
     else:
         results = repo.get_all()
         # all_trx = [sales_services_repo.get_full_transaction_details(trx.id) for trx in results['data']]

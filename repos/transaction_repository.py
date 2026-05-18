@@ -121,8 +121,12 @@ class TransactionRepository:
             referral_id: Optional[int] = None,
             client_id: int = 0,
             booking_status: Optional[str] = None,
+            user_id: Optional[int] = None,
     ):
         query = self.db_session.query(Transaction)
+
+        if user_id is not None:
+            query = query.filter(Transaction.user_id == user_id)
 
         # --- Referral filter ---
         if referred or referral_id is not None:
@@ -185,7 +189,8 @@ class TransactionRepository:
         lab_id: int = 0,
         client_id: int = 0,
         booking_status: Optional[str] = None,
-        search_text: str = ''
+        search_text: str = '',
+        user_id: Optional[int] = None,
     ):
         detail_filters = [
             ServiceBookingDetail.booking_type == BookingType.Laboratory,
@@ -224,6 +229,9 @@ class TransactionRepository:
         )
 
         search_text = (search_text or "").strip()
+
+        if user_id is not None:
+            query = query.filter(Transaction.user_id == user_id)
 
         if client_id != 0:
             query = query.filter(ServiceBooking.client_id == client_id)

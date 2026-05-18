@@ -197,15 +197,16 @@ class CollectedSamplesRepository(BaseRepository):
             raise
 
     def update_processed_sample(self, queue_id: int, status: QueueStatus = QueueStatus.Processed) -> bool:
-        sample = (
+        samples = (
             self.db.query(CollectedSamples)
             .filter(CollectedSamples.queue_id == queue_id)
-            .one_or_none()
+            .all()
         )
 
-        if not sample:
+        if not samples:
             return False
 
-        sample.status = status
-        self.db.commit()
+        for sample in samples:
+            sample.status = status
+
         return True
