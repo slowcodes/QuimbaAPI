@@ -120,7 +120,15 @@ def read_transactions(path: str, limit: int = 15, skip: int = 0,
     )
 
     if path == 'laboratories':
-        results = repo.get_all_lab(date_filter=date_filter, lab_id=lab_id, booking_status=booking_status)
+        results = repo.get_all_lab(
+            date_filter=date_filter,
+            skip=skip,
+            limit=limit,
+            lab_id=lab_id,
+            client_id=client_id,
+            booking_status=booking_status,
+            search_text=search_text
+        )
     elif path == 'consultation':
         results = repo.get_all_consultation()
     elif path == 'dispensaries':
@@ -128,7 +136,13 @@ def read_transactions(path: str, limit: int = 15, skip: int = 0,
     elif path == 'enrollments':
         results = repo.get_all_enrollment()
     elif path == 'all':
-        results = repo.get_all(date_filter=date_filter, client_id=client_id, booking_status=booking_status)
+        results = repo.get_all(
+            date_filter=date_filter,
+            skip=skip,
+            limit=limit,
+            client_id=client_id,
+            booking_status=booking_status
+        )
     elif path == 'referred':
         ref_id = None if only_referred_transactions == 0 else only_referred_transactions
         results = repo.get_all(date_filter, skip, limit, True, ref_id, booking_status=booking_status)

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from typing import Optional, Type, TypeVar
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import select, or_, and_, func, String
 from sqlalchemy.orm import Session, joinedload
@@ -32,6 +32,49 @@ class TransactionRepository:
         self.service_repository = ServiceRepository(self.db_session)
 
     ModelType = TypeVar("ModelType", bound=Base)
+
+    @staticmethod
+    def _coerce_date(value) -> Optional[date]:
+        if not value:
+            return None
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                return None
+            try:
+                return datetime.fromisoformat(value).date()
+            except ValueError:
+                return datetime.strptime(value[:10], "%Y-%m-%d").date()
+        return value
+
+    def _date_range_from_filter(self, date_filter: Optional[DateFilterDTO]) -> tuple[Optional[date], Optional[date]]:
+        if not date_filter:
+            return None, None
+
+        if isinstance(date_filter, dict):
+            start_date = date_filter.get("start_date")
+            last_date = date_filter.get("last_date")
+        else:
+            start_date = getattr(date_filter, "start_date", None)
+            last_date = getattr(date_filter, "last_date", None)
+
+        return self._coerce_date(start_date), self._coerce_date(last_date)
+
+    def _apply_date_filter(self, query, column, start_date=None, last_date=None):
+        start_date = self._coerce_date(start_date)
+        last_date = self._coerce_date(last_date)
+
+        if start_date and last_date:
+            return query.filter(column.between(start_date, last_date))
+        if start_date:
+            return query.filter(column >= start_date)
+        if last_date:
+            return query.filter(column <= last_date)
+        return query
 
     def get_lab_transaction_packages(self, transaction_id):
         cols = [Bundles.bundles_name,
@@ -89,18 +132,8 @@ class TransactionRepository:
             if referral_id is not None:
                 query = query.filter(ReferredTransaction.referral_id == referral_id)
 
-        # --- Date filtering ---
-        if date_filter:
-            start_date = getattr(date_filter, "start_date", None)
-            last_date = getattr(date_filter, "last_date", None)
-            if isinstance(date_filter, dict):
-                start_date = date_filter.get("start_date")
-                last_date = date_filter.get("last_date")
-        if date_filter and start_date:
-            last_date = last_date or datetime.utcnow()
-            query = query.filter(
-                Transaction.transaction_date.between(start_date, last_date)
-            )
+        start_date, last_date = self._date_range_from_filter(date_filter)
+        query = self._apply_date_filter(query, Transaction.transaction_date, start_date, last_date)
 
         joined_service_booking = False
         if client_id != 0:
@@ -218,17 +251,8 @@ class TransactionRepository:
                 status_value = booking_status
             query = query.filter(ServiceBooking.booking_status == status_value)
 
-        if date_filter:
-            start_date = getattr(date_filter, "start_date", None)
-            last_date = getattr(date_filter, "last_date", None)
-            if isinstance(date_filter, dict):
-                start_date = date_filter.get("start_date")
-                last_date = date_filter.get("last_date")
-            if start_date:
-                last_date = last_date or datetime.utcnow()
-                query = query.filter(
-                    Transaction.transaction_date.between(start_date, last_date)
-                )
+        start_date, last_date = self._date_range_from_filter(date_filter)
+        query = self._apply_date_filter(query, Transaction.transaction_date, start_date, last_date)
 
         # --- Pagination ---
         total = query.count()
@@ -438,14 +462,7 @@ class TransactionRepository:
             )
         )
 
-        if start_date and end_date:
-            query = query.filter(
-                Transaction.transaction_date.between(start_date, end_date)
-            )
-        elif start_date:
-            query = query.filter(Transaction.transaction_date >= start_date)
-        elif end_date:
-            query = query.filter(Transaction.transaction_date <= end_date)
+        query = self._apply_date_filter(query, Transaction.transaction_date, start_date, end_date)
 
         return {
             'data': [self.get_list(datum, BookingType.Laboratory) for datum in query.all()],
@@ -552,14 +569,7 @@ class TransactionRepository:
         if referral_id:
             query = query.filter(ReferredTransactionSettlement.created_for == referral_id)
 
-        if start_date and last_date:
-            query = query.filter(
-                ReferredTransactionSettlement.created_at.between(start_date, last_date)
-            )
-        elif start_date:
-            query = query.filter(ReferredTransactionSettlement.created_at >= start_date)
-        elif last_date:
-            query = query.filter(ReferredTransactionSettlement.created_at <= last_date)
+        query = self._apply_date_filter(query, ReferredTransactionSettlement.created_at, start_date, last_date)
 
         if search_text:
             query = (

@@ -354,10 +354,10 @@ class LabRepository:
             return False  # Return False when lab does not exist
 
         try:
-            if lab.lab:
-                labx.lab_name = lab.lab
-            if lab.description:
-                labx.lab_desc = lab.description
+            if lab.lab_name:
+                labx.lab_name = lab.lab_name
+            if lab.lab_desc:
+                labx.lab_desc = lab.lab_desc
 
             self.session.commit()
             return True  # Indicate success
