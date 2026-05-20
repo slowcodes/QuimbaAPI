@@ -39,8 +39,13 @@ class CollectedSamplesRepository(BaseRepository):
         return [c.comment for c in self.db.query(SampleResult).all()]
 
     def add_collected_sample(self, sample_data: CollectedSamplesCreateDTO) -> CollectedSamplesDTO:
-
-        print('smpl-repo:', sample_data)
+        existing_sample = (
+            self.db.query(CollectedSamples)
+            .filter(CollectedSamples.queue_id == sample_data.queue_id)
+            .first()
+        )
+        if existing_sample:
+            raise ValueError("Sample already exists for this queue")
 
         smpl = sample_data.__dict__.copy()  # copy to avoid modifying original DTO
         smpl['sample_type'] = self.normalize_sample_type(smpl['sample_type'])

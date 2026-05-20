@@ -78,6 +78,7 @@ def create_collected_sample(
             lab_service_id=queue.lab_service_id
         )
     )
+    sample_data.collected_by = current_user.id
     return repo.add_collected_sample(sample_data)
 
 
