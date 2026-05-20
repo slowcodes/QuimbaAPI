@@ -235,7 +235,7 @@ class ConsultantRepository:
         if last_date:
             try:
                 end_dt = datetime.strptime(last_date, "%Y-%m-%d")
-                filters.append(ConsultationQueue.consultation_time <= end_dt)
+                filters.append(ConsultationQueue.consultation_time < end_dt + timedelta(days=1))
             except ValueError:
                 raise ValueError("Invalid last_date format. Use YYYY-MM-DD.")
 

@@ -4,6 +4,7 @@ import logging
 from datetime import date
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from db import SessionLocal
@@ -19,8 +20,8 @@ from models.lab.lab import (
     SampleResult,
 )
 from models.notification import Notification
-from models.services.services import BookingStatus, ServiceBooking, ServiceBookingDetail
-from models.transaction import Transaction, TransactionType
+from models.services.services import BookingStatus, PriceCode, ServiceBooking, ServiceBookingDetail
+from models.transaction import Payments, Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +148,7 @@ class UserNotificationService:
             queue_id: Optional[int] = None,
             sample_id: Optional[int] = None,
             result_id: Optional[int] = None,
+            extra: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         item = {
             "client_name": " ".join(filter(None, [first_name, last_name])) or None,
@@ -160,6 +162,8 @@ class UserNotificationService:
             item["sample_id"] = sample_id
         if result_id is not None:
             item["result_id"] = result_id
+        if extra:
+            item.update(extra)
 
         return item
 
@@ -297,18 +301,48 @@ class UserNotificationService:
         ]
 
     def _incomplete_payment_transaction_items(self) -> List[Dict[str, Any]]:
+        payment_totals = (
+            self.db.query(
+                Payments.transaction_id.label("transaction_id"),
+                func.coalesce(func.sum(Payments.amount), 0).label("total_paid"),
+            )
+            .group_by(Payments.transaction_id)
+            .subquery()
+        )
+        transaction_totals = (
+            self.db.query(
+                ServiceBooking.transaction_id.label("transaction_id"),
+                (
+                    func.coalesce(func.sum(PriceCode.service_price), 0)
+                    - func.coalesce(Transaction.discount, 0)
+                ).label("transaction_total"),
+            )
+            .select_from(ServiceBooking)
+            .join(Transaction, ServiceBooking.transaction_id == Transaction.id)
+            .outerjoin(ServiceBookingDetail, ServiceBookingDetail.booking_id == ServiceBooking.id)
+            .outerjoin(PriceCode, ServiceBookingDetail.price_code == PriceCode.id)
+            .group_by(ServiceBooking.transaction_id, Transaction.discount)
+            .subquery()
+        )
         rows = (
             self.db.query(
                 Person.first_name,
                 Person.last_name,
                 Transaction.id.label("transaction_id"),
                 Transaction.transaction_date,
+                transaction_totals.c.transaction_total,
+                func.coalesce(payment_totals.c.total_paid, 0).label("total_paid"),
             )
             .select_from(Transaction)
             .join(ServiceBooking, ServiceBooking.transaction_id == Transaction.id)
             .join(Client, ServiceBooking.client_id == Client.id)
             .join(Person, Client.person_id == Person.id)
-            .filter(Transaction.transaction_status == TransactionType.Open)
+            .join(transaction_totals, transaction_totals.c.transaction_id == Transaction.id)
+            .outerjoin(payment_totals, payment_totals.c.transaction_id == Transaction.id)
+            .filter(
+                transaction_totals.c.transaction_total > 0,
+                func.coalesce(payment_totals.c.total_paid, 0) < transaction_totals.c.transaction_total,
+            )
             .all()
         )
         return [
@@ -317,6 +351,11 @@ class UserNotificationService:
                 row.last_name,
                 row.transaction_id,
                 row.transaction_date,
+                extra={
+                    "transaction_total": row.transaction_total,
+                    "total_paid": row.total_paid,
+                    "balance": row.transaction_total - row.total_paid,
+                },
             )
             for row in rows
         ]

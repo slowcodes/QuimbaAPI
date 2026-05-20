@@ -215,6 +215,10 @@ def get_consultation_booking(consultant_id: int = 0, client_id=0, start_date='',
                              repo: ConsultantRepository = Depends(get_consultant_repository),*, 
     current_user: Annotated[UserDTO, Depends(get_current_active_user)]
 ):
+    if consultant_id == 0:
+        consultant = repo.get_consultant_by_user_id(current_user.id)
+        consultant_id = consultant.id if consultant else 0
+
     return repo.get_consultant_queue(
         consultant_id,
         client_id,
